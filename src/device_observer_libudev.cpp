@@ -123,14 +123,10 @@ void device_observer::deinit ()
         _rep->ed = -1;
     }
 
-    if (_rep->md > 0) {
-        ::close(_rep->md);
-        _rep->md = -1;
-    }
-
     udev_monitor_filter_remove(_rep->m);
     udev_monitor_unref(_rep->m);
     _rep->m = nullptr;
+    _rep->md = -1;
 
     udev_unref(_rep->u);
     _rep->u = nullptr;
@@ -166,53 +162,31 @@ void device_observer::poll (std::chrono::milliseconds timeout)
     int nfds = epoll_wait(_rep->ed, events, MAX_EVENTS, timeout.count());
 
     for (int i = 0; i < nfds; i++) {
-        //if (events[i].events & EPOLLIN) {
-            if (events[i].events & EPOLLIN)
-                fmt::print("--- EPOLLIN ---\n");
+        udev_device * dev = udev_monitor_receive_device(_rep->m);
 
-            if (events[i].events & EPOLLOUT)
-                fmt::print("--- EPOLLOUT ---\n");
+        if (dev) {
+            auto subsystem = udev_device_get_subsystem(dev);
+            auto devpath   = udev_device_get_devpath(dev);
+            auto sysname   = udev_device_get_sysname(dev);
 
-            if (events[i].events & EPOLLET)
-                fmt::print("--- EPOLLET ---\n");
+            auto action = udev_device_get_action(dev);
 
-            udev_device * dev = udev_monitor_receive_device(_rep->m);
-
-            if (dev) {
-                auto subsystem = udev_device_get_subsystem(dev);
-                auto devpath   = udev_device_get_devpath(dev);
-                auto sysname   = udev_device_get_sysname(dev);
-                //auto devtype   = udev_device_get_devtype(dev);
-                //auto syspath   = udev_device_get_syspath(dev);
-                //auto sysnum    = udev_device_get_sysnum(dev);
-                //auto devnode   = udev_device_get_devnode(dev);
-
-                //fmt::print("--- SUBSYSTEM: {} ---\n", subsystem);
-                //fmt::print("--- SYSNAME  : {} ---\n", sysname);
-                //fmt::print("--- DEVTYPE  : {} ---\n", devtype);
-                //fmt::print("--- DEVPATH  : {} ---\n", devpath);
-                //fmt::print("--- SYSPATH  : {} ---\n", syspath);
-                //fmt::print("--- SYSNUM   : {} ---\n", sysnum ? sysnum : "null");
-                //fmt::print("--- DEVNODE  : {} ---\n", devnode ? devnode : "null");
-
-                auto action = udev_device_get_action(dev);
-
-                if (std::strcmp(action, "add") == 0) {
-                    if (arrived)
-                        arrived(device_info{subsystem, devpath, sysname});
-                } else if (std::strcmp(action, "remove") == 0) {
-                    if (removed)
-                        removed(device_info{subsystem, devpath, sysname});
-                } else if (std::strcmp(action, "bind") == 0) {
-                    if (bound)
-                        bound(device_info{subsystem, devpath, sysname});
-                } else if (std::strcmp(action, "unbind") == 0) {
-                    if (unbound)
-                        unbound(device_info{subsystem, devpath, sysname});
-                }
-
-                udev_device_unref(dev);
+            if (std::strcmp(action, "add") == 0) {
+                if (arrived)
+                    arrived(device_info{subsystem, devpath, sysname});
+            } else if (std::strcmp(action, "remove") == 0) {
+                if (removed)
+                    removed(device_info{subsystem, devpath, sysname});
+            } else if (std::strcmp(action, "bind") == 0) {
+                if (bound)
+                    bound(device_info{subsystem, devpath, sysname});
+            } else if (std::strcmp(action, "unbind") == 0) {
+                if (unbound)
+                    unbound(device_info{subsystem, devpath, sysname});
             }
+
+            udev_device_unref(dev);
+        }
     }
 }
 
