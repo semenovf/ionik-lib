@@ -20,6 +20,7 @@ enum class errc
 {
       success = 0
     , acquire_device_observer
+    , operation_system_error
 };
 
 class error_category : public std::error_category
@@ -37,6 +38,9 @@ public:
                 return std::string{"no error"};
             case static_cast<int>(errc::acquire_device_observer):
                 return std::string{"acquire device observer"};
+            case static_cast<int>(errc::operation_system_error):
+                return std::string{"operation system error"};
+
             default: return std::string{"unknown net error"};
         }
     }

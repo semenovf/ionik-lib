@@ -7,6 +7,7 @@
 //      2022.08.21 Initial version
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include "exports.hpp"
 #include <chrono>
 #include <functional>
 #include <system_error>
@@ -19,25 +20,51 @@ struct device_observer_rep;
 
 struct device_info
 {
-    std::string subsystem; // `block`, ...
-    std::string devtype;   // `partition`, `disk`, ...
-    std::string sysname;   // `sdc`, `sdc1` for `block` subsystem
+    // On Linux:
+    // `block`, `hid`, `usb`, ...
+    // On Windows:
+    // System, Display, USB, HIDClass...
+    std::string subsystem; 
+
+    std::string devpath;   
+    
+    // Empty on Windows
+    std::string sysname;
 };
 
+// On Windows only one instance allowed.
 class device_observer
 {
     device_observer_rep * _rep {nullptr};
 
 public:
-    std::function<void(device_info const & )> arrived;
-    std::function<void(device_info const & )> removed;
-    std::function<void(device_info const & )> bound;
-    std::function<void(device_info const & )> unbound;
+    static IONIK__EXPORT std::function<void(std::string const &)> on_failure;
+
+    std::function<void(device_info const &)> arrived 
+        = [] (device_info const &) {};
+
+    std::function<void(device_info const &)> removed
+        = [] (device_info const &) {};
+
+    // Unused in Windows
+    std::function<void(device_info const &)> bound
+        = [] (device_info const &) {};
+
+    // Unused in Windows
+    std::function<void(device_info const & )> unbound
+        = [] (device_info const &) {};
 
 private:
     std::pair<std::error_code, std::string> init (
         std::initializer_list<std::string> && subsystems);
     void deinit ();
+
+private:
+    device_observer () = delete;
+    device_observer (device_observer const &) = delete;
+    device_observer (device_observer &&) = delete;
+    device_observer & operator = (device_observer const &) = delete;
+    device_observer & operator = (device_observer &&) = delete;
 
 public:
     /**
@@ -45,19 +72,20 @@ public:
      *
      * @throws ionik::error (errc::bad_resource)
      */
-    device_observer (std::initializer_list<std::string> subsystems);
+    IONIK__EXPORT device_observer (std::initializer_list<std::string> subsystems);
 
     /**
      * Construct device observer for subsystem.
      */
-    device_observer (std::error_code & ec, std::initializer_list<std::string> subsystems);
+    IONIK__EXPORT device_observer (std::error_code & ec, std::initializer_list<std::string> subsystems);
 
-    ~device_observer ();
+    IONIK__EXPORT ~device_observer ();
 
-    void poll (std::chrono::milliseconds timeout);
+    // On Windows timeout value ignored
+    IONIK__EXPORT void poll (std::chrono::milliseconds timeout);
 
 public: // static
-    static std::vector<std::string> working_device_subsystems ();
+    static IONIK__EXPORT std::vector<std::string> working_device_subsystems ();
 };
 
 } // namespace ionik

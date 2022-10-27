@@ -29,6 +29,9 @@ struct device_observer_rep
     int ed;           // epoll descriptor
 };
 
+std::function<void(std::string const &)> device_observer::on_failure
+    = [] (std::string const &) {};
+
 std::pair<std::error_code, std::string>
 device_observer::init (std::initializer_list<std::string> && subsystems)
 {
