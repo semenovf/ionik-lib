@@ -316,12 +316,38 @@ void device_observer::deinit ()
     delete _rep;
 }
 
-void device_observer::poll (std::chrono::milliseconds /*timeout*/)
+//
+// https://stackoverflow.com/questions/10866311/getmessage-with-a-timeout
+//
+static BOOL GetMessageWithTimeout (MSG * msg, HWND hwnd, std::chrono::milliseconds timeout)
+{
+    BOOL res;
+    UINT_PTR timerId = SetTimer(hwnd, NULL, static_cast<UINT>(timeout.count()), NULL);
+    res = GetMessage(msg, hwnd, 0, 0);
+    KillTimer(NULL, timerId);
+
+    if (!res)
+        return FALSE;
+
+    if (msg->message == WM_TIMER && msg->hwnd == hwnd && msg->wParam == timerId)
+        return FALSE; //TIMEOUT! You could call SetLastError() or something...
+
+    return TRUE;
+}
+
+void device_observer::poll (std::chrono::milliseconds timeout)
 {
     MSG msg;
-    auto success = GetMessage(& msg, _rep->hwnd, 0, 0);
 
-    if (success > 0) {
+    // GetMessage is blocking call
+    // auto success = GetMessage(& msg, _rep->hwnd, 0, 0);
+    //
+    // PeekMessage returns immediately
+    // auto success = PeekMessage(& msg, _rep->hwnd, 0, 0, PM_REMOVE);
+
+    auto success = GetMessageWithTimeout(& msg, _rep->hwnd, timeout);
+
+    if (success != 0) {
         TranslateMessage(& msg);
         DispatchMessage(& msg);
     }
