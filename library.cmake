@@ -36,6 +36,10 @@ portable_target(LINK ${PROJECT_NAME} PUBLIC pfs::common)
 portable_target(LINK ${PROJECT_NAME}-static PUBLIC pfs::common)
 
 if (UNIX)
+    if (NOT EXISTS /usr/include/libudev.h)
+        portable_target(INCLUDE_DIRS ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
+    endif()
+
     portable_target(LINK ${PROJECT_NAME} PRIVATE udev)
     portable_target(LINK ${PROJECT_NAME}-static PRIVATE udev)
 elseif (MSVC)
