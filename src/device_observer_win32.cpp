@@ -309,7 +309,6 @@ void device_observer::deinit ()
     // Destroy window
     if (_rep->hwnd) {
         DestroyWindow(_rep->hwnd);
-        CloseHandle(_rep->hwnd);
         _rep->hwnd = nullptr;
     }
 
