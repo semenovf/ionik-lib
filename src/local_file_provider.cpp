@@ -30,11 +30,24 @@
 
 namespace ionik {
 
+static constexpr int INVALID_FILE_HANDLE = -1;
 namespace fs = pfs::filesystem;
-using file_provider_t = file_provider<pfs::filesystem::path>;
+using file_provider_t = file_provider<int, pfs::filesystem::path>;
 using filepath_t = file_provider_t::filepath_type;
 using filesize_t = file_provider_t::filesize_type;
 using handle_t = file_provider_t::handle_type;
+
+template <>
+handle_t file_provider_t::invalid () noexcept
+{
+    return -1;
+}
+
+template <>
+bool file_provider_t::is_invalid (handle_type const & h) noexcept
+{
+    return h < 0;
+}
 
 template <>
 handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
@@ -47,7 +60,7 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 
         if (*perr) {
             *perr = err;
-            return file_provider_t::INVALID_FILE_HANDLE;
+            return INVALID_FILE_HANDLE;
         } else {
             throw err;
         }
@@ -68,7 +81,7 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 
         if (perr) {
             *perr = err;
-            return file_provider_t::INVALID_FILE_HANDLE;
+            return INVALID_FILE_HANDLE;
         } else {
             throw err;
         }
@@ -100,7 +113,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 
         if (perr) {
             *perr = err;
-            return file_provider_t::INVALID_FILE_HANDLE;
+            return INVALID_FILE_HANDLE;
         } else {
             throw err;
         }
@@ -110,7 +123,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 }
 
 template <>
-inline void file_provider_t::close (handle_t h)
+void file_provider_t::close (handle_t & h)
 {
 #if _MSC_VER
     _close(h);
@@ -120,7 +133,7 @@ inline void file_provider_t::close (handle_t h)
 }
 
 template <>
-filesize_t file_provider_t::offset (handle_t h)
+filesize_t file_provider_t::offset (handle_t const & h)
 {
 #if _MSC_VER
     return static_cast<filesize_t>(_lseek(h, 0, SEEK_CUR));
@@ -130,7 +143,7 @@ filesize_t file_provider_t::offset (handle_t h)
 }
 
 template <>
-bool file_provider_t::set_pos (handle_t h, filesize_t offset, error * perr)
+void file_provider_t::set_pos (handle_t & h, filesize_t offset, error * perr)
 {
 #if _MSC_VER
     auto pos = static_cast<filesize_t>(_lseek(h, offset, SEEK_SET));
@@ -146,17 +159,15 @@ bool file_provider_t::set_pos (handle_t h, filesize_t offset, error * perr)
 
         if (perr) {
             *perr = err;
-            return false;
+            return;
         } else {
             throw err;
         }
     }
-
-    return true;
 }
 
 template <>
-filesize_t file_provider_t::read (handle_t h, char * buffer, filesize_t len, error * perr)
+filesize_t file_provider_t::read (handle_t & h, char * buffer, filesize_t len, error * perr)
 {
 #if _MSC_VER
     auto n = _read(h, buffer, len);
@@ -182,7 +193,7 @@ filesize_t file_provider_t::read (handle_t h, char * buffer, filesize_t len, err
 }
 
 template <>
-filesize_t file_provider_t::write (handle_t h, char const * buffer, filesize_t len, error * perr)
+filesize_t file_provider_t::write (handle_t & h, char const * buffer, filesize_t len, error * perr)
 {
 #if _MSC_VER
     auto n = _write(h, buffer, len);
@@ -208,4 +219,3 @@ filesize_t file_provider_t::write (handle_t h, char const * buffer, filesize_t l
 }
 
 } // namespace ionik
-

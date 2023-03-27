@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "error.hpp"
-#include "pfs/file_provider.hpp"
+#include "file_provider.hpp"
 #include "pfs/i18n.hpp"
 #include <string>
 
@@ -23,11 +23,8 @@ public:
     using filesize_type = typename FileProvider::filesize_type;
     using handle_type   = typename FileProvider::handle_type;
 
-public:
-    static constexpr handle_type INVALID_FILE_HANDLE = FileProvider::INVALID_FILE_HANDLE;
-
 private:
-    handle_type _h {INVALID_FILE_HANDLE};
+    handle_type _h {FileProvider::invalid()};
 
 private:
     file (handle_type h): _h(h) {}
@@ -41,7 +38,7 @@ public:
     file (file && f)
     {
         _h = f._h;
-        f._h = INVALID_FILE_HANDLE;
+        f._h = FileProvider::invalid();
     }
 
     file & operator = (file && f)
@@ -49,7 +46,7 @@ public:
         if (this != & f) {
             close();
             _h = f._h;
-            f._h = INVALID_FILE_HANDLE;
+            f._h = FileProvider::invalid();
         }
 
         return *this;
@@ -67,11 +64,10 @@ public:
 
     void close () noexcept
     {
-        if (_h > 0) {
+        if (!FileProvider::is_invalid(_h))
             FileProvider::close(_h);
-        }
 
-        _h = INVALID_FILE_HANDLE;
+        _h = FileProvider::invalid();
     }
 
     filesize_type offset () const
@@ -94,7 +90,7 @@ public:
      * @note Limit maximum file size to 2,147,479,552 bytes. For transfer bigger
      *       files use another way/tools (scp, for example).
      */
-    filesize_type read (char * buffer, filesize_type len, error * perr = nullptr) const
+    filesize_type read (char * buffer, filesize_type len, error * perr = nullptr)
     {
         if (len == 0)
             return 0;
@@ -117,7 +113,7 @@ public:
     }
 
     template <typename T>
-    inline filesize_type read (T & value, error * perr = nullptr) const
+    inline filesize_type read (T & value, error * perr = nullptr)
     {
         return read(reinterpret_cast<char *>(& value), sizeof(T), perr);
     }
@@ -125,7 +121,7 @@ public:
     /**
      * Read all content from file started from specified @a offset.
      */
-    std::string read_all (error * perr = nullptr) const
+    std::string read_all (error * perr = nullptr)
     {
         std::string result;
         char buffer[512];
@@ -161,9 +157,9 @@ public:
     /**
      * Set file position by @a offset.
      */
-    bool set_pos (filesize_type offset, error * perr = nullptr)
+    void set_pos (filesize_type offset, error * perr = nullptr)
     {
-        return FileProvider::set_pos(_h, offset, perr);
+        FileProvider::set_pos(_h, offset, perr);
     }
 
 public: // static
@@ -197,7 +193,7 @@ public: // static
     }
 
 
-    static file open_write_only (filepath_t const & path, error * perr = nullptr)
+    static file open_write_only (filepath_type const & path, error * perr = nullptr)
     {
         return open_write_only(path, truncate_enum::off, perr);
     }
@@ -217,7 +213,6 @@ public: // static
 
         return false;
     }
-
 
     static void rewrite (filepath_type const & path, std::string const & text)
     {

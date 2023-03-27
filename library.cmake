@@ -88,11 +88,3 @@ if (IONIK__BUILD_STATIC)
         portable_target(LINK ${STATIC_PROJECT_NAME} PRIVATE ${_ionik__private_libs})
     endif()
 endif()
-
-if (ANDROID)
-    portable_target(BUILD_JAR pfs.ionik
-        SOURCES
-            ${CMAKE_CURRENT_LIST_DIR}/src/android/pfs/ionik/FileCache.java
-            ${CMAKE_CURRENT_LIST_DIR}/src/android/pfs/ionik/FileInfo.java
-        LINK_ANDROID)
-endif()
