@@ -1,7 +1,7 @@
 ################################################################################
-# Copyright (c) 2021,2022 Vladislav Trifochkin
+# Copyright (c) 2021-2023 Vladislav Trifochkin
 #
-# This file is part of `netty-lib`.
+# This file is part of `ionik-lib`.
 #
 # Changelog:
 #      2021.10.05 Initial version.

@@ -5,22 +5,53 @@
 #
 # Changelog:
 #      2022.08.21 Initial version.
+#      2023.03.27 Separated static and shared builds.
 ################################################################################
 cmake_minimum_required (VERSION 3.11)
 project(ionik CXX)
 
-portable_target(ADD_SHARED ${PROJECT_NAME} ALIAS pfs::ionik
-    EXPORTS IONIK__EXPORTS
-    BIND_STATIC ${PROJECT_NAME}-static
-    STATIC_ALIAS pfs::ionik::static
-    STATIC_EXPORTS IONIK__STATIC)
+option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
+option(IONIK__BUILD_STATIC "Enable build static library" ON)
+
+if (NOT PORTABLE_TARGET__CURRENT_PROJECT_DIR)
+    set(PORTABLE_TARGET__CURRENT_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+if (IONIK__BUILD_SHARED)
+    portable_target(ADD_SHARED ${PROJECT_NAME} ALIAS pfs::ionik EXPORTS IONIK__EXPORTS)
+endif()
+
+if (IONIK__BUILD_STATIC)
+    set(STATIC_PROJECT_NAME ${PROJECT_NAME}-static)
+    portable_target(ADD_STATIC ${STATIC_PROJECT_NAME} ALIAS pfs::ionik::static EXPORTS IONIK__STATIC)
+endif()
+
+if (PFS__LOG_LEVEL)
+    list(APPEND _ionik__definitions "PFS__LOG_LEVEL=${PFS__LOG_LEVEL}")
+endif()
+
+list(APPEND _ionik__sources
+    ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp)
+
+list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/include)
 
 if (UNIX)
-    portable_target(SOURCES ${PROJECT_NAME}
-        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp)
+    if (NOT ANDROID)
+        list(APPEND _ionik__sources
+            ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp)
+
+        list(APPEND _ionik__private_libs udev)
+
+        if (NOT EXISTS /usr/include/libudev.h)
+            list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
+        endif()
+    endif()
 elseif (MSVC)
-    portable_target(SOURCES ${PROJECT_NAME}
+    list(APPEND _ionik__sources
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_win32.cpp)
+
+    list(APPEND _ionik__private_libs Setupapi)
 else()
     message (FATAL_ERROR "Unsupported platform")
 endif()
@@ -30,21 +61,38 @@ if (NOT TARGET pfs::common)
         ${CMAKE_CURRENT_LIST_DIR}/3rdparty/pfs/common/library.cmake)
 endif()
 
-portable_target(INCLUDE_DIRS ${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
-portable_target(INCLUDE_DIRS ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
-portable_target(LINK ${PROJECT_NAME} PUBLIC pfs::common)
-portable_target(LINK ${PROJECT_NAME}-static PUBLIC pfs::common)
+if (IONIK__BUILD_SHARED)
+    portable_target(SOURCES ${PROJECT_NAME} ${_ionik__sources})
+    portable_target(INCLUDE_DIRS ${PROJECT_NAME} PUBLIC ${_ionik__include_dirs})
+    portable_target(LINK ${PROJECT_NAME} PUBLIC pfs::common)
 
-if (UNIX)
-    if (NOT EXISTS /usr/include/libudev.h)
-        portable_target(INCLUDE_DIRS ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
+    if (_ionik__definitions)
+        portable_target(DEFINITIONS ${PROJECT_NAME} PUBLIC ${_ionik__definitions})
     endif()
 
-    portable_target(LINK ${PROJECT_NAME} PRIVATE udev)
-    portable_target(LINK ${PROJECT_NAME}-static PRIVATE udev)
-elseif (MSVC)
-#    portable_target(COMPILE_OPTIONS ${PROJECT_NAME} "/wd4251")
-#    portable_target(COMPILE_OPTIONS ${PROJECT_NAME}-static "/wd4251")
-   portable_target(LINK ${PROJECT_NAME} PRIVATE Setupapi)
-   portable_target(LINK ${PROJECT_NAME}-static PRIVATE Setupapi)
-endif(UNIX)
+    if (_ionik__private_libs)
+        portable_target(LINK ${PROJECT_NAME} PRIVATE ${_ionik__private_libs})
+    endif()
+endif()
+
+if (IONIK__BUILD_STATIC)
+    portable_target(SOURCES ${STATIC_PROJECT_NAME} ${_ionik__sources})
+    portable_target(INCLUDE_DIRS ${STATIC_PROJECT_NAME} PUBLIC ${_ionik__include_dirs})
+    portable_target(LINK ${STATIC_PROJECT_NAME} PUBLIC pfs::common)
+
+    if (_ionik__definitions)
+        portable_target(DEFINITIONS ${STATIC_PROJECT_NAME} PUBLIC ${_ionik__definitions})
+    endif()
+
+    if (_ionik__private_libs)
+        portable_target(LINK ${STATIC_PROJECT_NAME} PRIVATE ${_ionik__private_libs})
+    endif()
+endif()
+
+if (ANDROID)
+    portable_target(BUILD_JAR pfs.ionik
+        SOURCES
+            ${CMAKE_CURRENT_LIST_DIR}/src/android/pfs/ionik/FileCache.java
+            ${CMAKE_CURRENT_LIST_DIR}/src/android/pfs/ionik/FileInfo.java
+        LINK_ANDROID)
+endif()

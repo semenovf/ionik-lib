@@ -1,10 +1,9 @@
 #!/bin/bash
 
-CMAKE_OPTIONS=""
 PROJECT_NAME=ionik
+ANDROID_MIN_SDK_VERSION=25
+ANDROID_ABI=arm64-v8a
 PROJECT_OPT_PREFIX=IONIK__
 CXX_STANDARD=11
-BUILD_TESTS=ON
-BUILD_DEMO=ON
 
-. ./build-linux.sh
+. ./build-android.sh

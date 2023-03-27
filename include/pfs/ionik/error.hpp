@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "pfs/error.hpp"
+#include "exports.hpp"
 
 namespace ionik {
 
@@ -26,24 +27,8 @@ enum class errc
 class error_category : public std::error_category
 {
 public:
-    virtual char const * name () const noexcept override
-    {
-        return "pfs::ionik";
-    }
-
-    virtual std::string message (int ev) const override
-    {
-        switch (ev) {
-            case static_cast<int>(errc::success):
-                return std::string{"no error"};
-            case static_cast<int>(errc::acquire_device_observer):
-                return std::string{"acquire device observer"};
-            case static_cast<int>(errc::operation_system_error):
-                return std::string{"operation system error"};
-
-            default: return std::string{"unknown net error"};
-        }
-    }
+    IONIK__EXPORT char const * name () const noexcept override;
+    IONIK__EXPORT std::string message (int ev) const override;
 };
 
 inline std::error_category const & get_error_category ()
@@ -61,5 +46,31 @@ inline std::system_error make_exception (errc e)
 {
     return std::system_error(make_error_code(e));
 }
+
+class error: public pfs::error
+{
+public:
+#if _MSC_VER
+    // MSVC 2022 C2512
+    error () : pfs::error() {}
+#else
+    using pfs::error::error;
+#endif
+
+    error (errc ec)
+        : pfs::error(make_error_code(ec))
+    {}
+
+    error (errc ec
+        , std::string const & description
+        , std::string const & cause)
+        : pfs::error(make_error_code(ec), description, cause)
+    {}
+
+    error (errc ec
+        , std::string const & description)
+        : pfs::error(make_error_code(ec), description)
+    {}
+};
 
 } // namespace ionik
