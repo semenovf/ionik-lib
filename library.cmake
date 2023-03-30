@@ -36,16 +36,17 @@ list(APPEND _ionik__sources
 
 list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/include)
 
-if (UNIX)
-    if (NOT ANDROID)
-        list(APPEND _ionik__sources
-            ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp)
+if (ANDROID)
+    list(APPEND _ionik__sources
+        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_android.cpp)
+elseif (UNIX)
+    list(APPEND _ionik__sources
+        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp)
 
-        list(APPEND _ionik__private_libs udev)
+    list(APPEND _ionik__private_libs udev)
 
-        if (NOT EXISTS /usr/include/libudev.h)
-            list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
-        endif()
+    if (NOT EXISTS /usr/include/libudev.h)
+        list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
     endif()
 elseif (MSVC)
     list(APPEND _ionik__sources
