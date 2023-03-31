@@ -6,8 +6,8 @@
 // Changelog:
 //      2022.08.21 Initial version
 ////////////////////////////////////////////////////////////////////////////////
-#include "device_observer.hpp"
-#include "error.hpp"
+#include "pfs/ionik/device_observer.hpp"
+#include "pfs/ionik/error.hpp"
 #include "pfs/i18n.hpp"
 #include "pfs/string_view.hpp"
 #include "pfs/windows.hpp"

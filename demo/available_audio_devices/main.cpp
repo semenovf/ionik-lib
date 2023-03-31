@@ -8,6 +8,7 @@
 //      2021.08.03 Initial version (multimedia-lib).
 //      2023.03.31 Initial version (ionik-lib).
 ////////////////////////////////////////////////////////////////////////////////
+#include "pfs/fmt.hpp"
 #include "pfs/ionik/audio/device.hpp"
 #include <iostream>
 #include <iomanip>
@@ -21,13 +22,23 @@ int main (int argc, char * argv[])
     auto default_input_device = audio::default_input_device();
     auto default_output_device = audio::default_output_device();
 
-    std::cout << "Default input device:\n"
-        << "\tname=" << default_input_device.name << "\n"
-        << "\treadable name=" << default_input_device.readable_name << "\n";
+    if (!default_input_device.name.empty()) {
+        fmt::print("Default input device:\n"
+                "\tname={}\n"
+                "\treadable name={}\n"
+            , default_input_device.name, default_input_device.readable_name);
+    } else {
+        fmt::print("Default input device: none\n");
+    }
 
-    std::cout << "Default output device:\n"
-        << "\tname=" << default_output_device.name << "\n"
-        << "\treadable name=" << default_output_device.readable_name << "\n";
+    if (!default_output_device.name.empty()) {
+        fmt::print("Default output device:\n"
+		        "\tname={}\n"
+		        "\treadable name={}\n"
+            , default_output_device.name, default_output_device.readable_name);
+    } else {
+        fmt::print("Default output device: none\n");
+    }
 
     std::string indent{"     "};
     std::string   mark{"  (*)"};

@@ -7,7 +7,9 @@
 // Changelog:
 //      2021.08.07 Initial version (multimedia-lib).
 //      2023.03.31 Initial version (ionik-lib).
+//      2023.03.31 Replaced call `convert_wide` by `pfs::windows::utf8_encode`.
 ////////////////////////////////////////////////////////////////////////////////
+#include "pfs/windows.hpp"
 #include "pfs/ionik/audio/device.hpp"
 #include <mmdeviceapi.h>
 #include <strmif.h> // ICreateDevEnum
@@ -23,15 +25,15 @@ namespace audio {
 //                 Consider using wcsrtombs_s instead. To disable
 //                 deprecation, use _CRT_SECURE_NO_WARNINGS. See online
 //                 help for details.
-static std::string convert_wide (LPCWSTR wstr)
-{
-    std::mbstate_t state = std::mbstate_t();
-    std::size_t len = 1 + std::wcsrtombs(nullptr, & wstr, 0, & state);
-
-    std::string result(len, '\x0');
-    std::wcsrtombs(& result[0], & wstr, len, & state);
-    return result;
-}
+//static std::string convert_wide (LPCWSTR wstr)
+//{
+//    std::mbstate_t state = std::mbstate_t();
+//    std::size_t len = 1 + std::wcsrtombs(nullptr, & wstr, 0, & state);
+//
+//    std::string result(len, '\x0');
+//    std::wcsrtombs(& result[0], & wstr, len, & state);
+//    return result;
+//}
 
 class IMMDeviceEnumerator_initializer
 {
@@ -196,8 +198,8 @@ static bool device_info_helper (IMMDevice * pEndpoint, device_info & di)
                 hr = pProps->GetValue(PKEY_Device_FriendlyName, & varName);
 
                 if (SUCCEEDED(hr)) {
-                    di.name = convert_wide(pwszID);
-                    di.readable_name = convert_wide(varName.pwszVal);
+					di.name = pfs::windows::utf8_encode(pwszID); // convert_wide(pwszID);
+					di.readable_name = pfs::windows::utf8_encode(varName.pwszVal); // convert_wide(varName.pwszVal);
                     PropVariantClear(& varName);
 
                     result = true;

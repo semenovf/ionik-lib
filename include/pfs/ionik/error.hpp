@@ -50,12 +50,12 @@ inline std::system_error make_exception (errc e)
 class error: public pfs::error
 {
 public:
-#if _MSC_VER
-    // MSVC 2022 C2512
-    error () : pfs::error() {}
-#else
+//#if _MSC_VER
+//    // MSVC 2022 C2512
+//    error () : pfs::error() {}
+//#else
     using pfs::error::error;
-#endif
+//#endif
 
     error (errc ec)
         : pfs::error(make_error_code(ec))

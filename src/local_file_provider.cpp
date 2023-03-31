@@ -8,7 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "pfs/i18n.hpp"
 #include "pfs/filesystem.hpp"
+#include "pfs/ionik/error.hpp"
 #include "pfs/ionik/file_provider.hpp"
+#include <cassert>
 
 #if _MSC_VER
 #   include <sys/types.h>
@@ -146,9 +148,9 @@ template <>
 void file_provider_t::set_pos (handle_t & h, filesize_t offset, error * perr)
 {
 #if _MSC_VER
-    auto pos = static_cast<filesize_t>(_lseek(h, offset, SEEK_SET));
+    auto pos = _lseek(h, static_cast<long>(offset), SEEK_SET);
 #else
-    auto pos = static_cast<filesize_t>(::lseek(h, offset, SEEK_SET));
+    auto pos = ::lseek(h, offset, SEEK_SET);
 #endif
 
     if (pos < 0) {
@@ -169,8 +171,10 @@ void file_provider_t::set_pos (handle_t & h, filesize_t offset, error * perr)
 template <>
 filesize_t file_provider_t::read (handle_t & h, char * buffer, filesize_t len, error * perr)
 {
+    assert(len >= 0);
+
 #if _MSC_VER
-    auto n = _read(h, buffer, len);
+    auto n = _read(h, buffer, static_cast<unsigned int>(len));
 #else
     auto n = ::read(h, buffer, len);
 #endif
@@ -195,8 +199,10 @@ filesize_t file_provider_t::read (handle_t & h, char * buffer, filesize_t len, e
 template <>
 filesize_t file_provider_t::write (handle_t & h, char const * buffer, filesize_t len, error * perr)
 {
+    assert(len >= 0);
+
 #if _MSC_VER
-    auto n = _write(h, buffer, len);
+    auto n = _write(h, buffer, static_cast<unsigned int>(len));
 #else
     auto n = ::write(h, buffer, len);
 #endif
