@@ -267,19 +267,19 @@ static device_info default_device_helper (device_mode mode)
 }
 
 // Default source/input device
-MULTIMEDIA__EXPORT device_info default_input_device ()
+device_info default_input_device ()
 {
     return default_device_helper(device_mode::input);
 }
 
 // Default sink/ouput device
-MULTIMEDIA__EXPORT device_info default_output_device ()
+device_info default_output_device ()
 {
     return default_device_helper(device_mode::output);
 }
 
 // https://docs.microsoft.com/en-us/windows/win32/coreaudio/device-properties
-MULTIMEDIA__EXPORT std::vector<device_info> fetch_devices (device_mode mode)
+std::vector<device_info> fetch_devices (device_mode mode)
 {
     std::vector<device_info> result;
     IMMDeviceEnumerator * pEnumerator = nullptr;
