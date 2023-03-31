@@ -1,9 +1,11 @@
 ################################################################################
-# Copyright (c) 2022 Vladislav Trifochkin
+# Copyright (c) 2022,2023 Vladislav Trifochkin
 #
 # This file is part of `ionik-lib`.
 #
 # Changelog:
 #      2022.08.21 Initial version.
+#      2023.03.31 Added `available_audio_devices` demo (from obsolete `multimedia-lib`).
 ################################################################################
+add_subdirectory(available_audio_devices)
 add_subdirectory(usb_monitor)

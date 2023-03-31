@@ -6,12 +6,17 @@
 # Changelog:
 #      2022.08.21 Initial version.
 #      2023.03.27 Separated static and shared builds.
+#      2023.03.31 Added audio devices info support (from obsolete `multimedia-lib`).
 ################################################################################
 cmake_minimum_required (VERSION 3.11)
 project(ionik CXX)
 
 option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
 option(IONIK__BUILD_STATIC "Enable build static library" ON)
+
+option(IONIK__ENABLE_PULSEAUDIO "Enable PulseAudio as backend" ON)
+option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
+set(_ionik__audio_backend_FOUND OFF)
 
 if (NOT PORTABLE_TARGET__CURRENT_PROJECT_DIR)
     set(PORTABLE_TARGET__CURRENT_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -55,6 +60,52 @@ elseif (MSVC)
     list(APPEND _ionik__private_libs Setupapi)
 else()
     message (FATAL_ERROR "Unsupported platform")
+endif()
+
+if (IONIK__ENABLE_QT5)
+    list(APPEND _ionik__sources
+        ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_qt5.cpp)
+
+    if (IONIK__BUILD_SHARED)
+        portable_target(LINK_QT5_COMPONENTS ${PROJECT_NAME} PRIVATE Core Gui Network Multimedia)
+    endif()
+
+    if (IONIK__BUILD_STATIC)
+        portable_target(LINK_QT5_COMPONENTS ${STATIC_PROJECT_NAME} PRIVATE Core Gui Network Multimedia)
+    endif()
+
+    set(_ionik__audio_backend_FOUND ON)
+endif(IONIK__ENABLE_QT5)
+
+if (NOT _ionik__audio_backend_FOUND)
+    #if (UNIX AND NOT APPLE AND NOT CYGWIN)
+    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+        if (IONIK__ENABLE_PULSEAUDIO)
+            # In Ubuntu it is a part of 'libpulse-dev' package
+            find_package(PulseAudio)
+
+            if (PULSEAUDIO_FOUND)
+                message(STATUS "PulseAudio version: ${PULSEAUDIO_VERSION}")
+
+                list(APPEND _ionik__sources
+                    ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_pulseaudio.cpp)
+
+                list(APPEND _ionik__include_dirs ${PULSEAUDIO_INCLUDE_DIR})
+                list(APPEND _ionik__private_libs ${PULSEAUDIO_LIBRARY})
+                set(_ionik__audio_backend_FOUND ON)
+            endif()
+        endif()
+    elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+        list(APPEND _ionik__sources
+            ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_win32.cpp)
+        set(_ionik__audio_backend_FOUND ON)
+    endif()
+endif()
+
+if (NOT _ionik__audio_backend_FOUND)
+    message(FATAL_ERROR
+        " No any Audio backend found\n"
+        " For Debian-based distributions it may be PulseAudio ('libpulse-dev' package)")
 endif()
 
 if (NOT TARGET pfs::common)
