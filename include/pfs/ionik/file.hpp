@@ -86,9 +86,6 @@ public:
      *        function may throw an error
      *
      * @return Actually read chunk size or -1 on error.
-     *
-     * @note Limit maximum file size to 2,147,479,552 bytes. For transfer bigger
-     *       files use another way/tools (scp, for example).
      */
     filesize_type read (char * buffer, filesize_type len, error * perr = nullptr)
     {
@@ -160,6 +157,14 @@ public:
     void set_pos (filesize_type offset, error * perr = nullptr)
     {
         FileProvider::set_pos(_h, offset, perr);
+    }
+
+    /**
+     * Read @a bytes from current file position.
+     */
+    void skip (filesize_type bytes, error * perr = nullptr)
+    {
+        set_pos(offset() + bytes, perr);
     }
 
 public: // static
