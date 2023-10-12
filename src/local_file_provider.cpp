@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "pfs/i18n.hpp"
 #include "pfs/filesystem.hpp"
+#include "pfs/numeric_cast.hpp"
 #include "pfs/ionik/error.hpp"
 #include "pfs/ionik/file_provider.hpp"
 #include <cassert>
@@ -32,6 +33,8 @@
 
 namespace ionik {
 
+// NOTE `pfs::numeric_cast` can throw `std::overflow_error` or `std::underflow_error`
+
 static constexpr int INVALID_FILE_HANDLE = -1;
 namespace fs = pfs::filesystem;
 using file_provider_t = file_provider<int, pfs::filesystem::path>;
@@ -52,20 +55,24 @@ bool file_provider_t::is_invalid (handle_type const & h) noexcept
 }
 
 template <>
+filesize_t file_provider_t::size (filepath_t const & path, error * perr)
+{
+    if (!fs::exists(path)) {
+        pfs::throw_or(perr, make_error_code(std::errc::no_such_file_or_directory)
+            , fs::utf8_encode(path));
+        return 0;
+    }
+
+    return pfs::numeric_cast<filesize_t>(fs::file_size(path));
+}
+
+template <>
 handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 {
     if (!fs::exists(path)) {
-        error err {
-              make_error_code(std::errc::no_such_file_or_directory)
-            , fs::utf8_encode(path)
-        };
-
-        if (*perr) {
-            *perr = err;
-            return INVALID_FILE_HANDLE;
-        } else {
-            throw err;
-        }
+        pfs::throw_or(perr, make_error_code(std::errc::no_such_file_or_directory)
+            , fs::utf8_encode(path));
+        return INVALID_FILE_HANDLE;
     }
 
 #   if _MSC_VER
@@ -76,24 +83,17 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 #   endif
 
     if (h < 0) {
-        error err {
-              std::error_code(errno, std::generic_category())
-            , tr::f_("open read only file: {}", path)
-        };
-
-        if (perr) {
-            *perr = err;
-            return INVALID_FILE_HANDLE;
-        } else {
-            throw err;
-        }
+        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+            , tr::f_("open read only file: {}", path));
+        return INVALID_FILE_HANDLE;
     }
 
     return h;
 }
 
 template <>
-handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enum trunc, error * perr)
+handle_t file_provider_t::open_write_only (filepath_t const & path
+    , truncate_enum trunc, error * perr)
 {
     int oflags = O_WRONLY | O_CREAT;
 
@@ -108,17 +108,9 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 #   endif
 
     if (h < 0) {
-        error err {
-              std::error_code(errno, std::generic_category())
-            , tr::f_("open write only file: {}", path)
-        };
-
-        if (perr) {
-            *perr = err;
-            return INVALID_FILE_HANDLE;
-        } else {
-            throw err;
-        }
+        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+            , tr::f_("open write only file: {}", path));
+        return INVALID_FILE_HANDLE;
     }
 
     return h;
@@ -135,93 +127,81 @@ void file_provider_t::close (handle_t & h)
 }
 
 template <>
-filesize_t file_provider_t::offset (handle_t const & h)
+std::pair<filesize_t, bool> file_provider_t::offset (handle_t const & h, error * perr)
 {
 #if _MSC_VER
-    return static_cast<filesize_t>(_lseek(h, 0, SEEK_CUR));
+    auto n = _lseek(h, 0, SEEK_CUR);
 #else
-    return static_cast<filesize_t>(::lseek(h, 0, SEEK_CUR));
-#endif
-}
-
-template <>
-void file_provider_t::set_pos (handle_t & h, filesize_t offset, error * perr)
-{
-#if _MSC_VER
-    auto pos = _lseek(h, static_cast<long>(offset), SEEK_SET);
-#else
-    auto pos = ::lseek(h, offset, SEEK_SET);
-#endif
-
-    if (pos < 0) {
-        error err {
-              std::error_code(errno, std::generic_category())
-            , tr::_("set file position")
-        };
-
-        if (perr) {
-            *perr = err;
-            return;
-        } else {
-            throw err;
-        }
-    }
-}
-
-template <>
-filesize_t file_provider_t::read (handle_t & h, char * buffer, filesize_t len, error * perr)
-{
-    assert(len >= 0);
-
-#if _MSC_VER
-    auto n = _read(h, buffer, static_cast<unsigned int>(len));
-#else
-    auto n = ::read(h, buffer, len);
+    auto n = ::lseek(h, 0, SEEK_CUR);
 #endif
 
     if (n < 0) {
-        error err {
-              std::error_code(errno, std::generic_category())
-            , tr::_("read from file")
-        };
-
-        if (perr) {
-            *perr = err;
-            return -1;
-        } else {
-            throw err;
-        }
+        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+            , tr::_("get file position"));
+        return std::make_pair(0, false);
     }
 
-    return n;
+    return std::make_pair(pfs::numeric_cast<filesize_t>(n), true);
 }
 
 template <>
-filesize_t file_provider_t::write (handle_t & h, char const * buffer, filesize_t len, error * perr)
+bool file_provider_t::set_pos (handle_t & h, filesize_t pos, error * perr)
 {
-    assert(len >= 0);
+    // FIXME Need to handle the situation when pos > std::numeric_limits<off_t>::max()
 
+    // NOTE lseek() allows the file offset to be set beyond the end of the file
+    // (but this does not change the size of the file).
 #if _MSC_VER
-    auto n = _write(h, buffer, static_cast<unsigned int>(len));
+    auto offset_value = _lseek(h, pfs::numeric_cast<long>(pos), SEEK_SET);
 #else
-    auto n = ::write(h, buffer, len);
+    auto offset_value = ::lseek(h, pfs::numeric_cast<off_t>(pos), SEEK_SET);
+#endif
+
+    if (offset_value < 0) {
+        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+            , tr::_("set file position"));
+        return false;
+    }
+
+    return true;
+}
+
+template <>
+std::pair<filesize_t, bool> file_provider_t::read (handle_t & h, char * buffer
+    , filesize_t len, error * perr)
+{
+#if _MSC_VER
+    auto n = _read(h, buffer, pfs::numeric_cast<unsigned int>(len));
+#else
+    auto n = ::read(h, buffer, pfs::numeric_cast<std::size_t>(len));
 #endif
 
     if (n < 0) {
-        error err {
-              std::error_code(errno, std::generic_category())
-            , tr::_("write into file")
-        };
-
-        if (perr) {
-            *perr = err;
-            return -1;
-        } else {
-            throw err;
-        }
+        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+            , tr::_("read from file"));
+        return std::make_pair(0, false);
     }
 
-    return n;
+    return std::make_pair(pfs::numeric_cast<filesize_t>(n), true);
+}
+
+template <>
+std::pair<filesize_t, bool> file_provider_t::write (handle_t & h, char const * buffer
+    , filesize_t len, error * perr)
+{
+#if _MSC_VER
+    auto n = _write(h, buffer, pfs::numeric_cast<unsigned int>(len));
+#else
+    auto n = ::write(h, buffer, pfs::numeric_cast<std::size_t>(len));
+#endif
+
+    if (n < 0) {
+        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+            , tr::_("write into file"));
+        return std::make_pair(0, false);
+    }
+
+    return std::make_pair(pfs::numeric_cast<filesize_t>(n), true);
 }
 
 } // namespace ionik

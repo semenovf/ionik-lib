@@ -1,25 +1,53 @@
 ################################################################################
-# Copyright (c) 2021-2023 Vladislav Trifochkin
+# Copyright (c) 2023 Vladislav Trifochkin
 #
 # This file is part of `ionik-lib`.
 #
 # Changelog:
-#      2021.10.05 Initial version.
-#      2022.01.14 Refactored for using portable_target `ADD_TEST`.
+#      2023.10.12 Initial version.
 ################################################################################
-project(netty-lib-TESTS CXX C)
+project(ionik-TESTS CXX C)
 
-if (NETTY__BUILD_P2P)
+if (IONIK__ENABLE_COVERAGE)
+    message(STATUS "Coverage feature enabled")
+    if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        message(FATAL_ERROR "Coverage feature requires GCC")
+    endif()
 
-set(TESTS
-    engine
-    envelope)
+    set(CMAKE_CXX_FLAGS "-g -O0 --coverage")
+    set(CMAKE_C_FLAGS "-g -O0 --coverage")
+endif()
 
-foreach (t ${TESTS})
-    portable_target(ADD_TEST ${t}
-        ENABLE_COVERAGE ${NETTY__ENABLE_COVERAGE}
-        SOURCES ${t}.cpp ${${t}_SOURCES}
-        LINK pfs::netty::p2p)
+if (TARGET pfs::ionik)
+    set(_ionik_lib pfs::ionik)
+elseif(TARGET pfs::ionik::static)
+    set(_ionik_lib pfs::ionik::static)
+endif()
+
+set(TEST_NAMES file wav_explorer)
+
+foreach (name ${TEST_NAMES})
+    if (${name}_SOURCES)
+        add_executable(${name} ${${name}_SOURCES} ${name}.cpp)
+    else ()
+        add_executable(${name} ${name}.cpp)
+    endif()
+
+    # https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html#Instrumentation-Options
+    #
+    # --coverage
+    #       This option is used to compile and link code instrumented for
+    #       coverage analysis. The option is a synonym for -fprofile-arcs
+    #       -ftest-coverage (when compiling) and -lgcov (when linking).
+    if (IONIK__ENABLE_COVERAGE)
+        target_compile_options(${name} PRIVATE -g -O0 --coverage)
+        target_link_libraries(${name} PRIVATE -g -O0 --coverage)
+    endif()
+
+    target_link_libraries(${name} PRIVATE ${_ionik_lib})
+    add_test(NAME ${name} COMMAND ${name})
 endforeach()
 
-endif(NETTY__BUILD_P2P)
+if (IONIK__ENABLE_COVERAGE)
+    coverage_target("'/usr/*';'*/doctest.h'")
+endif()

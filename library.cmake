@@ -37,7 +37,8 @@ endif()
 
 list(APPEND _ionik__sources
     ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp)
+    ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp)
 
 list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/include)
 

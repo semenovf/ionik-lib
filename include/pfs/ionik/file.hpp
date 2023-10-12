@@ -12,6 +12,7 @@
 #include "file_provider.hpp"
 #include "pfs/i18n.hpp"
 #include <string>
+#include <type_traits>
 
 namespace ionik {
 
@@ -22,12 +23,18 @@ public:
     using filepath_type = typename FileProvider::filepath_type;
     using filesize_type = typename FileProvider::filesize_type;
     using handle_type   = typename FileProvider::handle_type;
+    using offset_result_type = typename FileProvider::offset_result_type;
+    using read_result_type   = typename FileProvider::read_result_type;
+    using write_result_type  = typename FileProvider::write_result_type;
+
+    static_assert(std::is_unsigned<filesize_type>::value, "File size must be unsigned");
 
 private:
     handle_type _h {FileProvider::invalid()};
+    filesize_type _size {0};
 
 private:
-    file (handle_type h): _h(h) {}
+    file (handle_type h, filesize_type size): _h(h), _size(size) {}
 
 public:
     file () {}
@@ -38,7 +45,9 @@ public:
     file (file && f)
     {
         _h = f._h;
+        _size = f._size;
         f._h = FileProvider::invalid();
+        f._size = 0;
     }
 
     file & operator = (file && f)
@@ -46,7 +55,9 @@ public:
         if (this != & f) {
             close();
             _h = f._h;
+            _size = f._size;
             f._h = FileProvider::invalid();
+            f._size = 0;
         }
 
         return *this;
@@ -70,9 +81,9 @@ public:
         _h = FileProvider::invalid();
     }
 
-    filesize_type offset () const
+    offset_result_type offset (error * perr = nullptr) const
     {
-        return FileProvider::offset(_h);
+        return FileProvider::offset(_h, perr);
     }
 
     /**
@@ -87,30 +98,13 @@ public:
      *
      * @return Actually read chunk size or -1 on error.
      */
-    filesize_type read (char * buffer, filesize_type len, error * perr = nullptr)
+    read_result_type read (char * buffer, filesize_type len, error * perr = nullptr)
     {
-        if (len == 0)
-            return 0;
-
-        if (len < 0) {
-            error err {
-                  make_error_code(std::errc::invalid_argument)
-                , tr::_("invalid buffer length")
-            };
-
-            if (perr) {
-                *perr = err;
-                return -1;
-            } else {
-                throw err;
-            }
-        }
-
         return FileProvider::read(_h, buffer, len, perr);
     }
 
     template <typename T>
-    inline filesize_type read (T & value, error * perr = nullptr)
+    inline read_result_type read (T & value, error * perr = nullptr)
     {
         return read(reinterpret_cast<char *>(& value), sizeof(T), perr);
     }
@@ -125,19 +119,19 @@ public:
 
         auto n = FileProvider::read(_h, buffer, 512, perr);
 
-        while (n > 0) {
-            result.append(buffer, n);
+        while (n.first > 0) {
+            result.append(buffer, n.first);
 
             n = FileProvider::read(_h, buffer, 512, perr);
         }
 
-        return n < 0 ? std::string{} : result;
+        return n.second ? result : std::string{};
     }
 
     /**
      * @brief Write buffer to file.
      */
-    filesize_type write (char const * buffer, filesize_type len, error * perr = nullptr)
+    write_result_type write (char const * buffer, filesize_type len, error * perr = nullptr)
     {
         return FileProvider::write(_h, buffer, len, perr);
     }
@@ -146,7 +140,7 @@ public:
      * @brief Write value to file.
      */
     template <typename T>
-    inline filesize_type write (T const & value, error * perr = nullptr)
+    inline write_result_type write (T const & value, error * perr = nullptr)
     {
         return write(reinterpret_cast<char const *>(& value), sizeof(T), perr);
     }
@@ -154,17 +148,23 @@ public:
     /**
      * Set file position by @a offset.
      */
-    void set_pos (filesize_type offset, error * perr = nullptr)
+    bool set_pos (filesize_type pos, error * perr = nullptr)
     {
-        FileProvider::set_pos(_h, offset, perr);
+        if (pos >= _size) {
+            pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
+                , tr::f_("new file position is out of bounds"));
+            return false;
+        }
+
+        return FileProvider::set_pos(_h, pos, perr);
     }
 
     /**
      * Read @a bytes from current file position.
      */
-    void skip (filesize_type bytes, error * perr = nullptr)
+    bool skip (filesize_type bytes, error * perr = nullptr)
     {
-        set_pos(offset() + bytes, perr);
+        return set_pos(offset() + bytes, perr);
     }
 
 public: // static
@@ -180,7 +180,10 @@ public: // static
     */
     static file open_read_only (filepath_type const & path, error * perr = nullptr)
     {
-        return file{FileProvider::open_read_only(path, perr)};
+        return file {
+              FileProvider::open_read_only(path, perr)
+            , FileProvider::size(path, perr)
+        };
     }
 
     /**
@@ -194,9 +197,11 @@ public: // static
     static file open_write_only (filepath_type const & path, truncate_enum trunc
         , error * perr = nullptr)
     {
-        return file{FileProvider::open_write_only(path, trunc, perr)};
+        return file {
+              FileProvider::open_write_only(path, trunc, perr)
+            , trunc == truncate_enum::on ? 0 : FileProvider::size(path, perr)
+        };
     }
-
 
     static file open_write_only (filepath_type const & path, error * perr = nullptr)
     {
@@ -213,7 +218,7 @@ public: // static
 
         if (f) {
             auto n = f.write(buffer, count, perr);
-            return n >= 0;
+            return n.second;
         }
 
         return false;

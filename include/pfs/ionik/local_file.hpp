@@ -13,7 +13,8 @@
 
 namespace ionik {
 
-using local_file_provider = file_provider<int, pfs::filesystem::path>;
+using local_file_handle = int;
+using local_file_provider = file_provider<local_file_handle, pfs::filesystem::path>;
 using local_file = file<local_file_provider>;
 
 } // namespace ionik
