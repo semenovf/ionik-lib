@@ -22,6 +22,8 @@ enum class errc
       success = 0
     , acquire_device_observer
     , operation_system_error
+    , bad_data_format
+    , unsupported
 };
 
 class error_category : public std::error_category

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="MainWindow.qml">MainWindow.qml</file>
+        <file alias="WavSpectrumView.qml">WavSpectrumView.qml</file>
+    </qresource>
+</RCC>

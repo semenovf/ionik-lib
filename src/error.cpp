@@ -18,13 +18,17 @@ char const * error_category::name () const noexcept
 
 std::string error_category::message (int ev) const
 {
-    switch (ev) {
-        case static_cast<int>(errc::success):
+    switch (static_cast<errc>(ev)) {
+        case errc::success:
             return tr::_("no error");
-        case static_cast<int>(errc::acquire_device_observer):
+        case errc::acquire_device_observer:
             return tr::_("acquire device observer");
-        case static_cast<int>(errc::operation_system_error):
+        case errc::operation_system_error:
             return tr::_("operation system error");
+        case errc::bad_data_format:
+            return std::string{"bad/illegal data format"};
+        case errc::unsupported:
+            return tr::_("unsupported");
 
         default: return tr::_("unknown net error");
     }

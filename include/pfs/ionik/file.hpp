@@ -164,7 +164,12 @@ public:
      */
     bool skip (filesize_type bytes, error * perr = nullptr)
     {
-        return set_pos(offset() + bytes, perr);
+        auto off_res = offset(perr);
+
+        if (!off_res.second)
+            return false;
+
+        return set_pos(off_res.first + bytes, perr);
     }
 
 public: // static

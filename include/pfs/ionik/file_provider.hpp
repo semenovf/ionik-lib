@@ -35,6 +35,15 @@ public:
     static void close (handle_type & h);
     static offset_result_type offset (handle_type const & h, error * perr);
     static bool set_pos (handle_type & h, filesize_type offset, error * perr);
+
+    /**
+     * Read data from file into buffer
+     *
+     * @return { > 0,  true } on read successful;
+     *         {   0,  true } if no data available (end of file);
+     **        {   0, false } on read failureno data available, @e *perr set to
+     **                       @c ionik::error if specified and not @c null.
+     */
     static read_result_type read (handle_type & h, char * buffer, filesize_type len, error * perr);
     static write_result_type write (handle_type & h, char const * buffer, filesize_type len, error * perr);
 };

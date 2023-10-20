@@ -24,6 +24,9 @@ elseif(TARGET pfs::ionik::static)
     set(_ionik_lib pfs::ionik::static)
 endif()
 
+# Copy test files to build folder
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/au DESTINATION data)
+
 set(TEST_NAMES file wav_explorer)
 
 foreach (name ${TEST_NAMES})
@@ -47,6 +50,13 @@ foreach (name ${TEST_NAMES})
     target_link_libraries(${name} PRIVATE ${_ionik_lib})
     add_test(NAME ${name} COMMAND ${name})
 endforeach()
+
+find_package(Qt5 COMPONENTS Core Multimedia)
+
+if (Qt5Core_VERSION AND Qt5Multimedia_VERSION)
+    target_compile_definitions(wav_explorer PRIVATE "IONIK__QT5_MULTIMEDIA_ENABLED=1")
+    target_link_libraries(wav_explorer PRIVATE Qt5::Multimedia Qt5::Core)
+endif()
 
 if (IONIK__ENABLE_COVERAGE)
     coverage_target("'/usr/*';'*/doctest.h'")
