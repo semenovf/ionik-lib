@@ -24,6 +24,8 @@
 #include "pfs/ionik/local_file.hpp"
 #include <cstdint>
 
+#include "pfs/log.hpp"
+
 namespace ionik {
 namespace audio {
 
@@ -265,7 +267,8 @@ bool wav_explorer::decode (std::size_t frames_chunk_size)
         return false;
 
     std::vector<char> raw_buffer;
-    std:size_t raw_buffer_size = frames_chunk_size * hdr->num_channels;
+    std::size_t raw_buffer_size = frames_chunk_size * hdr->num_channels;
+    std::size_t remain_size = hdr->data.size;
 
     if (hdr->sample_size <= 8)
         ;
@@ -279,7 +282,9 @@ bool wav_explorer::decode (std::size_t frames_chunk_size)
     // File offset in the begining of samples data now.
 
     do {
-        auto res = _wav_file.read(raw_buffer.data(), raw_buffer.size(), & err);
+        auto res = remain_size > raw_buffer.size()
+            ? _wav_file.read(raw_buffer.data(), raw_buffer.size(), & err)
+            : _wav_file.read(raw_buffer.data(), remain_size, & err);
 
         // Read failure
         if (!res.second)
@@ -292,7 +297,9 @@ bool wav_explorer::decode (std::size_t frames_chunk_size)
         } else {
             break;
         }
-    } while (true);
+
+        remain_size -= res.first;
+    } while (remain_size > 0);
 
     if (err) {
         on_error(err);
@@ -393,20 +400,70 @@ bool wav_spectrum_builder::build_from_mono8 (builder_context & ctx
     , char const * raw_samples, std::size_t size)
 {
     // TODO Implement
+    ctx.err = error {errc::unsupported, tr::_("not implemented yet: mono8")};
     return false;
 }
 
 bool wav_spectrum_builder::build_from_stereo8 (builder_context & ctx
     , char const * raw_samples, std::size_t size)
 {
-    // TODO Implement
-    return false;
+    // HERE-----------------------------------v
+    auto samples_count = size / sizeof(std::uint8_t);
+
+    if (size % samples_count != 0) {
+        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        return false;
+    }
+
+    // HERE------------------------------------------v
+    using frame_iterator = ionik::audio::u8_stereo_frame_iterator;
+    frame_iterator pos {raw_samples};
+    frame_iterator last {raw_samples + size};
+    frame_iterator::value_type frame;
+    std::size_t count = 0;
+    float left_sum = 0;
+    float right_sum = 0;
+
+    for (; pos < last; pos += ctx.frame_step) {
+        frame = *pos;
+
+        // HERE----------------v
+        float left  = normalize_sample8(frame.left);
+        float right = normalize_sample8(frame.right);
+
+        left_sum += left;
+        right_sum += right;
+        count++;
+    }
+
+    if (count > 0) {
+        float left  = left_sum / count;
+        float right = right_sum / count;
+
+        if (left > ctx.spectrum.max_frame.first)
+            ctx.spectrum.max_frame.first = left;
+
+        if (right > ctx.spectrum.max_frame.second)
+            ctx.spectrum.max_frame.second = right;
+
+        if (left < ctx.spectrum.min_frame.first)
+            ctx.spectrum.min_frame.first = left;
+
+        if (right < ctx.spectrum.min_frame.second)
+            ctx.spectrum.min_frame.second = right;
+
+        ctx.spectrum.data.push_back(std::make_pair(left, right));
+    } else {
+        ctx.spectrum.data.push_back(std::make_pair(0.f, 0.f));
+    }
+
+    return true;
 }
 
 bool wav_spectrum_builder::build_from_mono16 (builder_context & ctx
     , char const * raw_samples, std::size_t size)
 {
-    // TODO Implement
+    ctx.err = error {errc::unsupported, tr::_("not implemented yet")};
     return false;
 }
 
