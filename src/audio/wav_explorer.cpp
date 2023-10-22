@@ -399,9 +399,42 @@ inline float normalize_sample16 (std::int16_t value)
 bool wav_spectrum_builder::build_from_mono8 (builder_context & ctx
     , char const * raw_samples, std::size_t size)
 {
-    // TODO Implement
-    ctx.err = error {errc::unsupported, tr::_("not implemented yet: mono8")};
-    return false;
+    auto samples_count = size / sizeof(std::uint8_t);
+
+    if (size % samples_count != 0) {
+        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        return false;
+    }
+
+    using frame_iterator = ionik::audio::u8_mono_frame_iterator;
+    frame_iterator pos {raw_samples};
+    frame_iterator last {raw_samples + size};
+    frame_iterator::value_type frame;
+    std::size_t count = 0;
+    float sum = 0;
+
+    for (; pos < last; pos += ctx.frame_step) {
+        frame = *pos;
+        float sample  = normalize_sample8(frame.sample);
+        sum += sample;
+        count++;
+    }
+
+    if (count > 0) {
+        float sample  = sum / count;
+
+        if (sample > ctx.spectrum.max_frame.first)
+            ctx.spectrum.max_frame.first = sample;
+
+        if (sample < ctx.spectrum.min_frame.first)
+            ctx.spectrum.min_frame.first = sample;
+
+        ctx.spectrum.data.push_back(std::make_pair(sample, 0.f));
+    } else {
+        ctx.spectrum.data.push_back(std::make_pair(0.f, 0.f));
+    }
+
+    return true;
 }
 
 bool wav_spectrum_builder::build_from_stereo8 (builder_context & ctx
@@ -463,8 +496,42 @@ bool wav_spectrum_builder::build_from_stereo8 (builder_context & ctx
 bool wav_spectrum_builder::build_from_mono16 (builder_context & ctx
     , char const * raw_samples, std::size_t size)
 {
-    ctx.err = error {errc::unsupported, tr::_("not implemented yet")};
-    return false;
+    auto samples_count = size / sizeof(std::int16_t);
+
+    if (size % samples_count != 0) {
+        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        return false;
+    }
+
+    using frame_iterator = ionik::audio::s16_mono_frame_iterator;
+    frame_iterator pos {raw_samples};
+    frame_iterator last {raw_samples + size};
+    frame_iterator::value_type frame;
+    std::size_t count = 0;
+    float sum = 0;
+
+    for (; pos < last; pos += ctx.frame_step) {
+        frame = *pos;
+        float sample  = normalize_sample16(frame.sample);
+        sum += sample;
+        count++;
+    }
+
+    if (count > 0) {
+        float sample  = sum / count;
+
+        if (sample > ctx.spectrum.max_frame.first)
+            ctx.spectrum.max_frame.first = sample;
+
+        if (sample < ctx.spectrum.min_frame.first)
+            ctx.spectrum.min_frame.first = sample;
+
+        ctx.spectrum.data.push_back(std::make_pair(sample, 0.f));
+    } else {
+        ctx.spectrum.data.push_back(std::make_pair(0.f, 0.f));
+    }
+
+    return true;
 }
 
 bool wav_spectrum_builder::build_from_stereo16 (builder_context & ctx

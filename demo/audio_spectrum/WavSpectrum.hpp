@@ -7,8 +7,10 @@
 //      2023.10.20 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include "pfs/filesystem.hpp"
 #include "pfs/ionik/audio/wav_explorer.hpp"
 #include <QObject>
+#include <QUrl>
 
 class WavSpectrum: public QObject
 {
@@ -17,10 +19,12 @@ class WavSpectrum: public QObject
     Q_PROPERTY(bool good MEMBER _good NOTIFY spectrumChanged)
     Q_PROPERTY(bool stereo READ isStereo NOTIFY spectrumChanged)
     Q_PROPERTY(int frameCount READ frameCount NOTIFY spectrumChanged)
+    Q_PROPERTY(QUrl source READ source NOTIFY spectrumChanged)
 
 private:
     bool _good {false};
     ionik::audio::wav_spectrum _wavSpectrum;
+    QUrl _source;
 
 public:
     Q_SIGNAL void spectrumChanged ();
@@ -33,11 +37,12 @@ public:
 private:
     bool isStereo () const noexcept;
     int frameCount () const noexcept;
+    QUrl source () const noexcept;
 
 public:
     WavSpectrum (QObject * parent = nullptr);
 
-    void setSpectrum (ionik::audio::wav_spectrum && wavSpectrum);
-    void setSpectrum (ionik::audio::wav_spectrum const & wavSpectrum);
+    void setSpectrum (pfs::filesystem::path const & auPath, ionik::audio::wav_spectrum && wavSpectrum);
+    void setSpectrum (pfs::filesystem::path const & auPath, ionik::audio::wav_spectrum const & wavSpectrum);
     void setFailure ();
 };

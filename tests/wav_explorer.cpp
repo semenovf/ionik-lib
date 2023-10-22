@@ -13,6 +13,7 @@
 
 // Source of test audio files
 // https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples.html
+// https://mauvecloud.net/sounds/index.html
 
 namespace fs = pfs::filesystem;
 
@@ -21,9 +22,27 @@ TEST_CASE("wav_explorer") {
         char const * filename;
         ionik::audio::wav_info info;
     } test_data[] = {
+        // https://mauvecloud.net/sounds/pcm0808m.wav
+        // PCM (uncompressed) 8 bit Mono 8000 Hz
+        { "pcm0808m.wav"
+            , {
+                  pfs::endian::little // byte_order
+                ,       1 // audio_format
+                ,       1 // num_channels: Mono = 1, Stereo = 2, etc.
+                ,    8000 // sample_rate: 8000, 44100, etc.
+                ,       8 // sample_size: 8 bits = 8, 16 bits = 16, etc.
+                ,    8000 // byte_rate
+                ,   53499 // sample_count
+                ,   53499 // frame_count
+                , 6687375 // duration
+                , {0x64617461, 53499, 44} // data
+                // Extra parameters
+                , {}
+            }
+        }
         // https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples/SoundCardAttrition/stereol.wav
         // A standard 16-bit stereo WAVE file, but with a long header, 22050 Hz, 16-bit, 1.32 s
-          { "stereol.wav"
+        , { "stereol.wav"
               , {
                   pfs::endian::little // byte_order
                 ,       1 // audio_format

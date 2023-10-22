@@ -24,17 +24,26 @@ int WavSpectrum::frameCount () const noexcept
     return pfs::numeric_cast<int>(_wavSpectrum.data.size());
 }
 
-void WavSpectrum::setSpectrum (ionik::audio::wav_spectrum && wavSpectrum)
+QUrl WavSpectrum::source () const noexcept
+{
+    return _source;
+}
+
+void WavSpectrum::setSpectrum (pfs::filesystem::path const & auPath
+    , ionik::audio::wav_spectrum && wavSpectrum)
 {
     _good = true;
     _wavSpectrum = std::move(wavSpectrum);
+    _source = QUrl::fromLocalFile(QString::fromStdString(pfs::filesystem::utf8_encode(auPath)));
     Q_EMIT(spectrumChanged());
 }
 
-void WavSpectrum::setSpectrum (ionik::audio::wav_spectrum const & wavSpectrum)
+void WavSpectrum::setSpectrum (pfs::filesystem::path const & auPath
+    , ionik::audio::wav_spectrum const & wavSpectrum)
 {
     _good = true;
     _wavSpectrum = wavSpectrum;
+    _source = QUrl::fromLocalFile(QString::fromStdString(pfs::filesystem::utf8_encode(auPath)));
     Q_EMIT(spectrumChanged());
 }
 

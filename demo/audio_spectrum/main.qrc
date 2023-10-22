@@ -3,4 +3,7 @@
         <file alias="MainWindow.qml">MainWindow.qml</file>
         <file alias="WavSpectrumView.qml">WavSpectrumView.qml</file>
     </qresource>
+    <qresource prefix="/Icons">
+        <file alias="Playback.svg">Playback.svg</file>
+    </qresource>
 </RCC>

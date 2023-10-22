@@ -23,11 +23,11 @@
 
 namespace fs = pfs::filesystem;
 
-bool build_spectrum (fs::path const & au_path
+bool build_spectrum (fs::path const & auPath
     , pfs::emitter<ionik::audio::wav_spectrum const &> & spectrumCompleted
     , pfs::emitter<> & spectrumFailure)
 {
-    ionik::audio::wav_explorer explorer {au_path};
+    ionik::audio::wav_explorer explorer {auPath};
     ionik::audio::wav_spectrum_builder spectrum_builder {explorer};
 
     std::size_t chunk_count = 25;
@@ -73,12 +73,14 @@ int main (int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    auto au_path = fs::utf8_decode(argv[1]);
+    auto auPath = fs::utf8_decode(argv[1]);
 
-    if (!(fs::exists(au_path) && fs::is_regular_file(au_path))) {
-        LOGE("", "File not found or it is not a regular file: {}", au_path);
+    if (!(fs::exists(auPath) && fs::is_regular_file(auPath))) {
+        LOGE("", "File not found or it is not a regular file: {}", auPath);
         return EXIT_FAILURE;
     }
+
+    auPath = fs::canonical(auPath);
 
     int exit_status = EXIT_SUCCESS;
 
@@ -105,8 +107,8 @@ int main (int argc, char * argv[])
     pfs::emitter<ionik::audio::wav_spectrum const &> spectrumCompleted;
     pfs::emitter<> spectrumFailure;
 
-    spectrumCompleted.connect([& wavSpectrum] (ionik::audio::wav_spectrum const & spectrum) {
-        wavSpectrum.setSpectrum(spectrum);
+    spectrumCompleted.connect([auPath, & wavSpectrum] (ionik::audio::wav_spectrum const & spectrum) {
+        wavSpectrum.setSpectrum(auPath, spectrum);
     });
 
     spectrumFailure.connect([& wavSpectrum] () {
@@ -115,7 +117,7 @@ int main (int argc, char * argv[])
 
     std::thread buildSpectrumThread {
           build_spectrum
-        , au_path
+        , auPath
         , std::ref(spectrumCompleted)
         , std::ref(spectrumFailure)
     };
