@@ -16,6 +16,7 @@
 #include "pfs/iterator.hpp"
 #include "pfs/expected.hpp"
 #include <functional>
+#include <limits>
 #include <utility>
 
 namespace ionik {
@@ -228,7 +229,7 @@ public:
     {}
 
     pfs::expected<wav_spectrum, error> operator () (std::size_t chunk_count
-        , std::size_t frame_step);
+        , std::size_t frame_step = (std::numeric_limits<std::size_t>::max)());
 };
 
 enum class duration_precision

@@ -357,6 +357,18 @@ wav_spectrum_builder::operator () (std::size_t chunk_count
                 / (chunk_count - 1);
         }
 
+        // Adjust frame_step
+        if (ctx.frame_step == (std::numeric_limits<decltype(ctx.frame_step)>::max)()) {
+            if (*frames_chunk_size < 1000)
+                ctx.frame_step = 1;
+            else if (*frames_chunk_size < 10000)
+                ctx.frame_step = 10;
+            else if (*frames_chunk_size < 100000)
+                ctx.frame_step = 100;
+            else
+                ctx.frame_step = 500;
+        }
+
         return true;
     };
 
