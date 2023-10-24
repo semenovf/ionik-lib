@@ -29,8 +29,8 @@ private:
 public:
     Q_SIGNAL void spectrumChanged ();
 
-    Q_INVOKABLE float leftAt (int index) const;
-    Q_INVOKABLE float rightAt (int index) const;
+    Q_INVOKABLE float leftSampleAt (int index) const;
+    Q_INVOKABLE float rightSampleAt (int index) const;
     Q_INVOKABLE float sampleAt (int index) const;
     Q_INVOKABLE float maxSampleValue () const;
 

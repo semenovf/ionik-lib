@@ -65,7 +65,7 @@ Canvas {
             var to = limits[k][2];
 
             for (var i = from; i < to; i++) {
-                var left = scaleFactor * Math.abs(wavSpectrum.leftAt(i));
+                var left = scaleFactor * Math.abs(wavSpectrum.sampleAt(i));
 
                 ctx.moveTo(currentX, baseLineY);
                 ctx.lineTo(currentX, baseLineY - left + heightCorrection);
@@ -106,8 +106,8 @@ Canvas {
             var to = limits[k][2];
 
             for (var i = from; i < to; i++) {
-                var left  = scaleFactor * Math.abs(wavSpectrum.leftAt(i));
-                var right = scaleFactor * Math.abs(wavSpectrum.rightAt(i));
+                var left  = scaleFactor * Math.abs(wavSpectrum.leftSampleAt(i));
+                var right = scaleFactor * Math.abs(wavSpectrum.rightSampleAt(i));
 
                 ctx.moveTo(currentX, baseLineY);
                 ctx.lineTo(currentX, baseLineY - left + heightCorrection);

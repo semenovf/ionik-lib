@@ -53,7 +53,7 @@ void WavSpectrum::setFailure ()
     Q_EMIT(spectrumChanged());
 }
 
-float WavSpectrum::leftAt (int index) const
+float WavSpectrum::leftSampleAt (int index) const
 {
     if (index < 0 || index > _wavSpectrum.data.size())
         return 0.f;
@@ -61,7 +61,7 @@ float WavSpectrum::leftAt (int index) const
     return _wavSpectrum.data.at(index).first;
 }
 
-float WavSpectrum::rightAt (int index) const
+float WavSpectrum::rightSampleAt (int index) const
 {
     if (index < 0 || index > _wavSpectrum.data.size())
         return 0.f;
@@ -71,7 +71,7 @@ float WavSpectrum::rightAt (int index) const
 
 float WavSpectrum::sampleAt (int index) const
 {
-    return leftAt(index);
+    return leftSampleAt(index);
 }
 
 float WavSpectrum::maxSampleValue () const
