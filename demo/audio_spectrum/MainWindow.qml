@@ -82,10 +82,8 @@ Window {
         notifyInterval: 100 // millis
 
         onPositionChanged: {
-            if (this.duration > 0) {
+            if (this.duration > 0)
                 spectrumView.playbacked = this.position / this.duration;
-                //console.log(`-- POS: ${this.position} / ${this.duration} (${this.position/this.duration * 100} %)`);
-            }
         }
     }
 }

@@ -123,6 +123,13 @@ Canvas {
     }
 
     onPaint: {
+        var ctx = getContext('2d');
+
+        if (ctx == null)
+            return;
+
+        ctx.clearRect(0, 0, this.width, this.height);
+
         if (this.width <= 0)
             return;
 
@@ -134,13 +141,6 @@ Canvas {
 
         if (wavSpectrum.frameCount <= 0)
             return;
-
-        var ctx = getContext('2d');
-
-        if (ctx == null)
-            return;
-
-        ctx.clearRect(0, 0, this.width, this.height);
 
         if (wavSpectrum.stereo) {
             paintStereoSpectrum(ctx);
