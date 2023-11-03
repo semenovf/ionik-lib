@@ -24,8 +24,6 @@
 #include "pfs/ionik/local_file.hpp"
 #include <cstdint>
 
-#include "pfs/log.hpp"
-
 namespace ionik {
 namespace audio {
 

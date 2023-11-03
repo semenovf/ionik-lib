@@ -16,6 +16,7 @@ option(IONIK__BUILD_STATIC "Enable build static library" ON)
 
 option(IONIK__ENABLE_PULSEAUDIO "Enable PulseAudio as backend" ON)
 option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
+
 set(_ionik__audio_backend_FOUND OFF)
 
 if (NOT PORTABLE_TARGET__CURRENT_PROJECT_DIR)
@@ -113,6 +114,11 @@ if (NOT TARGET pfs::common)
     portable_target(INCLUDE_PROJECT
         ${CMAKE_CURRENT_LIST_DIR}/3rdparty/pfs/common/library.cmake)
 endif()
+
+list(REMOVE_DUPLICATES _ionik__sources)
+list(REMOVE_DUPLICATES _ionik__private_libs)
+list(REMOVE_DUPLICATES _ionik__include_dirs)
+list(REMOVE_DUPLICATES _ionik__definitions)
 
 if (IONIK__BUILD_SHARED)
     portable_target(SOURCES ${PROJECT_NAME} ${_ionik__sources})
