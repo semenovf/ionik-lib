@@ -16,7 +16,7 @@ option(IONIK__ENABLE_COVERAGE "Build tests with coverage support" OFF)
 option(IONIK__ENABLE_PROFILER "Build with profiling support" OFF)
 
 if (NOT PORTABLE_TARGET__ENABLED)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/3rdparty/portable-target/cmake/v2)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/2ndparty/portable-target/cmake/v2)
     include(PortableTarget)
     portable_target(SET ENABLE_TRACE ON)
 endif()

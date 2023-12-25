@@ -108,7 +108,7 @@ mkdir -p ${BUILD_DIR} \
         -DANDROID_MIN_SDK_VERSION=${ANDROID_MIN_SDK_VERSION} \
         -DANDROID_TARGET_SDK_VERSION=${ANDROID_TARGET_SDK_VERSION} \
         -DANDROID_ABI=${ANDROID_ABI} \
-        -DCMAKE_TOOLCHAIN_FILE=${SOURCE_DIR}/3rdparty/portable-target/cmake/v2/android/AndroidToolchain.cmake \
+        -DCMAKE_TOOLCHAIN_FILE=${SOURCE_DIR}/2ndparty/portable-target/cmake/v2/android/AndroidToolchain.cmake \
         -Wno-dev \
         ${SOURCE_DIR} \
     && cmake --build .

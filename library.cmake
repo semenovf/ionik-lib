@@ -37,6 +37,7 @@ if (PFS__LOG_LEVEL)
 endif()
 
 list(APPEND _ionik__sources
+    ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp)
@@ -112,7 +113,7 @@ endif()
 
 if (NOT TARGET pfs::common)
     portable_target(INCLUDE_PROJECT
-        ${CMAKE_CURRENT_LIST_DIR}/3rdparty/pfs/common/library.cmake)
+        ${CMAKE_CURRENT_LIST_DIR}/2ndparty/common/library.cmake)
 endif()
 
 list(REMOVE_DUPLICATES _ionik__sources)

@@ -7,7 +7,9 @@
 #      2022.08.21 Initial version.
 #      2023.03.31 Added `available_audio_devices` demo (from obsolete `multimedia-lib`).
 #      2023.10.19 Added `audio_spectrum` demo.
+#      2023.12.24 Added `already_running` demo.
 ####################################################################################################
+add_subdirectory(already_running)
 add_subdirectory(audio_spectrum)
 add_subdirectory(available_audio_devices)
 add_subdirectory(usb_monitor)
