@@ -52,12 +52,7 @@ inline std::system_error make_exception (errc e)
 class error: public pfs::error
 {
 public:
-//#if _MSC_VER
-//    // MSVC 2022 C2512
-//    error () : pfs::error() {}
-//#else
-    using pfs::error::error;
-//#endif
+    error () : pfs::error() {}
 
     error (errc ec)
         : pfs::error(make_error_code(ec))
@@ -73,6 +68,8 @@ public:
         , std::string const & description)
         : pfs::error(make_error_code(ec), description)
     {}
+
+    using pfs::error::error;
 };
 
 } // namespace ionik

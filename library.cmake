@@ -37,10 +37,13 @@ if (PFS__LOG_LEVEL)
 endif()
 
 list(APPEND _ionik__sources
-    ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp)
+
+if (NOT ANDROID)
+    list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp)
+endif()
 
 list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/include)
 
