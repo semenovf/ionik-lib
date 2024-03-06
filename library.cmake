@@ -52,7 +52,8 @@ if (ANDROID)
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_android.cpp)
 elseif (UNIX)
     list(APPEND _ionik__sources
-        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp)
+        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_v4l2.cpp)
 
     list(APPEND _ionik__private_libs udev)
 
@@ -127,6 +128,7 @@ list(REMOVE_DUPLICATES _ionik__definitions)
 if (IONIK__BUILD_SHARED)
     portable_target(SOURCES ${PROJECT_NAME} ${_ionik__sources})
     portable_target(INCLUDE_DIRS ${PROJECT_NAME} PUBLIC ${_ionik__include_dirs})
+    portable_target(INCLUDE_DIRS ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
     portable_target(LINK ${PROJECT_NAME} PUBLIC pfs::common)
 
     if (_ionik__definitions)
@@ -141,6 +143,7 @@ endif()
 if (IONIK__BUILD_STATIC)
     portable_target(SOURCES ${STATIC_PROJECT_NAME} ${_ionik__sources})
     portable_target(INCLUDE_DIRS ${STATIC_PROJECT_NAME} PUBLIC ${_ionik__include_dirs})
+    portable_target(INCLUDE_DIRS ${STATIC_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
     portable_target(LINK ${STATIC_PROJECT_NAME} PUBLIC pfs::common)
 
     if (_ionik__definitions)

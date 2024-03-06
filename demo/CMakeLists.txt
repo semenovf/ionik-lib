@@ -12,4 +12,5 @@
 add_subdirectory(already_running)
 add_subdirectory(audio_spectrum)
 add_subdirectory(available_audio_devices)
+add_subdirectory(available_video_capture_devices)
 add_subdirectory(usb_monitor)

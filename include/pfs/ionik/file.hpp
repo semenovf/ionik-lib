@@ -73,6 +73,11 @@ public:
         return _h >= 0;
     }
 
+    handle_type native () const noexcept
+    {
+        return _h;
+    }
+
     void close () noexcept
     {
         if (!FileProvider::is_invalid(_h))
