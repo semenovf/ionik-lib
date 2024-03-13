@@ -23,6 +23,7 @@ enum class errc
     , acquire_device_observer
     , operation_system_error
     , bad_data_format
+    , backend_error
     , unsupported
 };
 

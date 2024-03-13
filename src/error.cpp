@@ -29,7 +29,8 @@ std::string error_category::message (int ev) const
             return std::string{"bad/illegal data format"};
         case errc::unsupported:
             return tr::_("unsupported");
-
+        case errc::backend_error:
+            return tr::_("backend error");
         default: return tr::_("unknown net error");
     }
 }

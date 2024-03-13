@@ -20,7 +20,8 @@ namespace ionik {
 namespace video {
 
 enum class subsystem_enum {
-    video4linux2
+      video4linux2
+    , camera2android
 };
 
 struct frame_size
@@ -50,14 +51,16 @@ struct pixel_format
 struct capture_device_info
 {
     subsystem_enum subsystem;
+
+    // For camera2android subsystem the readable name is stringified camera index
     std::string readable_name;
 
     // For video4linux2 subsystem contains:
-    //      * driver    - name of the driver module;
-    //      * card      - name of the card (equivalent to readable_name);
-    //      * path      - path to the device in the file system;
-    //      * bus       - name of the bus;
-    //      * version   - kernel version.
+    //      * driver  - name of the driver module;
+    //      * card    - name of the card (equivalent to readable_name);
+    //      * path    - path to the device in the file system;
+    //      * bus     - name of the bus;
+    //      * version - kernel version.
     std::map<std::string, std::string> data;
     std::vector<pixel_format> pixel_formats;
     std::size_t current_pixel_format_index;
