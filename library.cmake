@@ -51,6 +51,8 @@ if (ANDROID)
     list(APPEND _ionik__sources
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_android.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_android.cpp)
+
+    list(APPEND _ionik__private_libs camera2ndk)
 elseif (UNIX)
     list(APPEND _ionik__sources
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp

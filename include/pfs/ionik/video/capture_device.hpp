@@ -32,8 +32,14 @@ struct frame_size
 
 struct frame_rate
 {
+    // FPS = denom / num
     std::uint32_t num;
     std::uint32_t denom;
+
+#if __ANDROID__
+    std::uint32_t min_num;
+    std::uint32_t min_denom;
+#endif
 };
 
 struct discrete_frame_size: frame_size
