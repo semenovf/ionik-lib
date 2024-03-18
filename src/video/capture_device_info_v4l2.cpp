@@ -84,8 +84,9 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
                     capture_device_info & cdi = result.back();
 
                     cdi.subsystem       = subsystem_enum::video4linux2;
+                    cdi.id              = fs::utf8_encode(path);
                     cdi.readable_name   = reinterpret_cast<char const *>(vcap.card);
-                    cdi.data["path"]    = fs::utf8_encode(path);
+                    cdi.data["path"]    = cdi.id;
                     cdi.data["driver"]  = reinterpret_cast<char const *>(vcap.driver);
                     cdi.data["card"]    = reinterpret_cast<char const *>(vcap.card);
                     cdi.data["bus"]     = reinterpret_cast<char const *>(vcap.bus_info);
@@ -165,6 +166,12 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
 
                                                 frmivalenum.index++;
                                             }
+
+                                            std::sort(framesize.frame_rates.begin(), framesize.frame_rates.end()
+                                                , [] (frame_rate const & a, frame_rate const & b) {
+                                                    return (static_cast<double>(a.num) / a.denom)
+                                                        > (static_cast<double>(b.num) / b.denom);
+                                                });
                                         }
 
                                         break;
@@ -179,6 +186,12 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
 
                                 frmsizeenum.index++;
                             }
+
+                            std::sort(pxf.discrete_frame_sizes.begin(), pxf.discrete_frame_sizes.end()
+                                , [] (discrete_frame_size const & a, discrete_frame_size const & b) {
+                                    return (static_cast<double>(a.width) * a.height)
+                                        < (static_cast<double>(b.width) * b.height);
+                                });
                         }
 
                         fmtdesc.index++;

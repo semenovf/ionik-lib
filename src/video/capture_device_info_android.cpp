@@ -11,6 +11,7 @@
 #include "pfs/i18n.hpp"
 #include <camera/NdkCameraManager.h>
 #include <media/NdkImage.h>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
@@ -133,6 +134,20 @@ static std::string stringify_camera_facing (std::int32_t id)
     return "Unknown camera facing";
 }
 
+static std::string encode_camera_facing (std::int32_t id)
+{
+    switch (id) {
+        case ACAMERA_LENS_FACING_FRONT:
+            return "0";
+        case ACAMERA_LENS_FACING_BACK:
+            return "1";
+        case ACAMERA_LENS_FACING_EXTERNAL:
+            return "2";
+    }
+
+    return "?";
+}
+
 std::vector<capture_device_info> fetch_capture_devices (error * perr)
 {
     std::vector<capture_device_info> result;
@@ -149,8 +164,10 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                 result.emplace_back();
                 capture_device_info & cdi = result.back();
                 cdi.subsystem = subsystem_enum::camera2android;
+                cdi.id = idList->cameraIds[i];
                 cdi.current_pixel_format_index = 0;
 
+                bool backward_compatible = false;
                 std::uint8_t facing = std::numeric_limits<std::uint8_t>::max();
                 std::uint32_t angle = 0;
                 std::map<std::int32_t, std::vector<std::pair<std::int32_t,std::int32_t>>> image_format_resolutions;
@@ -162,8 +179,9 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                 if (status == ACAMERA_OK) {
                     ACameraMetadata_const_entry entry;
 
-                    std::array<std::uint32_t, 4> tags = {
-                          ACAMERA_LENS_FACING
+                    std::array<std::uint32_t, 5> tags = {
+                          ACAMERA_REQUEST_AVAILABLE_CAPABILITIES
+                        , ACAMERA_LENS_FACING
                         , ACAMERA_SENSOR_ORIENTATION
                         , ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS
                         , ACAMERA_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES
@@ -178,11 +196,26 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
 
                         if (status == ACAMERA_OK) {
                             switch (tag) {
+                                case ACAMERA_REQUEST_AVAILABLE_CAPABILITIES:
+                                    for (int i = 0; i < entry.count; i++) {
+                                        switch (entry.data.u8[i]) {
+                                            case ACAMERA_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE:
+                                                backward_compatible = true;
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                    }
+
+                                    break;
+
                                 case ACAMERA_LENS_FACING:
                                     facing = entry.data.u8[0];
+                                    break;
 
                                 case ACAMERA_SENSOR_ORIENTATION:
                                     angle = entry.data.i32[0];
+                                    break;
 
                                 case ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS: {
                                     for (int i = 0; i < entry.count; i++) {
@@ -266,11 +299,17 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                 if (meta != nullptr)
                     ACameraMetadata_free(meta);
 
-                // YUV_420_888
-
-                cdi.readable_name = stringify_camera_facing(facing) + " (" + std::to_string(angle) + ")" ;
+                cdi.readable_name = stringify_camera_facing(facing) + " (" + cdi.id + ")" ;
+                cdi.data["backward_compatible"] = backward_compatible ? "1" : "0";
+                cdi.data["facing"] = encode_camera_facing(facing);
                 cdi.current_pixel_format_index = 0;
                 int image_format_index = 0;
+
+                std::sort(frame_rates.begin(), frame_rates.end()
+                    , [] (std::pair<std::uint32_t,std::uint32_t> const & a, std::pair<std::uint32_t,std::uint32_t> const & b) {
+                        return a.first < b.first;
+                    });
+
 
                 for (auto pos = image_format_resolutions.cbegin(), last = image_format_resolutions.cend(); pos != last; ++pos) {
                     std::int32_t image_format = pos->first;
@@ -295,6 +334,12 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                             frame_size.frame_rates.push_back(frame_rate{1, fr.second, 1, fr.first});
                         }
                     }
+
+                    std::sort(pxf.discrete_frame_sizes.begin(), pxf.discrete_frame_sizes.end()
+                        , [] (discrete_frame_size const & a, discrete_frame_size const & b) {
+                            return (static_cast<double>(a.width) * a.height)
+                                < (static_cast<double>(b.width) * b.height);
+                        });
 
                     image_format_index++;
                 }

@@ -58,7 +58,9 @@ struct capture_device_info
 {
     subsystem_enum subsystem;
 
-    // For camera2android subsystem the readable name is stringified camera index
+    // For video4linux2 subsystem contains the path to the device in the file system.
+    // For camera2android subsystem contains Camera ID.
+    std::string id;
     std::string readable_name;
 
     // For video4linux2 subsystem contains:
@@ -67,7 +69,12 @@ struct capture_device_info
     //      * path    - path to the device in the file system;
     //      * bus     - name of the bus;
     //      * version - kernel version.
+    // For camera2android subsystem contains:
+    //      * backward_compatible - "1" (true) or "0" (false);
+    //      * facing  - "0" (front), "1" (back) or "2" (external).
+
     std::map<std::string, std::string> data;
+
     std::vector<pixel_format> pixel_formats;
     std::size_t current_pixel_format_index;
     frame_size current_frame_size;
