@@ -86,6 +86,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
                     cdi.subsystem       = subsystem_enum::video4linux2;
                     cdi.id              = fs::utf8_encode(path);
                     cdi.readable_name   = reinterpret_cast<char const *>(vcap.card);
+                    cdi.orientation     = 0;
                     cdi.data["path"]    = cdi.id;
                     cdi.data["driver"]  = reinterpret_cast<char const *>(vcap.driver);
                     cdi.data["card"]    = reinterpret_cast<char const *>(vcap.card);

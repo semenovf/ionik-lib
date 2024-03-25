@@ -9,6 +9,7 @@
 #include "video/capture_device.hpp"
 #include "pfs/fmt.hpp"
 #include "pfs/i18n.hpp"
+#include "pfs/numeric_cast.hpp"
 #include <camera/NdkCameraManager.h>
 #include <media/NdkImage.h>
 #include <algorithm>
@@ -169,7 +170,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
 
                 bool backward_compatible = false;
                 std::uint8_t facing = std::numeric_limits<std::uint8_t>::max();
-                std::uint32_t angle = 0;
+                std::uint32_t orientation = 0;
                 std::map<std::int32_t, std::vector<std::pair<std::int32_t,std::int32_t>>> image_format_resolutions;
                 std::vector<std::pair<std::uint32_t,std::uint32_t>> frame_rates;
 
@@ -214,7 +215,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                                     break;
 
                                 case ACAMERA_SENSOR_ORIENTATION:
-                                    angle = entry.data.i32[0];
+                                    orientation = entry.data.i32[0];
                                     break;
 
                                 case ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS: {
@@ -300,6 +301,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                     ACameraMetadata_free(meta);
 
                 cdi.readable_name = stringify_camera_facing(facing) + " (" + cdi.id + ")" ;
+                cdi.orientation = pfs::numeric_cast<int>(orientation);
                 cdi.data["backward_compatible"] = backward_compatible ? "1" : "0";
                 cdi.data["facing"] = encode_camera_facing(facing);
                 cdi.current_pixel_format_index = 0;

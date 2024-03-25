@@ -63,6 +63,9 @@ struct capture_device_info
     std::string id;
     std::string readable_name;
 
+    // Camera orientation
+    int orientation;
+
     // For video4linux2 subsystem contains:
     //      * driver  - name of the driver module;
     //      * card    - name of the card (equivalent to readable_name);
