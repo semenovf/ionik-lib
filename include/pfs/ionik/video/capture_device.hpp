@@ -85,4 +85,18 @@ struct capture_device_info
 
 IONIK__EXPORT std::vector<capture_device_info> fetch_capture_devices (error * perr = nullptr);
 
+#ifndef __ANDROID__
+/**
+ * Remove incomplete video capture devices.
+ *
+ * Video capture devices is incomplete if:
+ *      * has no pixel format
+ * That's all for now.
+ */
+IONIK__EXPORT
+std::vector<capture_device_info>
+sanitize_capture_devices (std::vector<capture_device_info> const & devices);
+
+#endif
+
 }} // namespace ionik::video

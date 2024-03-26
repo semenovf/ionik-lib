@@ -39,7 +39,8 @@ endif()
 list(APPEND _ionik__sources
     ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp)
+    ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info.cpp)
 
 if (NOT ANDROID)
     list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp)
