@@ -23,8 +23,8 @@ std::string error_category::message (int ev) const
             return tr::_("no error");
         case errc::acquire_device_observer:
             return tr::_("acquire device observer");
-        case errc::operation_system_error:
-            return tr::_("operation system error");
+        case errc::system_error:
+            return tr::_("system error");
         case errc::bad_data_format:
             return std::string{"bad/illegal data format"};
         case errc::unsupported:

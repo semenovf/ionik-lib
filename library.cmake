@@ -11,6 +11,8 @@
 cmake_minimum_required (VERSION 3.11)
 project(ionik CXX)
 
+include(CheckIncludeFile)
+
 option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
 option(IONIK__BUILD_STATIC "Enable build static library" ON)
 
@@ -25,11 +27,13 @@ endif()
 
 if (IONIK__BUILD_SHARED)
     portable_target(ADD_SHARED ${PROJECT_NAME} ALIAS pfs::ionik EXPORTS IONIK__EXPORTS)
+    list(APPEND _ionik__targets ${PROJECT_NAME})
 endif()
 
 if (IONIK__BUILD_STATIC)
     set(STATIC_PROJECT_NAME ${PROJECT_NAME}-static)
     portable_target(ADD_STATIC ${STATIC_PROJECT_NAME} ALIAS pfs::ionik::static EXPORTS IONIK__STATIC)
+    list(APPEND _ionik__targets ${STATIC_PROJECT_NAME})
 endif()
 
 if (PFS__LOG_LEVEL)
@@ -41,6 +45,30 @@ list(APPEND _ionik__sources
     ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info.cpp)
+
+if (UNIX OR ANDROID)
+    list(APPEND _ionik__sources
+        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface_linux.cpp)
+
+    CHECK_INCLUDE_FILE("libmnl/libmnl.h" __has_libmnl)
+
+    list(APPEND _netty__sources
+        ${CMAKE_CURRENT_LIST_DIR}/src/net/netlink_monitor.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/net/netlink_socket.cpp)
+
+    if (__has_libmnl)
+        list(APPEND _netty__definitions "IONIK__LIBMNL_ENABLED=1")
+        list(APPEND _netty__private_links mnl)
+    endif()
+
+elseif (MSVC)
+    list(APPEND _ionik__sources
+        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface_win32.cpp)
+else()
+    message (FATAL_ERROR "Unsupported platform")
+endif()
 
 if (NOT ANDROID)
     list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp)
@@ -68,7 +96,9 @@ elseif (MSVC)
     list(APPEND _ionik__sources
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_win32.cpp)
 
+    list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
     list(APPEND _ionik__private_libs Setupapi)
+    list(APPEND _ionik__private_libs Ws2_32 Iphlpapi)
 else()
     message (FATAL_ERROR "Unsupported platform")
 endif()
@@ -127,34 +157,25 @@ endif()
 list(REMOVE_DUPLICATES _ionik__sources)
 list(REMOVE_DUPLICATES _ionik__private_libs)
 list(REMOVE_DUPLICATES _ionik__include_dirs)
+list(REMOVE_DUPLICATES _ionik__compile_options)
 list(REMOVE_DUPLICATES _ionik__definitions)
 
-if (IONIK__BUILD_SHARED)
-    portable_target(SOURCES ${PROJECT_NAME} ${_ionik__sources})
-    portable_target(INCLUDE_DIRS ${PROJECT_NAME} PUBLIC ${_ionik__include_dirs})
-    portable_target(INCLUDE_DIRS ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
-    portable_target(LINK ${PROJECT_NAME} PUBLIC pfs::common)
+foreach(_target IN LISTS _ionik__targets)
+# if (IONIK__BUILD_SHARED)
+    portable_target(SOURCES ${_target} ${_ionik__sources})
+    portable_target(INCLUDE_DIRS ${_target} PUBLIC ${_ionik__include_dirs})
+    portable_target(INCLUDE_DIRS ${_target} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
+    portable_target(LINK ${_target} PUBLIC pfs::common)
+
+    if (_ionik__compile_options)
+        portable_target(COMPILE_OPTIONS ${_target} PRIVATE ${_ionik__compile_options})
+    endif()
 
     if (_ionik__definitions)
-        portable_target(DEFINITIONS ${PROJECT_NAME} PUBLIC ${_ionik__definitions})
+        portable_target(DEFINITIONS ${_target} PUBLIC ${_ionik__definitions})
     endif()
 
     if (_ionik__private_libs)
-        portable_target(LINK ${PROJECT_NAME} PRIVATE ${_ionik__private_libs})
+        portable_target(LINK ${_target} PRIVATE ${_ionik__private_libs})
     endif()
-endif()
-
-if (IONIK__BUILD_STATIC)
-    portable_target(SOURCES ${STATIC_PROJECT_NAME} ${_ionik__sources})
-    portable_target(INCLUDE_DIRS ${STATIC_PROJECT_NAME} PUBLIC ${_ionik__include_dirs})
-    portable_target(INCLUDE_DIRS ${STATIC_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
-    portable_target(LINK ${STATIC_PROJECT_NAME} PUBLIC pfs::common)
-
-    if (_ionik__definitions)
-        portable_target(DEFINITIONS ${STATIC_PROJECT_NAME} PUBLIC ${_ionik__definitions})
-    endif()
-
-    if (_ionik__private_libs)
-        portable_target(LINK ${STATIC_PROJECT_NAME} PRIVATE ${_ionik__private_libs})
-    endif()
-endif()
+endforeach()
