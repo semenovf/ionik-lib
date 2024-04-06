@@ -9,13 +9,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "pfs/ionik/exports.hpp"
-// #include "pfs/netty/inet4_addr.hpp"
-// #include "pfs/netty/reader_poller.hpp"
-// #include "pfs/netty/linux/epoll_poller.hpp"
 #include "netlink_socket.hpp"
 #include <chrono>
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace ionik {
 namespace net {
@@ -31,20 +29,19 @@ struct netlink_attributes
 class netlink_monitor
 {
     netlink_socket _sock;
-    // FIXME
-    // reader_poller<epoll_poller> _poller;
+    int _epoll_id {-1};
 
 public:
-    // FIXME
-    // mutable std::function<void(error const &)> on_failure;
-    // mutable std::function<void(netlink_attributes const &)> attrs_ready;
-    // mutable std::function<void(inet4_addr, std::uint32_t)> inet4_addr_added;
-    // mutable std::function<void(inet4_addr, std::uint32_t)> inet4_addr_removed;
+    mutable std::function<void(error const &)> on_failure;
+    mutable std::function<void(netlink_attributes const &)> attrs_ready;
+    mutable std::function<void(std::uint32_t /*inet4_addr*/, std::uint32_t)> inet4_addr_added;
+    mutable std::function<void(std::uint32_t /*inet4_addr*/, std::uint32_t)> inet4_addr_removed;
     // mutable std::function<void(inet6_addr, int)> inet6_addr_added;
     // mutable std::function<void(inet6_addr, int)> inet6_addr_removed;
 
 public:
-    IONIK__EXPORT netlink_monitor ();
+    IONIK__EXPORT netlink_monitor (error * perr = nullptr);
+    IONIK__EXPORT ~netlink_monitor ();
     IONIK__EXPORT int poll (std::chrono::milliseconds millis, error * perr = nullptr);
 };
 

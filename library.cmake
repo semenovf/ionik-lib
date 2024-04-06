@@ -53,13 +53,13 @@ if (UNIX OR ANDROID)
 
     CHECK_INCLUDE_FILE("libmnl/libmnl.h" __has_libmnl)
 
-    list(APPEND _netty__sources
+    list(APPEND _ionik__sources
         ${CMAKE_CURRENT_LIST_DIR}/src/net/netlink_monitor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/net/netlink_socket.cpp)
 
     if (__has_libmnl)
-        list(APPEND _netty__definitions "IONIK__LIBMNL_ENABLED=1")
-        list(APPEND _netty__private_links mnl)
+        list(APPEND _ionik__definitions "IONIK__LIBMNL_ENABLED=1")
+        list(APPEND _ionik__private_libs mnl)
     endif()
 
 elseif (MSVC)

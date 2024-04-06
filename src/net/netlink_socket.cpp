@@ -37,8 +37,8 @@ netlink_socket::netlink_socket (type_enum netlinktype)
         }
         default: {
             throw error {
-                  errc::socket_error
-                , tr::f_("bad/unsupported Netlink socket type: {}"
+                  errc::system_error
+                , tr::f_("bad/unsupported netlink socket type: {}"
                     , static_cast<int>(netlinktype))
             };
         }
@@ -50,8 +50,8 @@ netlink_socket::netlink_socket (type_enum netlinktype)
     if (_socket < 0) {
 #endif
         throw error {
-              errc::socket_error
-            , tr::_("create Netlink socket failure")
+              errc::system_error
+            , tr::_("create netlink socket failure")
             , pfs::system_error_text()
         };
     }
@@ -76,8 +76,8 @@ netlink_socket::netlink_socket (type_enum netlinktype)
 
     if (rc < 0) {
         throw error {
-              errc::socket_error
-            , tr::_("bind Netlink socket failure")
+              errc::system_error
+            , tr::_("bind netlink socket failure")
             , pfs::system_error_text()
         };
     }
@@ -179,7 +179,7 @@ int netlink_socket::recv (char * data, int len, error * perr)
 
     if (n < 0) {
         error err {
-              errc::socket_error
+              errc::system_error
             , tr::_("receive data from Netlink socket failure")
             , pfs::system_error_text()
         };
@@ -212,8 +212,8 @@ int netlink_socket::send (char const * req, int len, error * perr)
 
     if (n < 0) {
         error err {
-              errc::socket_error
-            , tr::_("send Netlink request failure")
+              errc::system_error
+            , tr::_("send netlink request failure")
             , pfs::system_error_text()
         };
 

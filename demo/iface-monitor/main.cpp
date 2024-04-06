@@ -53,26 +53,25 @@ int main (int argc, char * argv[])
 
     fmt::print("Start Netlink monitoring\n");
 
-    // FIXME
-    // netlink_monitor nm;
-    //
-    // nm.attrs_ready = [] (netlink_attributes const & attrs) {
-    //     fmt::print("{} [{}] [{}]: mtu={}\n", attrs.iface_name
-    //         , attrs.running ? "RUNNING" : "NOT RUNNING"
-    //         , attrs.up ? "UP" : "DOWN"
-    //         , attrs.mtu);
-    // };
-    //
-    // nm.inet4_addr_added = [] (netty::inet4_addr addr, std::uint32_t iface_index) {
-    //     LOGD("", "Address added to interface {}: {}", iface_index, to_string(addr));
-    // };
-    //
-    // nm.inet4_addr_removed = [] (netty::inet4_addr addr, std::uint32_t iface_index) {
-    //     LOGD("", "Address removed from interface {}: {}", iface_index, to_string(addr));
-    // };
-    //
-    // while(true)
-    //     nm.poll(std::chrono::seconds{1});
+    netlink_monitor nm;
+
+    nm.attrs_ready = [] (netlink_attributes const & attrs) {
+        fmt::print("{} [{}] [{}]: mtu={}\n", attrs.iface_name
+            , attrs.running ? "RUNNING" : "NOT RUNNING"
+            , attrs.up ? "UP" : "DOWN"
+            , attrs.mtu);
+    };
+
+    nm.inet4_addr_added = [] (std::uint32_t addr, std::uint32_t iface_index) {
+        LOGD("", "Address added to interface {}: {}", iface_index, addr);
+    };
+
+    nm.inet4_addr_removed = [] (std::uint32_t addr, std::uint32_t iface_index) {
+        LOGD("", "Address removed from interface {}: {}", iface_index, addr);
+    };
+
+    while(true)
+        nm.poll(std::chrono::seconds{1});
 
     return EXIT_SUCCESS;
 }
