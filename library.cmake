@@ -94,7 +94,8 @@ elseif (UNIX)
     endif()
 elseif (MSVC)
     list(APPEND _ionik__sources
-        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_win32.cpp)
+        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_win32.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_win.cpp)
 
     list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
     list(APPEND _ionik__private_libs Setupapi)
@@ -158,7 +159,10 @@ list(REMOVE_DUPLICATES _ionik__sources)
 list(REMOVE_DUPLICATES _ionik__private_libs)
 list(REMOVE_DUPLICATES _ionik__include_dirs)
 list(REMOVE_DUPLICATES _ionik__compile_options)
-list(REMOVE_DUPLICATES _ionik__definitions)
+
+if (_ionik__definitions)
+    list(REMOVE_DUPLICATES _ionik__definitions)
+endif()
 
 foreach(_target IN LISTS _ionik__targets)
 # if (IONIK__BUILD_SHARED)

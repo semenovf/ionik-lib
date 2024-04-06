@@ -23,7 +23,7 @@ static fs::path unique_temp_file_path ()
 
     while (result.empty() && counter-- > 0) {
         result = fs::standard_paths::temp_folder()
-            / fs::utf8_decode(to_string(pfs::generate_uuid()) + PFS__LITERAL_PATH(".ionik"));
+            / fs::utf8_decode(to_string(pfs::generate_uuid()) + ".ionik");
 
         if (fs::exists(result))
             result.clear();

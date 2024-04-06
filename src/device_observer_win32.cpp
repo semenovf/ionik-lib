@@ -83,8 +83,7 @@ LRESULT notify_window_proc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lpara
             auto ptr = reinterpret_cast<device_observer *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
             if (!ptr) {
-                throw pfs::error(make_error_code(errc::operation_system_error)
-                    , tr::_("Unable to fetch device observer pointer"));
+                throw error(errc::system_error), tr::_("Unable to fetch device observer pointer");
             }
 
             PDEV_BROADCAST_HDR hdr = reinterpret_cast<PDEV_BROADCAST_HDR>(lparam);
@@ -265,8 +264,7 @@ std::pair<std::error_code, std::string> device_observer::init (
             , nullptr, wx.hInstance, nullptr);
 
         if (!_rep->hwnd) {
-            throw pfs::error(make_error_code(errc::operation_system_error)
-                , pfs::windows::utf8_error(GetLastError()));
+            throw error {errc::system_error, pfs::system_error_text()};
         }
     }
 

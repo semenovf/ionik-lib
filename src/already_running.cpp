@@ -16,7 +16,7 @@
 namespace fs = pfs::filesystem;
 
 #elif defined(PFS__OS_WIN)
-#   include <windows.h>
+#   include "pfs/windows.hpp"
 #else
 #   error "Unsupported operation system yet"
 #endif
@@ -46,7 +46,7 @@ already_running::already_running (std::string const & unique_name, error * perr)
 
     SetLastError(0);
 
-    _mutex = CreateMutex(NULL, TRUE, unique_name.c_str());
+    _mutex = CreateMutex(NULL, TRUE, pfs::windows::utf8_decode(unique_name.c_str()).c_str());
 
     auto last_error = GetLastError();
 
@@ -89,7 +89,7 @@ bool already_running::operator () () const noexcept
 #if defined(PFS__OS_LINUX)
     return _fd < 0;
 #elif defined(PFS__OS_WIN)
-    return _handle == nullptr;
+    return _mutex == nullptr;
 #endif
 }
 

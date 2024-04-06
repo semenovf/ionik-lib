@@ -101,7 +101,7 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
         return pfs::make_unexpected(error {errc::bad_data_format});
 
     pfs::binary_istream<pfs::endian::little> is {buffer
-        , WAV_HEADER_SIZE};
+        , pfs::numeric_cast<std::size_t>(WAV_HEADER_SIZE)};
 
     wav_header header;
 

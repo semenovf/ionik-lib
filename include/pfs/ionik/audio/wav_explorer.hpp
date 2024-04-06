@@ -137,6 +137,9 @@ class frame_iterator : public pfs::iterator_facade<
     , frame_iterator<FrameType>
     , FrameType, char const *, FrameType>
 {
+public:
+    using difference_type = typename frame_iterator<FrameType>::difference_type;
+
 private:
     char const * _p {nullptr};
 

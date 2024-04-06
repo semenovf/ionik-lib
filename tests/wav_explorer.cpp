@@ -129,7 +129,7 @@ TEST_CASE("wav_explorer") {
 
         REQUIRE_EQ(expected->extra.size(), elem.info.extra.size());
 
-        for (int i = 0; i < expected->extra.size(); i++) {
+        for (std::size_t i = 0; i < expected->extra.size(); i++) {
             CHECK_EQ(expected->extra[i].id, elem.info.extra[i].id);
         }
 

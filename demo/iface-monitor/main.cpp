@@ -7,8 +7,11 @@
 //      2023.02.15 Initial version (netty-lib).
 //      2024.04.04 Moved from `netty-lib`.
 ////////////////////////////////////////////////////////////////////////////////
+#if _MSC_VER
+#else
 #include "pfs/ionik/net/netlink_socket.hpp"
 #include "pfs/ionik/net/netlink_monitor.hpp"
+#endif
 #include "pfs/filesystem.hpp"
 #include "pfs/fmt.hpp"
 #include "pfs/log.hpp"
@@ -18,9 +21,13 @@ using string_view = pfs::string_view;
 static char const * TAG = "netty";
 
 namespace fs = pfs::filesystem;
+
+#if _MSC_VER
+#else
 using netlink_attributes = ionik::net::netlink_attributes;
 using netlink_socket     = ionik::net::netlink_socket;
 using netlink_monitor    = ionik::net::netlink_monitor;
+#endif
 
 static struct program_context {
     std::string program;
@@ -51,6 +58,8 @@ int main (int argc, char * argv[])
         }
     }
 
+#if _MSC_VER
+#else
     fmt::print("Start Netlink monitoring\n");
 
     netlink_monitor nm;
@@ -72,6 +81,8 @@ int main (int argc, char * argv[])
 
     while(true)
         nm.poll(std::chrono::seconds{1});
+
+#endif
 
     return EXIT_SUCCESS;
 }
