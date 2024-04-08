@@ -79,7 +79,7 @@ already_running::~already_running ()
 #elif defined(PFS__OS_WIN)
     if (_mutex != nullptr) {
         CloseHandle(_mutex);
-        _mutex == nullptr;
+        _mutex = nullptr;
     }
 #endif
 }

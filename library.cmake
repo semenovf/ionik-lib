@@ -46,30 +46,6 @@ list(APPEND _ionik__sources
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info.cpp)
 
-if (UNIX OR ANDROID)
-    list(APPEND _ionik__sources
-        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface_linux.cpp)
-
-    CHECK_INCLUDE_FILE("libmnl/libmnl.h" __has_libmnl)
-
-    list(APPEND _ionik__sources
-        ${CMAKE_CURRENT_LIST_DIR}/src/net/netlink_monitor.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/net/netlink_socket.cpp)
-
-    if (__has_libmnl)
-        list(APPEND _ionik__definitions "IONIK__LIBMNL_ENABLED=1")
-        list(APPEND _ionik__private_libs mnl)
-    endif()
-
-elseif (MSVC)
-    list(APPEND _ionik__sources
-        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/net/network_interface_win32.cpp)
-else()
-    message (FATAL_ERROR "Unsupported platform")
-endif()
-
 if (NOT ANDROID)
     list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp)
 endif()
@@ -99,7 +75,7 @@ elseif (MSVC)
 
     list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
     list(APPEND _ionik__private_libs Setupapi)
-    list(APPEND _ionik__private_libs Ws2_32 Iphlpapi)
+    #list(APPEND _ionik__private_libs Ws2_32 Iphlpapi)
 else()
     message (FATAL_ERROR "Unsupported platform")
 endif()
@@ -165,10 +141,10 @@ if (_ionik__definitions)
 endif()
 
 foreach(_target IN LISTS _ionik__targets)
-# if (IONIK__BUILD_SHARED)
     portable_target(SOURCES ${_target} ${_ionik__sources})
     portable_target(INCLUDE_DIRS ${_target} PUBLIC ${_ionik__include_dirs})
     portable_target(INCLUDE_DIRS ${_target} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
+    portable_target(INCLUDE_DIRS ${_target} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs)
     portable_target(LINK ${_target} PUBLIC pfs::common)
 
     if (_ionik__compile_options)
