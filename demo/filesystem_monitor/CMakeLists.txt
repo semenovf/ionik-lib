@@ -1,12 +1,12 @@
 ################################################################################
-# Copyright (c) 2021-2023 Vladislav Trifochkin
+# Copyright (c) 2024 Vladislav Trifochkin
 #
-# This file is part of `ionik-lib`.
+# This file is part of `ionic-lib`.
 #
 # Changelog:
-#      2021.08.03 Initial version.
+#      2024.06.30 Initial version.
 ################################################################################
-project(available_audio_devices)
+project(filesystem_monitor)
 
 add_executable(${PROJECT_NAME} main.cpp)
 

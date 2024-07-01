@@ -18,7 +18,7 @@
 
 namespace ionik {
 
-static constexpr int const MAX_EVENTS = 32;
+static constexpr int MAX_EVENTS = 32;
 
 struct device_observer_rep
 {

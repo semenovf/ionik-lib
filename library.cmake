@@ -9,7 +9,7 @@
 #      2023.03.31 Added audio devices info support (from obsolete `multimedia-lib`).
 ################################################################################
 cmake_minimum_required (VERSION 3.11)
-project(ionik CXX)
+project(ionik CXX C)
 
 include(CheckIncludeFile)
 
@@ -50,7 +50,10 @@ if (NOT ANDROID)
     list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp)
 endif()
 
-list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/include)
+list(APPEND _ionik__include_dirs
+    ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_CURRENT_LIST_DIR}/include/pfs
+    ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
 
 if (ANDROID)
     list(APPEND _ionik__sources
@@ -117,6 +120,17 @@ if (NOT _ionik__audio_backend_FOUND)
         list(APPEND _ionik__sources
             ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_win32.cpp)
         set(_ionik__audio_backend_FOUND ON)
+    endif()
+endif()
+
+if (UNIX)
+    check_include_file(sys/inotify.h _ionik__has_sys_inotify_h)
+
+    if (_ionik__has_sys_inotify_h)
+        list(APPEND _ionik__definitions IONIK__HAS_INOTIFY=1)
+        list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/filesystem_monitor/inotify.cpp)
+    else()
+        message(FATAL_ERROR "inotify NOT FOUND")
     endif()
 endif()
 

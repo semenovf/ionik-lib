@@ -1,7 +1,7 @@
 ####################################################################################################
 # Copyright (c) 2024 Vladislav Trifochkin
 #
-# This file is part of `ionik`.
+# This file is part of `ionik-lib`.
 #
 # Changelog:
 #      2024.03.06 Initial version.
