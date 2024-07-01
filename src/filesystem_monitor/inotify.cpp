@@ -8,8 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "filesystem_monitor/monitor.hpp"
 #include "filesystem_monitor/backend/inotify.hpp"
+#include "filesystem_monitor/callbacks/emitter_callbacks.hpp"
+#include "filesystem_monitor/callbacks/fptr_calbacks.hpp"
 #include "filesystem_monitor/callbacks/functional.hpp"
 #include <pfs/i18n.hpp>
+#include <pfs/log.hpp>
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/inotify.h>
@@ -164,63 +167,103 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 return -1;
             }
 
-            fs::path path = pos->second;
             bool is_dir = x->mask & IN_ISDIR;
+
+            fs::path path = pos->second;
+
+            if (x->len > 0) {
+                // Canonical function requires path existance
+                //path = fs::canonical(path / fs::utf8_decode(x->name));
+                path /= fs::utf8_decode(x->name);
+            }
+
+#if PFS__LOG_LEVEL >= 3
             std::string entry_type_str = is_dir ? "DIR_" : "FILE";
             std::string xname = x->len > 0 ? x->name : "<empty>";
+#endif
 
             // File was accessed
             if (x->mask & IN_ACCESS) {
-                fmt::println("~~~ IN_ACCESS: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_ACCESS: {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.accessed)
+                    cb.accessed(is_dir, path);
             }
 
             // File was modified
             if (x->mask & IN_MODIFY) {
-                fmt::println("~~~ IN_MODIFY: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_MODIFY: {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.modified)
+                    cb.modified(is_dir, path);
             }
 
             // Metadata changed
             if (x->mask & IN_ATTRIB) {
-                fmt::println("~~~ IN_ATTRIB: {}: path={}; x->name={}", entry_type_str, path, xname);
-            }
+                LOG_TRACE_3("IN_ATTRIB: {}: path={}; x->name={}", entry_type_str, path, xname);
 
-            // Closed
-            if (x->mask & IN_CLOSE) {
-                fmt::println("~~~ IN_CLOSE : {}: path={}; x->name={}", entry_type_str, path, xname);
+                if (cb.metadata_changed)
+                    cb.metadata_changed(is_dir, path);
             }
 
             // Opened
             if (x->mask & IN_OPEN) {
-                fmt::println("~~~ IN_OPEN  : {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_OPEN  : {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.opened)
+                    cb.opened(is_dir, path);
             }
 
-            // Moves
-            if (x->mask & IN_MOVE) {
-                fmt::println("~~~ IN_MOVE  : {}: path={}; x->name={}", entry_type_str, path, xname);
+            // Closed
+            if (x->mask & IN_CLOSE) {
+                LOG_TRACE_3("IN_CLOSE : {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.closed)
+                    cb.closed(is_dir, path);
             }
 
             // Subfile was created
             if (x->mask & IN_CREATE) {
-                fmt::println("~~~ IN_CREATE: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_CREATE: {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.created)
+                    cb.created(is_dir, path);
             }
 
             // Subfile was deleted
             if (x->mask & IN_DELETE) {
-                fmt::println("~~~ IN_DELETE: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_DELETE: {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.deleted)
+                    cb.deleted(is_dir, path);
             }
 
             // Self was deleted
             if (x->mask & IN_DELETE_SELF) {
-                fmt::println("~~~ IN_DELETE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_DELETE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.deleted)
+                    cb.deleted(is_dir, path);
+            }
+
+            // Moves
+            if (x->mask & IN_MOVE) {
+                LOG_TRACE_3("IN_MOVE  : {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.moved)
+                    cb.moved(is_dir, path);
             }
 
             // Self was moved
             if (x->mask & IN_MOVE_SELF) {
-                fmt::println("~~~ IN_MOVE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_MOVE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
+
+                if (cb.moved)
+                    cb.moved(is_dir, path);
             }
 
             if (x->mask & IN_IGNORED) {
-                fmt::println("~~~ IN_IGNORED: {}: path={}; x->name={}", entry_type_str, path, xname);
+                LOG_TRACE_3("IN_IGNORED: {}: path={}; x->name={}", entry_type_str, path, xname);
             }
         }
 
@@ -244,5 +287,14 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
 
 template
 int monitor<rep_type>::poll<functional_callbacks> (std::chrono::milliseconds timeout, functional_callbacks & cb, error * perr);
+
+template
+int monitor<rep_type>::poll<fptr_callbacks> (std::chrono::milliseconds timeout, fptr_callbacks & cb, error * perr);
+
+template
+int monitor<rep_type>::poll<emitter_callbacks> (std::chrono::milliseconds timeout, emitter_callbacks & cb, error * perr);
+
+template
+int monitor<rep_type>::poll<emitter_mt_callbacks> (std::chrono::milliseconds timeout, emitter_mt_callbacks & cb, error * perr);
 
 }} // namespace ionik::filesystem_monitor

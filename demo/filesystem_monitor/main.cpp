@@ -13,6 +13,7 @@
 #include <atomic>
 #include <signal.h>
 
+namespace fs = pfs::filesystem;
 using filesystem_monitor = ionik::filesystem_monitor::monitor_t;
 
 static std::atomic_bool TERM_APP {false};
@@ -34,6 +35,39 @@ int main (int argc, char * argv[])
 
     auto path = pfs::filesystem::utf8_decode(argv[1]);
     ionik::filesystem_monitor::functional_callbacks callbacks;
+
+    callbacks.accessed = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- ACCESSED: {}", p);
+    };
+
+    callbacks.modified = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- MODIFIED: {}", p);
+    };
+
+    callbacks.metadata_changed = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- METADATA: {}", p);
+    };
+
+    callbacks.opened = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- OPENED: {}", p);
+    };
+
+    callbacks.closed = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- CLOSED: {}", p);
+    };
+
+    callbacks.created = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- CREATED: {}", p);
+    };
+
+    callbacks.deleted = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- DELETED: {}", p);
+    };
+
+    callbacks.moved = [] (bool /*is_dir*/, fs::path const & p) {
+        fmt::println("-- MOVED: {}", p);
+    };
+
     filesystem_monitor mon;
 
     fmt::println("Watching: {}", path);
