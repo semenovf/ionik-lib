@@ -187,7 +187,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_ACCESS: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.accessed)
-                    cb.accessed(is_dir, path);
+                    cb.accessed(path);
             }
 
             // File was modified
@@ -195,7 +195,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_MODIFY: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.modified)
-                    cb.modified(is_dir, path);
+                    cb.modified(path);
             }
 
             // Metadata changed
@@ -203,7 +203,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_ATTRIB: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.metadata_changed)
-                    cb.metadata_changed(is_dir, path);
+                    cb.metadata_changed(path);
             }
 
             // Opened
@@ -211,7 +211,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_OPEN  : {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.opened)
-                    cb.opened(is_dir, path);
+                    cb.opened(path);
             }
 
             // Closed
@@ -219,7 +219,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_CLOSE : {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.closed)
-                    cb.closed(is_dir, path);
+                    cb.closed(path);
             }
 
             // Subfile was created
@@ -227,7 +227,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_CREATE: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.created)
-                    cb.created(is_dir, path);
+                    cb.created(path);
             }
 
             // Subfile was deleted
@@ -235,7 +235,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_DELETE: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.deleted)
-                    cb.deleted(is_dir, path);
+                    cb.deleted(path);
             }
 
             // Self was deleted
@@ -243,7 +243,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_DELETE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.deleted)
-                    cb.deleted(is_dir, path);
+                    cb.deleted(path);
             }
 
             // Moves
@@ -251,7 +251,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_MOVE  : {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.moved)
-                    cb.moved(is_dir, path);
+                    cb.moved(path);
             }
 
             // Self was moved
@@ -259,7 +259,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 LOG_TRACE_3("IN_MOVE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
 
                 if (cb.moved)
-                    cb.moved(is_dir, path);
+                    cb.moved(path);
             }
 
             if (x->mask & IN_IGNORED) {

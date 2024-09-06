@@ -10,6 +10,7 @@
 #include "pfs/ionik/filesystem_monitor/callbacks/functional.hpp"
 #include <pfs/filesystem.hpp>
 #include <pfs/fmt.hpp>
+#include <pfs/log.hpp>
 #include <atomic>
 #include <signal.h>
 
@@ -36,42 +37,48 @@ int main (int argc, char * argv[])
     auto path = pfs::filesystem::utf8_decode(argv[1]);
     ionik::filesystem_monitor::functional_callbacks callbacks;
 
-    callbacks.accessed = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.accessed = [] (fs::path const & p) {
         fmt::println("-- ACCESSED: {}", p);
     };
 
-    callbacks.modified = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.modified = [] (fs::path const & p) {
         fmt::println("-- MODIFIED: {}", p);
     };
 
-    callbacks.metadata_changed = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.metadata_changed = [] (fs::path const & p) {
         fmt::println("-- METADATA: {}", p);
     };
 
-    callbacks.opened = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.opened = [] (fs::path const & p) {
         fmt::println("-- OPENED: {}", p);
     };
 
-    callbacks.closed = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.closed = [] (fs::path const & p) {
         fmt::println("-- CLOSED: {}", p);
     };
 
-    callbacks.created = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.created = [] (fs::path const & p) {
         fmt::println("-- CREATED: {}", p);
     };
 
-    callbacks.deleted = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.deleted = [] (fs::path const & p) {
         fmt::println("-- DELETED: {}", p);
     };
 
-    callbacks.moved = [] (bool /*is_dir*/, fs::path const & p) {
+    callbacks.moved = [] (fs::path const & p) {
         fmt::println("-- MOVED: {}", p);
     };
 
     filesystem_monitor mon;
 
     fmt::println("Watching: {}", path);
-    mon.add(path);
+
+    try {
+        mon.add(path);
+    } catch (pfs::error const & ex) {
+        LOGE("", "Exception: {}", ex.what());
+        return EXIT_FAILURE;
+    }
 
     std::chrono::seconds timeout{30};
 

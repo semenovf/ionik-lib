@@ -17,29 +17,28 @@ struct emitter_callbacks
 {
     using path_t = pfs::filesystem::path;
 
-    pfs::emitter<bool /*is_dir*/, path_t const &> accessed;
-    pfs::emitter<bool /*is_dir*/, path_t const &> modified;
-    pfs::emitter<bool /*is_dir*/, path_t const &> metadata_changed;
-    pfs::emitter<bool /*is_dir*/, path_t const &> opened;
-    pfs::emitter<bool /*is_dir*/, path_t const &> closed;
-    pfs::emitter<bool /*is_dir*/, path_t const &> created;
-    pfs::emitter<bool /*is_dir*/, path_t const &> deleted;
-    pfs::emitter<bool /*is_dir*/, path_t const &> moved;
+    pfs::emitter<path_t const &> accessed;
+    pfs::emitter<path_t const &> modified;
+    pfs::emitter<path_t const &> metadata_changed;
+    pfs::emitter<path_t const &> opened;
+    pfs::emitter<path_t const &> closed;
+    pfs::emitter<path_t const &> created;
+    pfs::emitter<path_t const &> deleted;
+    pfs::emitter<path_t const &> moved;
 };
 
 struct emitter_mt_callbacks
 {
     using path_t = pfs::filesystem::path;
 
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> accessed;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> modified;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> metadata_changed;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> opened;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> closed;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> created;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> deleted;
-    pfs::emitter_mt<bool /*is_dir*/, path_t const &> moved;
+    pfs::emitter_mt<path_t const &> accessed;
+    pfs::emitter_mt<path_t const &> modified;
+    pfs::emitter_mt<path_t const &> metadata_changed;
+    pfs::emitter_mt<path_t const &> opened;
+    pfs::emitter_mt<path_t const &> closed;
+    pfs::emitter_mt<path_t const &> created;
+    pfs::emitter_mt<path_t const &> deleted;
+    pfs::emitter_mt<path_t const &> moved;
 };
 
 }} // namespace ionik::filesystem_monitor
-

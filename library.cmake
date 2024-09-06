@@ -132,7 +132,11 @@ if (UNIX)
     else()
         message(FATAL_ERROR "inotify NOT FOUND")
     endif()
-endif()
+endif(UNIX)
+
+if (MSVC)
+    list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/filesystem_monitor/win32.cpp)
+endif(MSVC)
 
 if (NOT _ionik__audio_backend_FOUND)
     message(FATAL_ERROR

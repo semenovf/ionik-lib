@@ -17,14 +17,14 @@ struct functional_callbacks
 {
     using path_t = pfs::filesystem::path;
 
-    std::function<void (bool is_dir, path_t const &)> accessed;
-    std::function<void (bool is_dir, path_t const &)> modified;
-    std::function<void (bool is_dir, path_t const &)> metadata_changed;
-    std::function<void (bool is_dir, path_t const &)> opened;
-    std::function<void (bool is_dir, path_t const &)> closed;
-    std::function<void (bool is_dir, path_t const &)> created;
-    std::function<void (bool is_dir, path_t const &)> deleted;
-    std::function<void (bool is_dir, path_t const &)> moved;
+    std::function<void (path_t const &)> accessed;         // inotify
+    std::function<void (path_t const &)> modified;         // inotify, win32
+    std::function<void (path_t const &)> metadata_changed; // inotify
+    std::function<void (path_t const &)> opened;           // inotify
+    std::function<void (path_t const &)> closed;           // inotify
+    std::function<void (path_t const &)> created;          // inotify, win32
+    std::function<void (path_t const &)> deleted;          // inotify, win32
+    std::function<void (path_t const &)> moved;            // inotify, win32
 };
 
 }} // namespace ionik::filesystem_monitor
