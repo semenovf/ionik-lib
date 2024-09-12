@@ -31,6 +31,9 @@ inline bool pmp_query (ionik::metrics::proc_meminfo_provider & pmp)
 
 int main (int /*argc*/, char * /*argv*/[])
 {
+    signal(SIGINT, sigterm_handler);
+    signal(SIGTERM, sigterm_handler);
+
     std::chrono::seconds query_interval{1};
     ionik::metrics::proc_meminfo_provider pmp;
     ionik::metrics::sysinfo_provider sp;
