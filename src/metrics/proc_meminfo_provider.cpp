@@ -8,13 +8,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "ionik/metrics/proc_provider.hpp"
 #include "ionik/local_file.hpp"
+#include <pfs/i18n.hpp>
 #include <pfs/numeric_cast.hpp>
 #include <cctype>
 
-#include <pfs/log.hpp>
-
 namespace ionik {
 namespace metrics {
+
+using string_view = proc_meminfo_provider::string_view;
 
 inline bool is_ws (char ch)
 {
@@ -123,53 +124,47 @@ proc_reader::proc_reader (pfs::filesystem::path const & path, error * perr)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 proc_meminfo_provider::proc_meminfo_provider () = default;
 
-struct meminfo_parse_context
-{
-    pfs::string_view key;
-    pfs::string_view value;
-    pfs::string_view units;
-};
-
 inline bool advance_key (std::string::const_iterator & pos, std::string::const_iterator last
-    , meminfo_parse_context & ctx)
+    , string_view & key)
 {
     auto p = pos;
 
     if (!advance_word(p, last))
         return false;
 
-    ctx.key = pfs::string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    key = string_view{pos.base(), static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }
 
 inline bool advance_value (std::string::const_iterator & pos, std::string::const_iterator last
-    , meminfo_parse_context & ctx)
+    , string_view & value)
 {
     auto p = pos;
 
     if (!advance_decimal_digits(p, last))
         return false;
 
-    ctx.value = pfs::string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    value = string_view{pos.base(), static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }
 
 inline bool advance_units (std::string::const_iterator & pos, std::string::const_iterator last
-    , meminfo_parse_context & ctx)
+    , string_view & units)
 {
     auto p = pos;
 
     if (!advance_word(p, last))
         return true;
 
-    ctx.units = pfs::string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    units = pfs::string_view{pos.base(), static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }
 
-bool proc_meminfo_provider::parse_key_value (std::string::const_iterator & pos, std::string::const_iterator last)
+bool proc_meminfo_provider::parse_record (std::string::const_iterator & pos
+    , std::string::const_iterator last, record_view & rec, error * perr)
 {
     auto p = pos;
 
@@ -181,51 +176,93 @@ bool proc_meminfo_provider::parse_key_value (std::string::const_iterator & pos, 
     if (p == last)
         return false;
 
-    meminfo_parse_context ctx;
+    rec.key = string_view{};
+    rec.value = string_view{};
+    rec.units = string_view{};
 
-    auto success = advance_key(p, last, ctx)
+    auto success = advance_key(p, last, rec.key)
         && advance_colon(p, last)
         && advance_ws(p, last)
-        && advance_value(p, last, ctx)
+        && advance_value(p, last, rec.value)
         && advance_ws(p, last)
-        && advance_units(p, last, ctx)
+        && advance_units(p, last, rec.units)
         && advance_ws(p, last)
         && advance_nl(p, last);
 
     if (!success) {
-        LOGE("", "PARSE FAILURE");
+        pfs::throw_or(perr, error {
+              pfs::errc::unexpected_data
+            , tr::_("unexpected meminfo record format")
+        });
+
         return false;
     }
 
-    if (ctx.key.empty()) {
-        LOGE("", "KEY IS EMPTY");
+    if (rec.key.empty()) {
+        pfs::throw_or(perr, error {
+              pfs::errc::unexpected_data
+            , tr::_("meminfo record key is empty")
+        });
+
         return false;
     }
 
-    if (ctx.value.empty()) {
-        LOGE("", "VALUE IS EMPTY");
+    if (rec.value.empty()) {
+        pfs::throw_or(perr, error {
+              pfs::errc::unexpected_data
+            , tr::_("meminfo record value is empty")
+        });
+
         return false;
     }
-
-    using pfs::to_string;
-    LOGD("", "{}: {} {}", to_string(ctx.key), to_string(ctx.value), to_string(ctx.units));
 
     pos = p;
     return true;
 }
 
-bool proc_meminfo_provider::parse (error * perr)
+std::map<string_view, proc_meminfo_provider::record_view>
+proc_meminfo_provider::parse_rv (error * perr)
 {
+    if (!read_all(perr))
+        return std::map<string_view, record_view>{};
+
     auto pos = _content.cbegin();
     auto last = _content.cend();
 
-    while (parse_key_value(pos, last))
-        ;
+    record_view rec;
+    std::map<string_view, record_view> result;
 
-    return true;
+    while (parse_record(pos, last, rec))
+        result.emplace(rec.key, rec);
+
+    return result;
 }
 
-bool proc_meminfo_provider::query (error * perr)
+std::map<std::string, proc_meminfo_provider::record>
+proc_meminfo_provider::parse (error * perr)
+{
+    using pfs::to_string;
+
+    if (!read_all(perr))
+        return std::map<std::string, record>{};
+
+    auto pos = _content.cbegin();
+    auto last = _content.cend();
+
+    record_view rec;
+    std::map<std::string, record> result;
+
+    while (parse_record(pos, last, rec))
+        result.emplace(to_string(rec.key), record {
+              to_string(rec.key)
+            , to_string(rec.value)
+            , to_string(rec.units)
+        });
+
+    return result;
+}
+
+bool proc_meminfo_provider::read_all (error * perr)
 {
     error err;
     proc_reader reader {PFS__LITERAL_PATH("/proc/meminfo"), & err};
@@ -236,7 +273,7 @@ bool proc_meminfo_provider::query (error * perr)
     }
 
     _content = reader.content();
-    return parse(perr);
+    return true;
 }
 
 }} // namespace ionik::metrics

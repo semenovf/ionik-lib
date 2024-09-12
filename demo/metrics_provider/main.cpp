@@ -22,13 +22,20 @@ static void sigterm_handler (int /*sig*/)
     TERM_APP = true;
 }
 
-int main (int argc, char * argv[])
+inline bool pmp_query (ionik::metrics::proc_meminfo_provider & pmp)
+{
+    return pmp.query([] (std::string const & key, std::string const & value, std::string const & units) {
+        LOGD("[meminfo]", "{}: {} {}", key, value, units);
+    });
+}
+
+int main (int /*argc*/, char * /*argv*/[])
 {
     std::chrono::seconds query_interval{1};
     ionik::metrics::proc_meminfo_provider pmp;
     ionik::metrics::sysinfo_provider sp;
 
-    while (!TERM_APP && sp.query() && pmp.query()) {
+    while (!TERM_APP && sp.query() && pmp_query(pmp)) {
         std::this_thread::sleep_for(query_interval);
     }
 

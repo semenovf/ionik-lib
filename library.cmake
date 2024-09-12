@@ -64,7 +64,7 @@ if (ANDROID)
 elseif (UNIX)
     list(APPEND _ionik__sources
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_provider.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_meminfo_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/sysinfo_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_v4l2.cpp)
 
