@@ -30,9 +30,9 @@ monitor<rep_type>::monitor (error * perr)
 
     if (_rep.fd < 0) {
         pfs::throw_or(perr, error {
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::_("inotify init failure")
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return;
@@ -42,9 +42,9 @@ monitor<rep_type>::monitor (error * perr)
 
     if (_rep.ed < 0) {
         pfs::throw_or(perr, error {
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::_("epoll create failure")
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return;
@@ -58,9 +58,9 @@ monitor<rep_type>::monitor (error * perr)
 
     if (rc < 0) {
         pfs::throw_or(perr, error {
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::_("add entry to epoll failure")
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return;
@@ -104,9 +104,9 @@ bool monitor<rep_type>::add (fs::path const & path, error * perr)
 
     if (fd < 0) {
         pfs::throw_or(perr, error {
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return false;
@@ -131,7 +131,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
             // Is not a critical error, ignore it
         } else {
             pfs::throw_or(perr, error {
-                  errc::system_error
+                  pfs::get_last_system_error()
                 , tr::_("epoll wait failure")
                 , pfs::system_error_text()
             });
@@ -142,7 +142,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
 
     if (events[0].events & EPOLLERR) {
         pfs::throw_or(perr, error {
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::_("error on inotify descriptor occurred while epolling")
         });
 
@@ -272,7 +272,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 ;
             } else {
                 pfs::throw_or(perr, error {
-                      errc::system_error
+                      pfs::get_last_system_error()
                     , tr::_("read inotify event failure")
                     , pfs::system_error_text()
                 });

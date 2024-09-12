@@ -21,7 +21,6 @@ enum class errc
 {
       success = 0
     , acquire_device_observer
-    , system_error
     , bad_data_format
     , backend_error
     , unsupported
