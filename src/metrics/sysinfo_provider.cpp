@@ -6,7 +6,7 @@
 // Changelog:
 //      2024.09.11 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
-#include "sysinfo_provider.hpp"
+#include "ionik/metrics/sysinfo_provider.hpp"
 #include <pfs/bits/operationsystem.h>
 #include <pfs/log.hpp>
 

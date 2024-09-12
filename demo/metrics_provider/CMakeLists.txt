@@ -8,7 +8,7 @@
 ################################################################################
 project(metrics_provider)
 
-add_executable(${PROJECT_NAME} main.cpp proc_provider.cpp sysinfo_provider.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 
 if (TARGET pfs::ionik)
     target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)

@@ -6,7 +6,7 @@
 // Changelog:
 //      2024.09.12 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
-#include "proc_provider.hpp"
+#include "ionik/metrics/proc_provider.hpp"
 #include "ionik/local_file.hpp"
 #include <pfs/numeric_cast.hpp>
 #include <cctype>
