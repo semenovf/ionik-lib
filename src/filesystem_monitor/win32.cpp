@@ -100,9 +100,9 @@ bool win32::add_dir (fs::path const & path, error* perr)
 
     if (hdir == INVALID_HANDLE_VALUE) {
         pfs::throw_or(perr, error{
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return false;
@@ -112,9 +112,9 @@ bool win32::add_dir (fs::path const & path, error* perr)
 
     if (waiting_handle == nullptr) {
         pfs::throw_or(perr, error {
-              errc::system_error
+              pfs::get_last_system_error()
             , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return false;
@@ -142,10 +142,10 @@ bool win32::add_dir (fs::path const & path, error* perr)
     auto success = read_dir_changes(x);
 
     if (!success) {
-        pfs::throw_or(perr, error{
-              errc::system_error
+        pfs::throw_or(perr, error {
+              pfs::get_last_system_error()
             , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text(errno)
+            , pfs::system_error_text()
         });
 
         return false;
@@ -253,7 +253,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         return 0;
        
     if (rc == WAIT_FAILED) {
-        pfs::throw_or(perr, error { errc::system_error
+        pfs::throw_or(perr, error { 
+              pfs::get_last_system_error()
             , tr::_("WaitForMultipleObjects failure")
             , pfs::system_error_text()
         });
@@ -268,7 +269,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         auto pos = _rep.watch_dirs.find(fd);
 
         if (pos == _rep.watch_dirs.end()) {
-            pfs::throw_or(perr, error { pfs::errc::unexpected_error
+            pfs::throw_or(perr, error {
+                  pfs::errc::unexpected_error
                 , tr::_("watch entity not found")
             });
 
@@ -353,156 +355,14 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         ::ResetEvent(x.overlapped_ptr->hEvent);
 
         if (!backend::win32::read_dir_changes(x)) {
-            pfs::throw_or(perr, error {pfs::errc::unexpected_error
+            pfs::throw_or(perr, error {
+                  pfs::errc::unexpected_error
                 , tr::_("ReadDirectoryChangesW failure")
             });
 
             return -1;
         }
     }
-
-    //if (has_removed) {
-    //    for (auto pos = _rep.waiting_handles.begin(), last = _rep.handles.end(); pos != last; ) {
-    //        if (*pos == INVALID_HANDLE_VALUE)
-    //            pos = _rep.handles.erase(pos);
-    //        else
-    //            ++pos;
-    //    }
-    //}
-
-//    if (events[0].events & EPOLLIN) {
-//        char buffer[sizeof(struct inotify_event) + NAME_MAX + 1];
-//        ssize_t n = 0;
-//
-//        while ((n = ::read(_rep.fd, buffer, sizeof(buffer))) > 0) {
-//            auto x = reinterpret_cast<inotify_event const*>(buffer);
-//
-//            auto pos = _rep.watch_map.find(x->wd);
-//
-//            if (pos == _rep.watch_map.end()) {
-//                pfs::throw_or(perr, error{
-//                        make_error_code(pfs::errc::unexpected_error)
-//                    , tr::f_("entry not found in watch map by descriptor: {}", x->wd)
-//                    });
-//
-//                return -1;
-//            }
-//
-//            bool is_dir = x->mask & IN_ISDIR;
-//
-//            fs::path path = pos->second;
-//
-//            if (x->len > 0) {
-//                // Canonical function requires path existance
-//                //path = fs::canonical(path / fs::utf8_decode(x->name));
-//                path /= fs::utf8_decode(x->name);
-//            }
-//
-//#if PFS__LOG_LEVEL >= 3
-//            std::string entry_type_str = is_dir ? "DIR_" : "FILE";
-//            std::string xname = x->len > 0 ? x->name : "<empty>";
-//#endif
-//
-//            // File was accessed
-//            if (x->mask & IN_ACCESS) {
-//                LOG_TRACE_3("IN_ACCESS: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.accessed)
-//                    cb.accessed(is_dir, path);
-//            }
-//
-//            // File was modified
-//            if (x->mask & IN_MODIFY) {
-//                LOG_TRACE_3("IN_MODIFY: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.modified)
-//                    cb.modified(is_dir, path);
-//            }
-//
-//            // Metadata changed
-//            if (x->mask & IN_ATTRIB) {
-//                LOG_TRACE_3("IN_ATTRIB: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.metadata_changed)
-//                    cb.metadata_changed(is_dir, path);
-//            }
-//
-//            // Opened
-//            if (x->mask & IN_OPEN) {
-//                LOG_TRACE_3("IN_OPEN  : {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.opened)
-//                    cb.opened(is_dir, path);
-//            }
-//
-//            // Closed
-//            if (x->mask & IN_CLOSE) {
-//                LOG_TRACE_3("IN_CLOSE : {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.closed)
-//                    cb.closed(is_dir, path);
-//            }
-//
-//            // Subfile was created
-//            if (x->mask & IN_CREATE) {
-//                LOG_TRACE_3("IN_CREATE: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.created)
-//                    cb.created(is_dir, path);
-//            }
-//
-//            // Subfile was deleted
-//            if (x->mask & IN_DELETE) {
-//                LOG_TRACE_3("IN_DELETE: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.deleted)
-//                    cb.deleted(is_dir, path);
-//            }
-//
-//            // Self was deleted
-//            if (x->mask & IN_DELETE_SELF) {
-//                LOG_TRACE_3("IN_DELETE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.deleted)
-//                    cb.deleted(is_dir, path);
-//            }
-//
-//            // Moves
-//            if (x->mask & IN_MOVE) {
-//                LOG_TRACE_3("IN_MOVE  : {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.moved)
-//                    cb.moved(is_dir, path);
-//            }
-//
-//            // Self was moved
-//            if (x->mask & IN_MOVE_SELF) {
-//                LOG_TRACE_3("IN_MOVE_SELF: {}: path={}; x->name={}", entry_type_str, path, xname);
-//
-//                if (cb.moved)
-//                    cb.moved(is_dir, path);
-//            }
-//
-//            if (x->mask & IN_IGNORED) {
-//                LOG_TRACE_3("IN_IGNORED: {}: path={}; x->name={}", entry_type_str, path, xname);
-//            }
-//        }
-//
-//        if (n < 0) {
-//            if (errno == EAGAIN) {
-//                ;
-//            }
-//            else {
-//                pfs::throw_or(perr, error{
-//                        errc::system_error
-//                    , tr::_("read inotify event failure")
-//                    , pfs::system_error_text()
-//                    });
-//
-//                return -1;
-//            }
-//        }
-//    }
 
     return rc;
 }

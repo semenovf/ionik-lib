@@ -77,7 +77,8 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 
 #   if _MSC_VER
     handle_t h;
-    _sopen_s(& h, fs::utf8_encode(path).c_str(), O_RDONLY, _SH_DENYNO, 0);
+    // _sopen_s(& h, fs::utf8_encode(path).c_str(), O_RDONLY, _SH_DENYNO, 0);
+    _wsopen_s(& h, path.c_str(), O_RDONLY | O_BINARY, _SH_DENYNO, 0);
 #   else
     handle_t h = ::open(fs::utf8_encode(path).c_str(), O_RDONLY);
 #   endif
@@ -100,12 +101,15 @@ handle_t file_provider_t::open_write_only (filepath_t const & path
     if (trunc == truncate_enum::on)
         oflags |= O_TRUNC;
 
-#   if _MSC_VER
+#if _MSC_VER
+    oflags |= O_BINARY;
+
     handle_t h;
-    _sopen_s(& h, fs::utf8_encode(path).c_str(), oflags, _SH_DENYWR, S_IRUSR | S_IWUSR);
-#   else
+    // _sopen_s(& h, fs::utf8_encode(path).c_str(), oflags, _SH_DENYWR, S_IRUSR | S_IWUSR);
+    _wsopen_s(& h, path.c_str(), oflags, _SH_DENYWR, S_IRUSR | S_IWUSR);
+#else
     handle_t h = ::open(fs::utf8_encode(path).c_str(), oflags, S_IRUSR | S_IWUSR);
-#   endif
+#endif
 
     if (h < 0) {
         pfs::throw_or(perr, std::error_code(errno, std::generic_category())

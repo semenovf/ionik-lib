@@ -37,6 +37,7 @@ static fs::path unique_temp_file_path ()
 
 TEST_CASE("local_file") {
     auto test_file_path = unique_temp_file_path();
+    MESSAGE("Test file path: ", pfs::filesystem::utf8_encode(test_file_path));
 
     // === Create file and write test data
     auto test_file = ionik::local_file::open_write_only(test_file_path);
@@ -81,6 +82,8 @@ TEST_CASE("local_file") {
     REQUIRE_EQ(test_file.set_pos(127), true);
     REQUIRE_EQ(test_file.read(ch).first, 1);
     REQUIRE_EQ(ch, '\x7f');
+
+    test_file.close();
 
     fs::remove(test_file_path);
 }

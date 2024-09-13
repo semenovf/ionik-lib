@@ -17,6 +17,27 @@
 
 namespace fs = pfs::filesystem;
 
+inline fs::path data_dir_path ()
+{
+    auto dir_path = fs::current_path() / PFS__LITERAL_PATH("..")
+#if _MSC_VER
+        / PFS__LITERAL_PATH("..")
+#endif
+        / PFS__LITERAL_PATH("tests")
+        / PFS__LITERAL_PATH("data");
+
+    if (fs::exists(dir_path))
+        return dir_path;
+
+    dir_path = fs::current_path() 
+        / PFS__LITERAL_PATH("data");
+
+    MESSAGE("dir_path: ", fs::utf8_encode(dir_path));
+    REQUIRE(fs::exists(dir_path));
+
+    return dir_path;
+}
+
 TEST_CASE("wav_explorer") {
     struct {
         char const * filename;
@@ -101,8 +122,7 @@ TEST_CASE("wav_explorer") {
     };
 
     for (auto const & elem: test_data) {
-        ionik::audio::wav_explorer wav_explorer{ fs::current_path()
-            / PFS__LITERAL_PATH("data")
+        ionik::audio::wav_explorer wav_explorer{ data_dir_path() 
             / PFS__LITERAL_PATH("au")
             / fs::utf8_decode(elem.filename)
         };
@@ -146,8 +166,7 @@ TEST_CASE("wav_explorer") {
 #include <QCoreApplication>
 
 TEST_CASE("QAudioDecoder") {
-    auto au_path = fs::current_path()
-        / PFS__LITERAL_PATH("data")
+    auto au_path = data_dir_path()
         / PFS__LITERAL_PATH("au")
         / PFS__LITERAL_PATH("stereol.wav");
     ionik::audio::wav_explorer wav_explorer { au_path };
@@ -264,8 +283,7 @@ TEST_CASE("QAudioDecoder") {
 #endif // IONIK__QT5_MULTIMEDIA_ENABLED
 
 TEST_CASE("ionik decoder") {
-    auto au_path = fs::current_path()
-        / PFS__LITERAL_PATH("data")
+    auto au_path = data_dir_path()
         / PFS__LITERAL_PATH("au")
         / PFS__LITERAL_PATH("stereol.wav");
     ionik::audio::wav_explorer wav_explorer { au_path };

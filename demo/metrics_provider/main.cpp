@@ -6,8 +6,11 @@
 // Changelog:
 //      2024.09.11 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
-#include "ionik/metrics/proc_provider.hpp"
-#include "ionik/metrics/sysinfo_provider.hpp"
+#ifndef _MSC_VER
+#   include "ionik/metrics/proc_provider.hpp"
+#   include "ionik/metrics/sysinfo_provider.hpp"
+#endif
+
 #include <pfs/i18n.hpp>
 #include <pfs/log.hpp>
 #include <atomic>
@@ -22,12 +25,14 @@ static void sigterm_handler (int /*sig*/)
     TERM_APP = true;
 }
 
+#ifndef _MSC_VER
 inline bool pmp_query (ionik::metrics::proc_meminfo_provider & pmp)
 {
     return pmp.query([] (std::string const & key, std::string const & value, std::string const & units) {
         LOGD("[meminfo]", "{}: {} {}", key, value, units);
     });
 }
+#endif
 
 int main (int /*argc*/, char * /*argv*/[])
 {
@@ -35,12 +40,15 @@ int main (int /*argc*/, char * /*argv*/[])
     signal(SIGTERM, sigterm_handler);
 
     std::chrono::seconds query_interval{1};
+
+#ifndef _MSC_VER
     ionik::metrics::proc_meminfo_provider pmp;
     ionik::metrics::sysinfo_provider sp;
 
     while (!TERM_APP && sp.query() && pmp_query(pmp)) {
         std::this_thread::sleep_for(query_interval);
     }
+#endif
 
     fmt::println("Finishing application");
 
