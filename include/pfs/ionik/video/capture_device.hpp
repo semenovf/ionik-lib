@@ -19,9 +19,11 @@
 namespace ionik {
 namespace video {
 
-enum class subsystem_enum {
+enum class subsystem_enum 
+{
       video4linux2
     , camera2android
+    , windows
 };
 
 struct frame_size
@@ -33,10 +35,10 @@ struct frame_size
 struct frame_rate
 {
     // FPS = denom / num
-    std::uint32_t num;
-    std::uint32_t denom;
+    std::uint32_t num;    // max value for 'windows'
+    std::uint32_t denom;  // max value for 'windows'
 
-#if __ANDROID__
+#if defined(__ANDROID__) || defined(_MSC_VER)
     std::uint32_t min_num;
     std::uint32_t min_denom;
 #endif
@@ -58,9 +60,11 @@ struct capture_device_info
 {
     subsystem_enum subsystem;
 
-    // For video4linux2 subsystem contains the path to the device in the file system.
-    // For camera2android subsystem contains Camera ID.
+    // For 'video4linux2' subsystem contains the path to the device in the file system.
+    // For 'camera2android' subsystem contains Camera ID.
+    // For 'windows' subsystem contains ... .
     std::string id;
+
     std::string readable_name;
 
     // Camera orientation

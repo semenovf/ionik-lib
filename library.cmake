@@ -79,8 +79,8 @@ elseif (MSVC)
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_win.cpp)
 
     list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
-    list(APPEND _ionik__private_libs Setupapi)
-    #list(APPEND _ionik__private_libs Ws2_32 Iphlpapi)
+    list(APPEND _ionik__private_libs Setupapi 
+        Mf Mfplat Mfreadwrite Mfuuid) # Media Foundation library
 else()
     message (FATAL_ERROR "Unsupported platform")
 endif()
