@@ -25,7 +25,7 @@ struct notify_changes_entry
     int notify_filters {0};
 
     HANDLE hdir {nullptr};
-    std::vector<char> buffer; 
+    std::vector<char> buffer;
     std::unique_ptr<OVERLAPPED> overlapped_ptr;
 
     // Empty if monitoring directory content only.
