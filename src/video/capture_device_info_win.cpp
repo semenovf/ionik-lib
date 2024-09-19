@@ -116,7 +116,9 @@ static std::pair<std::string, std::string> video_format (GUID const & subtype)
         , { MFVideoFormat_UYVY   , {"UYVY", "UYVY YUV format"} }
         , { MFVideoFormat_NV11   , {"NV11", "NV11 YUV format"} }
         , { MFVideoFormat_NV12   , {"NV12", "NV12 YUV format"} }
-        , { MFVideoFormat_NV21   , {"NV21", "NV21 YUV format"} }
+#if _MSC_VER >= 1930 // Visual Studio 2022 RTW 17.0
+	, { MFVideoFormat_NV21   , {"NV21", "NV21 YUV format"} }
+#endif
         , { MFVideoFormat_YV12   , {"YV12", "YV12 YUV format"} }
         , { MFVideoFormat_I420   , {"I420", "I420 YUV format"} }
         , { MFVideoFormat_IYUV   , {"IYUV", "IYUV YUV format"} }
@@ -178,9 +180,9 @@ static std::pair<std::string, std::string> video_format (GUID const & subtype)
         , { MFVideoFormat_AV1 , {"AV01", "AV1 video"} }
 #endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN10_FE)
-        , { MFVideoFormat_Theora, {"THEO", "Theora"} }
-#endif
+//#if (NTDDI_VERSION >= NTDDI_WIN10_FE)
+//        , { MFVideoFormat_Theora, {"THEO", "Theora"} }
+//#endif
     };
 
     auto pos = __mapping.find(subtype);
