@@ -37,6 +37,18 @@ void SafeRelease (T ** ppT)
     }
 }
 
+template <typename T>
+std::unique_ptr<T, void (*) (T *)>
+make_release_guard (T * p)
+{
+    std::unique_ptr<T, void (*) (T*)> guard {p, [] (T * p) {
+        if (p != nullptr)
+            p->Release();
+    }};
+
+    return guard;
+}
+
 namespace std
 {
 template <>
@@ -263,26 +275,106 @@ static discrete_frame_size * locale_discrete_frame_size (std::vector<discrete_fr
     return & *pos;
 }
 
-static std::vector<pixel_format> enumerate_pixel_formats (IMFMediaSource * psource, error * perr)
+IMFSourceReader * create_source_reader (IMFMediaSource * psource, error * perr)
 {
-    IMFSourceReader * reader = nullptr;
-    HRESULT hr = MFCreateSourceReaderFromMediaSource(psource, nullptr, & reader);
+    IMFAttributes * pattrs = nullptr;
+
+    HRESULT hr = MFCreateAttributes(& pattrs, 1);
+    auto attrs_guard = make_release_guard(pattrs);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error {
+        pfs::throw_or(perr, error{
+              errc::backend_error
+           , tr::_("MFCreateAttributes() call failure")
+        });
+
+        return nullptr;
+    }
+
+    hr = pattrs->SetUINT32(MF_SOURCE_READER_DISCONNECT_MEDIASOURCE_ON_SHUTDOWN, TRUE);
+
+    if (FAILED(hr)) {
+        pfs::throw_or(perr, error{
+              errc::backend_error
+            , tr::_("IMFAttributes::SetUINT32() call failure")
+        });
+
+        return nullptr;
+    }
+
+    // By default, when the application releases the source reader, the source reader 
+    // shuts down the media source by calling IMFMediaSource::Shutdown on the media 
+    // source.At that point, the application can no longer use the media source.
+    // To change this default behavior, set the MF_SOURCE_READER_DISCONNECT_MEDIASOURCE_ON_SHUTDOWN 
+    // attribute in the pAttributes parameter. If this attribute is TRUE, the application is 
+    // responsible for shutting down the media source.
+
+    IMFSourceReader * reader = nullptr;
+    hr = MFCreateSourceReaderFromMediaSource(psource, pattrs, & reader);
+
+    if (FAILED(hr)) {
+        pfs::throw_or(perr, error{
               errc::backend_error
             , tr::_("MFCreateSourceReaderFromMediaSource() call failure")
         });
 
-        return std::vector<pixel_format>{};
+        return nullptr;
     }
+
+    return reader;
+}
+
+static pfs::optional<pixel_format> current_pixel_format (IMFMediaSource * psource, error * perr)
+{
+    auto reader = make_release_guard(create_source_reader(psource, perr));
+
+    if (!reader)
+        return pfs::nullopt;
+
+    IMFMediaType * current_media_type = nullptr;
+
+    HRESULT hr = reader->GetCurrentMediaType(static_cast<DWORD>(MF_SOURCE_READER_FIRST_VIDEO_STREAM)
+        , & current_media_type);
+
+    if (FAILED(hr)) {
+        pfs::throw_or(perr, error {
+              errc::backend_error
+            , tr::_("IMFSourceReader::GetCurrentMediaType() call failure")
+        });
+
+        return pfs::nullopt;
+    }
+
+    auto current_pxf_opt = make_pixel_format(current_media_type);
+
+    if (!current_pxf_opt) {
+        pfs::throw_or(perr, error {
+              pfs::errc::unexpected_error
+            , tr::_("unsupported current media type for video capture device")
+        });
+
+        return pfs::nullopt;
+    }
+
+    return current_pxf_opt;
+}
+
+static std::vector<pixel_format> enumerate_pixel_formats (IMFMediaSource * psource, error * perr)
+{
+    auto reader = make_release_guard(create_source_reader(psource, perr));
+
+    if (!reader)
+        return std::vector<pixel_format>{};
 
     std::vector<pixel_format> pixel_formats;
 
     for (DWORD i = 0;; i++) {
         IMFMediaType * mediaType = nullptr;
 
-        hr = reader->GetNativeMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, i, & mediaType);
+        HRESULT hr = reader->GetNativeMediaType(static_cast<DWORD>(MF_SOURCE_READER_FIRST_VIDEO_STREAM)
+            , i, & mediaType);
+
+        auto media_type_guard = make_release_guard(mediaType);
 
         if (SUCCEEDED(hr)) {
             auto pxf_opt = make_pixel_format(mediaType);
@@ -305,8 +397,6 @@ static std::vector<pixel_format> enumerate_pixel_formats (IMFMediaSource * psour
             }
         }
 
-        SafeRelease(& mediaType);
-
         if (FAILED(hr)) {
             switch (hr) {
                 // Not an error
@@ -327,7 +417,6 @@ static std::vector<pixel_format> enumerate_pixel_formats (IMFMediaSource * psour
         }
     }
 
-    SafeRelease(& reader);
     return pixel_formats;
 }
 
@@ -336,9 +425,10 @@ static pfs::optional<capture_device_info> create_capture_device (IMFActivate * p
     IMFMediaSource * psource = nullptr;
      
     HRESULT hr = pdev->ActivateObject(IID_PPV_ARGS(& psource));
+    auto source_guard = make_release_guard(psource);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error{
+        pfs::throw_or(perr, error {
               errc::backend_error
             , tr::_("IMFActivate::ActivateObject() call failure")
         });
@@ -353,8 +443,33 @@ static pfs::optional<capture_device_info> create_capture_device (IMFActivate * p
     info.orientation = 0;
     info.pixel_formats = enumerate_pixel_formats(psource, perr);
 
-    if (psource != nullptr)
-        SafeRelease(& psource);
+    bool current_pixel_format_match = false;
+    auto current_pixel_format_opt = current_pixel_format(psource, perr);
+
+    psource->Shutdown();
+
+    if (!current_pixel_format_opt)
+        return pfs::nullopt;
+
+    for (std::size_t i = 0; i < info.pixel_formats.size(); i++) {
+        if (info.pixel_formats[i].description == current_pixel_format_opt->description) {
+            current_pixel_format_match = true;
+            info.current_pixel_format_index = i;
+            info.current_frame_size.width  = current_pixel_format_opt->discrete_frame_sizes[0].width;
+            info.current_frame_size.height = current_pixel_format_opt->discrete_frame_sizes[0].height;
+            break;
+        }
+    }
+
+    if (!current_pixel_format_match) {
+        pfs::throw_or(perr, error {
+              pfs::errc::unexpected_error
+            , tr::f_("none of the pixel formats match current one for video capture device: {}"
+                , info.readable_name)
+        });
+
+        return pfs::nullopt;
+    }
 
     return pfs::make_optional<capture_device_info>(std::move(info));
 }
@@ -420,6 +535,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
 
     // Create an attribute store to specify the enumeration parameters.
     HRESULT hr = MFCreateAttributes(& pattrs, 1);
+    auto attrs_guard = make_release_guard(pattrs);
 
     if (FAILED(hr)) {
         pfs::throw_or(perr, error { 
@@ -430,12 +546,8 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
         return std::vector<capture_device_info>{};
     }
 
-    std::unique_ptr<IMFAttributes, void (*) (IMFAttributes *)> _attributes_ptr { pattrs, [](IMFAttributes * p) {
-        if (p) p->Release();
-    }};
-
     // Source type: video capture devices
-    hr = _attributes_ptr->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE
+    hr = pattrs->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE
         , MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
 
     if (FAILED(hr)) {
@@ -447,7 +559,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
         return std::vector<capture_device_info>{};
     }
 
-    return enumerate_devices(_attributes_ptr.get(), perr);
+    return enumerate_devices(pattrs, perr);
 }
 
 }} // namespace ionik::video
