@@ -7,27 +7,16 @@
 //      2024.09.11 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #include "ionik/metrics/sysinfo_provider.hpp"
-#include <pfs/bits/operationsystem.h>
 #include <pfs/log.hpp>
-
-#if PFS__OS_LINUX
-#   include <sys/sysinfo.h>
-#endif
+#include <sys/sysinfo.h>
 
 namespace ionik {
 namespace metrics {
 
-sysinfo_provider::sysinfo_provider ()
-{
-#if PFS__OS_LINUX
-#else
-    throw pfs::error {ionik::errc::unsupported, tr::f_("only Linux supported `sysinfo`")}
-#endif
-}
+sysinfo_provider::sysinfo_provider () = default;
 
 bool sysinfo_provider::query (error * perr)
 {
-#if PFS__OS_LINUX
     struct sysinfo si;
 
     auto rc = sysinfo(& si);
@@ -47,9 +36,6 @@ bool sysinfo_provider::query (error * perr)
         , static_cast<double>(si.totalram) / (1000 * 1000 * 1000)
         , static_cast<double>(si.freeram) / (1024 * 1024));
     return true;
-#else
-    return false;
-#endif
 }
 
 }} // namespace ionic::metrics
