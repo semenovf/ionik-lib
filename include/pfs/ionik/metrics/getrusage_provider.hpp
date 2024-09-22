@@ -20,12 +20,6 @@ class getrusage_provider
 public:
     using string_view = pfs::string_view;
 
-    struct record_view
-    {
-        string_view key;
-        long value;
-    };
-
 public:
     getrusage_provider ();
 

@@ -7,7 +7,7 @@
 //      2024.09.11 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #include "ionik/metrics/sysinfo_provider.hpp"
-#include <pfs/log.hpp>
+#include "pfs/numeric_cast.hpp"
 #include <sys/sysinfo.h>
 
 namespace ionik {
@@ -15,7 +15,7 @@ namespace metrics {
 
 sysinfo_provider::sysinfo_provider () = default;
 
-bool sysinfo_provider::query (error * perr)
+bool sysinfo_provider::query (bool (* f) (string_view key, unsigned long value) , error * perr)
 {
     struct sysinfo si;
 
@@ -30,11 +30,18 @@ bool sysinfo_provider::query (error * perr)
         return false;
     }
 
-    LOGD("--"
-        , "Total RAM: {:.2f} Gb\n"
-            "Free  RAM: {:.2f} Mb\n"
-        , static_cast<double>(si.totalram) / (1000 * 1000 * 1000)
-        , static_cast<double>(si.freeram) / (1024 * 1024));
+    if (f != nullptr) {
+        (void)(!f("uptime", pfs::numeric_cast<unsigned long>(si.uptime))
+            && !f("totalram", si.totalram)
+            && !f("freeram", si.freeram)
+            && !f("sharedram", si.sharedram)
+            && !f("bufferram", si.bufferram)
+            && !f("totalswap", si.totalswap)
+            && !f("freeswap", si.freeswap)
+            && !f("totalhigh", si.totalhigh)
+            && !f("freehigh", si.freehigh));
+    }
+
     return true;
 }
 

@@ -28,11 +28,25 @@ static void sigterm_handler (int /*sig*/)
 }
 
 #ifndef _MSC_VER
+
+inline bool sysinfo_query (ionik::metrics::sysinfo_provider & sip)
+{
+    return sip.query([] (pfs::string_view key, unsigned long value) {
+        if (key == "totalram") {
+            LOGD("[sysinfo]", "Total RAM: {:.2f} Gb", static_cast<double>(value) / (1000 * 1000 * 1000));
+        } else if (key == "freeram") {
+            LOGD("[sysinfo]", "Free RAM: {:.2f} Mb", static_cast<double>(value) / (1024 * 1024));
+        }
+
+        return false;
+    });
+}
+
 inline bool pmp_query (ionik::metrics::proc_meminfo_provider & pmp)
 {
     int stop_flag = 3;
 
-    return pmp.query([& stop_flag] (pfs::string_view key, pfs::string_view const & value, pfs::string_view const & units) {
+    return pmp.query([& stop_flag] (pfs::string_view key, pfs::string_view value, pfs::string_view units) {
         if (key == "MemTotal" || key == "MemFree" || key == "MemAvailable") {
             LOGD("[meminfo]", "{}: {} {}", key, value, units);
             stop_flag--;
@@ -82,7 +96,7 @@ int main (int /*argc*/, char * /*argv*/[])
     ionik::metrics::sysinfo_provider sp;
     ionik::metrics::getrusage_provider grup;
 
-    while (!TERM_APP && sp.query() && pmp_query(pmp) && pssp_query(pssp) && rusage_query(grup)) {
+    while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp) && rusage_query(grup)) {
         std::this_thread::sleep_for(query_interval);
     }
 #endif

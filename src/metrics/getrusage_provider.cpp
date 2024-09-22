@@ -21,15 +21,19 @@ bool getrusage_provider::query (bool (* f) (string_view key, long value), error 
     int rc = getrusage(RUSAGE_SELF, & r);
 
     if (rc != 0) {
-        pfs::throw_or(perr, error {pfs::get_last_system_error(), pfs::system_error_text()});
+        pfs::throw_or(perr, error {
+              pfs::get_last_system_error()
+            , pfs::system_error_text()
+        });
+
         return false;
     }
 
     if (f != nullptr) {
-        !f("maxrss", r.ru_maxrss)
+        (void)(!f("maxrss", r.ru_maxrss)
             && !f("ixrss", r.ru_ixrss)
             && !f("idrss", r.ru_idrss)
-            && !f("isrss", r.ru_isrss);
+            && !f("isrss", r.ru_isrss));
     }
 
     return true;
