@@ -13,6 +13,10 @@
 #include <pfs/numeric_cast.hpp>
 #include <cctype>
 
+// References:
+// 1. [/proc/meminfo](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/deployment_guide/s2-proc-meminfo)
+// 2. [Interpreting /proc/meminfo and free output for Red Hat Enterprise Linux](https://access.redhat.com/solutions/406773)
+
 namespace ionik {
 namespace metrics {
 
@@ -122,6 +126,39 @@ bool proc_meminfo_provider::read_all (error * perr)
     }
 
     _content = reader.content();
+    return true;
+}
+
+bool proc_meminfo_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    , void * user_data_ptr, error * perr)
+{
+    if (f == nullptr)
+        return true;
+
+    if (!read_all(perr))
+        return false;
+
+    auto pos = _content.cbegin();
+    auto last = _content.cend();
+
+    record_view rec;
+
+    while (parse_record(pos, last, rec)) {
+        bool is_counter_format1 = rec.key == "MemTotal"
+            || rec.key == "MemFree"
+            || rec.key == "Cached"
+            || rec.key == "SwapCached"
+            || rec.key == "SwapTotal"
+            || rec.key == "SwapFree";
+
+        if (is_counter_format1) {
+            auto c = to_int64_counter(rec.value, rec.units);
+
+            if (f(rec.key, c, user_data_ptr))
+                break;
+        }
+    }
+
     return true;
 }
 

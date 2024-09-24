@@ -140,4 +140,35 @@ bool proc_self_status_provider::read_all (error * perr)
     return true;
 }
 
+bool proc_self_status_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    , void * user_data_ptr, error * perr)
+{
+    if (f == nullptr)
+        return true;
+
+    if (!read_all(perr))
+        return false;
+
+    auto pos = _content.cbegin();
+    auto last = _content.cend();
+
+    record_view rec;
+
+    while (parse_record(pos, last, rec)) {
+        bool is_counter_format1 = rec.key == "VmSize"
+            || rec.key == "VmPeak"
+            || rec.key == "VmRSS"
+            || rec.key == "VmSwap";
+
+        if (is_counter_format1) {
+            auto c = to_int64_counter(rec.values[0], rec.values[1]);
+
+            if (f(rec.key, c, user_data_ptr))
+                break;
+        }
+    }
+
+    return true;
+}
+
 }} // namespace ionik::metrics

@@ -7,6 +7,7 @@
 //      2024.09.12 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include "counter.hpp"
 #include <pfs/ionik/error.hpp>
 #include <pfs/filesystem.hpp>
 #include <pfs/string_view.hpp>
@@ -66,7 +67,7 @@ public:
      * If @a f returna @c true the loop breaks.
      */
     template <typename F>
-    bool query (F && f, error * perr = nullptr)
+    bool query_all (F && f, error * perr = nullptr)
     {
         if (!read_all(perr))
             return false;
@@ -83,6 +84,18 @@ public:
 
         return true;
     }
+
+    /**
+     * Supported keys:
+     *      * MemTotal   - total amount of physical RAM, in bytes;
+     *      * MemFree    - the amount of physical RAM left unused by the system, in bytes;
+     *      * Cached     - the amount of physical RAM used as cache memory, in bytes;
+     *      * SwapCached - the amount of swap used as cache memory, in bytes.
+     *      * SwapTotal  - the total amount of swap available, in bytes.
+     *      * SwapFree   - the total amount of swap free, in bytes.
+     */
+    bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+        , void * user_data_ptr, error * perr = nullptr);
 };
 
 class proc_self_status_provider
@@ -119,7 +132,7 @@ public:
      * If @a f returna @c true the loop breaks.
      */
     template <typename F>
-    bool query (F && f, error * perr = nullptr)
+    bool query_all (F && f, error * perr = nullptr)
     {
         if (!read_all(perr))
             return false;
@@ -136,6 +149,16 @@ public:
 
         return true;
     }
+
+    /**
+     * Supported keys:
+     *      * VmSize - the virtual memory usage of the entire process, in bytes (it is the sum of VmLib, VmExe, VmData, and VmStk);
+     *      * VmPeak - the peak virtual memory size, in bytes;
+     *      * VmRSS  - resident set size, in bytes;
+     *      * VmSwap - the swap memory used, in bytes.
+     */
+    bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+        , void * user_data_ptr, error * perr = nullptr);
 };
 
 }} // namespace ionik::metrics

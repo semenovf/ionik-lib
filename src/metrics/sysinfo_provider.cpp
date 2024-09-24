@@ -15,7 +15,8 @@ namespace metrics {
 
 sysinfo_provider::sysinfo_provider () = default;
 
-bool sysinfo_provider::query (bool (* f) (string_view key, unsigned long value) , error * perr)
+bool sysinfo_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    , void * user_data_ptr, error * perr)
 {
     struct sysinfo si;
 
@@ -31,15 +32,15 @@ bool sysinfo_provider::query (bool (* f) (string_view key, unsigned long value) 
     }
 
     if (f != nullptr) {
-        (void)(!f("uptime", pfs::numeric_cast<unsigned long>(si.uptime))
-            && !f("totalram", si.totalram)
-            && !f("freeram", si.freeram)
-            && !f("sharedram", si.sharedram)
-            && !f("bufferram", si.bufferram)
-            && !f("totalswap", si.totalswap)
-            && !f("freeswap", si.freeswap)
-            && !f("totalhigh", si.totalhigh)
-            && !f("freehigh", si.freehigh));
+        (void)(!f("uptime", counter_t{pfs::numeric_cast<std::int64_t>(si.uptime)}, user_data_ptr)
+            && !f("totalram", counter_t{pfs::numeric_cast<std::int64_t>(si.totalram)}, user_data_ptr)
+            && !f("freeram", counter_t{pfs::numeric_cast<std::int64_t>(si.freeram)}, user_data_ptr)
+            && !f("sharedram", counter_t{pfs::numeric_cast<std::int64_t>(si.sharedram)}, user_data_ptr)
+            && !f("bufferram", counter_t{pfs::numeric_cast<std::int64_t>(si.bufferram)}, user_data_ptr)
+            && !f("totalswap", counter_t{pfs::numeric_cast<std::int64_t>(si.totalswap)}, user_data_ptr)
+            && !f("freeswap", counter_t{pfs::numeric_cast<std::int64_t>(si.freeswap)}, user_data_ptr)
+            && !f("totalhigh", counter_t{pfs::numeric_cast<std::int64_t>(si.totalhigh)}, user_data_ptr)
+            && !f("freehigh", counter_t{pfs::numeric_cast<std::int64_t>(si.freehigh)}, user_data_ptr));
     }
 
     return true;

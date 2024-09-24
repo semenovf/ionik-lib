@@ -7,6 +7,8 @@
 //      2024.09.23 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include <pfs/ionik/error.hpp>
+#include <pfs/string_view.hpp>
 #include <pfs/variant.hpp>
 #include <cmath>
 #include <cstdint>
@@ -35,5 +37,7 @@ inline std::int64_t to_integer (counter_t const & c)
 
     return static_cast<std::int64_t>(pfs::get<0>(c));
 }
+
+counter_t to_int64_counter (pfs::string_view value, pfs::string_view units, error * perr = nullptr);
 
 }} // namespace ionik::metrics

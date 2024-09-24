@@ -31,10 +31,10 @@ static void sigterm_handler (int /*sig*/)
     TERM_APP = true;
 }
 
-#if _MSC_VER
 using ionik::metrics::to_double;
 using ionik::metrics::to_integer;
 
+#if _MSC_VER
 inline bool gms_query (ionik::metrics::gms_provider & gmsp)
 {
     return gmsp.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
@@ -74,46 +74,31 @@ inline bool psapi_query (ionik::metrics::psapi_provider & psapip)
 #else
 inline bool sysinfo_query (ionik::metrics::sysinfo_provider & sip)
 {
-    return sip.query([] (pfs::string_view key, unsigned long value) {
+    return sip.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
         if (key == "totalram") {
-            LOGD("[sysinfo]", "Total RAM: {:.2f} Gb", static_cast<double>(value) / (1000 * 1000 * 1000));
+            LOGD("[sysinfo]", "Total RAM: {:.2f} Gb", to_double(value) / (1000 * 1000 * 1000));
         } else if (key == "freeram") {
-            LOGD("[sysinfo]", "Free RAM: {:.2f} Mb", static_cast<double>(value) / (1024 * 1024));
+            LOGD("[sysinfo]", "Free RAM: {:.2f} Mb", to_double(value) / (1000 * 1000));
         }
 
         return false;
-    });
+    }, nullptr);
 }
 
 inline bool pmp_query (ionik::metrics::proc_meminfo_provider & pmp)
 {
-    int stop_flag = 3;
-
-    return pmp.query([& stop_flag] (pfs::string_view key, pfs::string_view value, pfs::string_view units) {
-        if (key == "MemTotal" || key == "MemFree" || key == "MemAvailable") {
-            LOGD("[meminfo]", "{}: {} {}", key, value, units);
-            stop_flag--;
-        }
-
-        return stop_flag <= 0 ? true : false;
-    });
+    return pmp.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
+        LOGD("[meminfo]", "{}: {} Kb", key, to_integer(value) / 1000);
+        return false;
+    }, nullptr);
 }
 
 inline bool pssp_query (ionik::metrics::proc_self_status_provider & pssp)
 {
-    int stop_flag = 4;
-    return pssp.query([& stop_flag] (pfs::string_view key, std::vector<pfs::string_view> const & values) {
-        if (key == "Name" || key == "Pid") {
-            LOGD("[self/status]", "{}: {}", key, values[0]);
-            stop_flag--;
-        } else if (key == "VmSize" || key == "VmRSS") {
-            PFS__TERMINATE(values.size() == 2, "");
-            LOGD("[self/status]", "{}: {} {}", key, values[0], values[1]);
-            stop_flag--;
-        }
-
-        return stop_flag <= 0 ? true : false;
-    });
+    return pssp.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
+        LOGD("[self/status]", "{}: {} Kb", key, to_integer(value) / 1000);
+        return false;
+    }, nullptr);
 }
 
 inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
