@@ -6,7 +6,7 @@
 // Changelog:
 //      2024.09.25 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
-#include "ionik/metrics/process_times_provider.hpp"
+#include "ionik/metrics/times_provider.hpp"
 #include "ionik/metrics/proc_provider.hpp"
 #include "parser.hpp"
 #include <pfs/assert.hpp>

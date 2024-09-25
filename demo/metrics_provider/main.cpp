@@ -12,8 +12,8 @@
 #   include "ionik/metrics/psapi_provider.hpp"
 #else
 #   include "ionik/metrics/proc_provider.hpp"
-#   include "ionik/metrics/process_times_provider.hpp"
 #   include "ionik/metrics/sysinfo_provider.hpp"
+#   include "ionik/metrics/times_provider.hpp"
 #   include "ionik/metrics/getrusage_provider.hpp"
 #endif
 
@@ -116,10 +116,10 @@ inline bool ptp_query (ionik::metrics::process_times_provider & ptp)
 
 inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
 {
-    return grup.query([] (pfs::string_view key, long value) {
-        LOGD("[getrusage]", "{}: {}", key, value);
+    return grup.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
+        LOGD("[getrusage]", "{}: {}", key, to_integer(value));
         return false;
-    });
+    }, nullptr);
 }
 
 #endif

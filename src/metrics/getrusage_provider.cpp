@@ -15,7 +15,8 @@ namespace metrics {
 
 getrusage_provider::getrusage_provider () = default;
 
-bool getrusage_provider::query (bool (* f) (string_view key, long value), error * perr)
+bool getrusage_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+        , void * user_data_ptr, error * perr)
 {
     struct rusage r;
     int rc = getrusage(RUSAGE_SELF, & r);
@@ -30,10 +31,10 @@ bool getrusage_provider::query (bool (* f) (string_view key, long value), error 
     }
 
     if (f != nullptr) {
-        (void)(!f("maxrss", r.ru_maxrss)
-            && !f("ixrss", r.ru_ixrss)
-            && !f("idrss", r.ru_idrss)
-            && !f("isrss", r.ru_isrss));
+        (void)(!f("maxrss", counter_t{static_cast<std::int64_t>(r.ru_maxrss)}, user_data_ptr)
+            && !f("ixrss", counter_t{static_cast<std::int64_t>(r.ru_ixrss)}, user_data_ptr)
+            && !f("idrss", counter_t{static_cast<std::int64_t>(r.ru_idrss)}, user_data_ptr)
+            && !f("isrss", counter_t{static_cast<std::int64_t>(r.ru_isrss)}, user_data_ptr));
     }
 
     return true;
