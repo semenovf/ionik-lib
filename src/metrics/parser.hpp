@@ -18,22 +18,27 @@ inline bool is_ws (char ch)
     return ch == ' ' || ch == '\t';
 }
 
-inline void skip_ws (std::string::const_iterator & pos, std::string::const_iterator last)
+inline bool is_nl (char ch)
+{
+    return ch == '\n';
+}
+
+inline void skip_ws (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     while (pos != last && is_ws(*pos))
         ++pos;
 }
 
-bool advance_ws (std::string::const_iterator & pos, std::string::const_iterator last);
-bool advance_nl (std::string::const_iterator & pos, std::string::const_iterator last);
-bool advance_until_nl (std::string::const_iterator & pos, std::string::const_iterator last);
-bool advance_word (std::string::const_iterator & pos, std::string::const_iterator last);
-bool advance_colon (std::string::const_iterator & pos, std::string::const_iterator last);
-bool advance_decimal_digits (std::string::const_iterator & pos, std::string::const_iterator last);
-bool advance_key (std::string::const_iterator & pos, std::string::const_iterator last, pfs::string_view & key);
-bool advance_decimal_digits_value (std::string::const_iterator & pos, std::string::const_iterator last, pfs::string_view & value);
-bool advance_unparsed_value (std::string::const_iterator & pos, std::string::const_iterator last, pfs::string_view & value);
-bool advance_units (std::string::const_iterator & pos, std::string::const_iterator last, pfs::string_view & units);
+bool advance_ws (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_until_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_word (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_colon (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_decimal_digits (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_key (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & key);
+bool advance_decimal_digits_value (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & value);
+bool advance_unparsed_value (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & value);
+bool advance_units (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & units);
 
 }} // namespace ionik::metrics
 

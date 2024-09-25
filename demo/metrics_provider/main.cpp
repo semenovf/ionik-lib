@@ -12,6 +12,7 @@
 #   include "ionik/metrics/psapi_provider.hpp"
 #else
 #   include "ionik/metrics/proc_provider.hpp"
+#   include "ionik/metrics/process_times_provider.hpp"
 #   include "ionik/metrics/sysinfo_provider.hpp"
 #   include "ionik/metrics/getrusage_provider.hpp"
 #endif
@@ -101,6 +102,18 @@ inline bool pssp_query (ionik::metrics::proc_self_status_provider & pssp)
     }, nullptr);
 }
 
+inline bool ptp_query (ionik::metrics::process_times_provider & ptp)
+{
+    return ptp.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
+        if (key == "cpu_usage") {
+            LOGD("[times]", "{}: {} %", key, to_integer(value));
+        } else {
+            LOGD("[times]", "{}: {}", key, to_integer(value));
+        }
+        return false;
+    }, nullptr);
+}
+
 inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
 {
     return grup.query([] (pfs::string_view key, long value) {
@@ -118,6 +131,15 @@ int main (int /*argc*/, char * /*argv*/[])
 
     std::chrono::seconds query_interval{1};
 
+    std::thread busy_thread {[] {
+        std::int64_t counter = 0;
+
+        while (!TERM_APP) {
+            counter++;
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+    }};
+
 #if _MSC_VER
     try {
         ionik::metrics::gms_provider gmsp;
@@ -134,13 +156,17 @@ int main (int /*argc*/, char * /*argv*/[])
 #else
     ionik::metrics::proc_meminfo_provider pmp;
     ionik::metrics::proc_self_status_provider pssp;
+    ionik::metrics::process_times_provider ptp;
     ionik::metrics::sysinfo_provider sp;
     ionik::metrics::getrusage_provider grup;
 
-    while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp) && rusage_query(grup)) {
+    while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
+            && ptp_query(ptp) && rusage_query(grup)) {
         std::this_thread::sleep_for(query_interval);
     }
 #endif
+
+    busy_thread.join();
 
     fmt::println("Finishing application");
 

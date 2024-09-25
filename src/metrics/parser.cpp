@@ -14,7 +14,7 @@ namespace metrics {
 
 using string_view = pfs::string_view;
 
-bool advance_ws (std::string::const_iterator & pos, std::string::const_iterator last)
+bool advance_ws (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -29,7 +29,7 @@ bool advance_ws (std::string::const_iterator & pos, std::string::const_iterator 
     return true;
 }
 
-bool advance_nl (std::string::const_iterator & pos, std::string::const_iterator last)
+bool advance_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -45,7 +45,7 @@ bool advance_nl (std::string::const_iterator & pos, std::string::const_iterator 
     return true;
 }
 
-bool advance_until_nl (std::string::const_iterator & pos, std::string::const_iterator last)
+bool advance_until_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -56,7 +56,7 @@ bool advance_until_nl (std::string::const_iterator & pos, std::string::const_ite
     return true;
 }
 
-bool advance_word (std::string::const_iterator & pos, std::string::const_iterator last)
+bool advance_word (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -72,7 +72,7 @@ bool advance_word (std::string::const_iterator & pos, std::string::const_iterato
     return true;
 }
 
-bool advance_colon (std::string::const_iterator & pos, std::string::const_iterator last)
+bool advance_colon (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -85,7 +85,7 @@ bool advance_colon (std::string::const_iterator & pos, std::string::const_iterat
     return true;
 }
 
-bool advance_decimal_digits (std::string::const_iterator & pos, std::string::const_iterator last)
+bool advance_decimal_digits (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -101,19 +101,19 @@ bool advance_decimal_digits (std::string::const_iterator & pos, std::string::con
     return true;
 }
 
-bool advance_key (std::string::const_iterator & pos, std::string::const_iterator last, string_view & key)
+bool advance_key (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, string_view & key)
 {
     auto p = pos;
 
     if (!advance_word(p, last))
         return false;
 
-    key = string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    key = string_view{pos, static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }
 
-bool advance_decimal_digits_value (std::string::const_iterator & pos, std::string::const_iterator last
+bool advance_decimal_digits_value (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last
     , string_view & value)
 {
     auto p = pos;
@@ -121,24 +121,24 @@ bool advance_decimal_digits_value (std::string::const_iterator & pos, std::strin
     if (!advance_decimal_digits(p, last))
         return false;
 
-    value = string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    value = string_view{pos, static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }
 
-bool advance_unparsed_value (std::string::const_iterator & pos, std::string::const_iterator last, pfs::string_view & value)
+bool advance_unparsed_value (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & value)
 {
     auto p = pos;
 
     if (!advance_until_nl(p, last))
         return false;
 
-    value = string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    value = string_view{pos, static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }
 
-bool advance_units (std::string::const_iterator & pos, std::string::const_iterator last
+bool advance_units (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last
     , string_view & units)
 {
     auto p = pos;
@@ -146,7 +146,7 @@ bool advance_units (std::string::const_iterator & pos, std::string::const_iterat
     if (!advance_word(p, last))
         return true;
 
-    units = pfs::string_view{pos.base(), static_cast<std::size_t>(p - pos)};
+    units = pfs::string_view{pos, static_cast<std::size_t>(p - pos)};
     pos = p;
     return true;
 }

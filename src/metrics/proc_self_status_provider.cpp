@@ -40,8 +40,8 @@ static std::unordered_set<string_view> const KEYS_WITH_UNITS {
 
 proc_self_status_provider::proc_self_status_provider () = default;
 
-bool proc_self_status_provider::parse_record (std::string::const_iterator & pos
-    , std::string::const_iterator last, record_view & rec, error * perr)
+bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
+    , string_view::const_iterator last, record_view & rec, error * perr)
 {
     auto p = pos;
 
@@ -108,24 +108,6 @@ bool proc_self_status_provider::parse_record (std::string::const_iterator & pos
     return true;
 }
 
-std::map<string_view, proc_self_status_provider::record_view>
-proc_self_status_provider::parse (error * perr)
-{
-    if (!read_all(perr))
-        return std::map<string_view, record_view>{};
-
-    auto pos = _content.cbegin();
-    auto last = _content.cend();
-
-    record_view rec;
-    std::map<string_view, record_view> result;
-
-    while (parse_record(pos, last, rec))
-        result.emplace(rec.key, rec);
-
-    return result;
-}
-
 bool proc_self_status_provider::read_all (error * perr)
 {
     error err;
@@ -136,7 +118,7 @@ bool proc_self_status_provider::read_all (error * perr)
         return false;
     }
 
-    _content = reader.content();
+    _content = reader.move_content();
     return true;
 }
 
@@ -149,8 +131,9 @@ bool proc_self_status_provider::query (bool (* f) (string_view key, counter_t co
     if (!read_all(perr))
         return false;
 
-    auto pos = _content.cbegin();
-    auto last = _content.cend();
+    string_view content_view {_content};
+    auto pos = content_view.cbegin();
+    auto last = content_view.cend();
 
     record_view rec;
 

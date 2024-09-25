@@ -9,6 +9,9 @@
 #include "ionik/metrics/counter.hpp"
 #include <pfs/i18n.hpp>
 #include <pfs/integer.hpp>
+#include <pfs/split.hpp>
+#include <iterator>
+#include <vector>
 
 namespace ionik {
 namespace metrics {
@@ -26,6 +29,10 @@ static std::int64_t units_to_bytes (pfs::string_view units, error * perr)
     // but is not corrected due to legacy concerns - programs rely on /proc/meminfo to specify
     // size with the "kB" string.
     if (units == "kB")
+        return std::int64_t{1024};
+
+    // /proc/cpuinfo units format
+    if (units == "KB")
         return std::int64_t{1024};
 
     pfs::throw_or(perr, error {pfs::errc::unexpected_data, tr::f_("unsupported units: {}", units)});

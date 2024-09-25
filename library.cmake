@@ -69,6 +69,7 @@ elseif (UNIX)
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/parser.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_meminfo_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_self_status_provider.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/process_times_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/sysinfo_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_v4l2.cpp)
 
