@@ -14,7 +14,22 @@ namespace metrics {
 
 using string_view = pfs::string_view;
 
-bool advance_ws (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
+bool advance_ws1n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
+{
+    if (pos == last)
+        return false;
+
+    if (!is_ws(*pos))
+        return false;
+
+    ++pos;
+
+    skip_ws(pos, last);
+
+    return true;
+}
+
+bool advance_ws0n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
 {
     if (pos == last)
         return false;
@@ -54,6 +69,17 @@ bool advance_until_nl (pfs::string_view::const_iterator & pos, pfs::string_view:
         ++pos;
 
     return true;
+}
+
+bool advance_token (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
+{
+    if (pos == last)
+        return false;
+
+    while (pos != last && (::isalnum(*pos) || *pos == '(' || *pos == ')' || *pos == '_'))
+        ++pos;
+
+    return pos != last;
 }
 
 bool advance_word (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)

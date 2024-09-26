@@ -64,7 +64,7 @@ public:
     /**
      * Сonsistently visits records with the function call @a f with a signature
      * bool (string_view const & key, string_view const & value, string_view const & units).
-     * If @a f returna @c true the loop breaks.
+     * If @a f return @c true the loop breaks.
      */
     template <typename F>
     bool query_all (F && f, error * perr = nullptr)
@@ -125,7 +125,7 @@ public:
     /**
      * Сonsistently visits records with the function call @a f with a signature
      * bool (string_view const & key, std::vector<string_view> const & values).
-     * If @a f returna @c true the loop breaks.
+     * If @a f return @c true the loop breaks.
      */
     template <typename F>
     bool query_all (F && f, error * perr = nullptr)

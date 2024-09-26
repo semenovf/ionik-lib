@@ -12,6 +12,7 @@
 #   include "ionik/metrics/psapi_provider.hpp"
 #else
 #   include "ionik/metrics/proc_provider.hpp"
+#   include "ionik/metrics/proc_stat_provider.hpp"
 #   include "ionik/metrics/sysinfo_provider.hpp"
 #   include "ionik/metrics/times_provider.hpp"
 #   include "ionik/metrics/getrusage_provider.hpp"
@@ -102,7 +103,15 @@ inline bool pssp_query (ionik::metrics::proc_self_status_provider & pssp)
     }, nullptr);
 }
 
-inline bool ptp_query (ionik::metrics::process_times_provider & ptp)
+inline bool psp_query (ionik::metrics::proc_stat_provider & psp)
+{
+    return psp.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
+        LOGD("[stat]", "{}: {:.2f} %", key, to_double(value));
+        return false;
+    }, nullptr);
+}
+
+inline bool tp_query (ionik::metrics::times_provider & ptp)
 {
     return ptp.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
         if (key == "cpu_usage") {
@@ -156,12 +165,14 @@ int main (int /*argc*/, char * /*argv*/[])
 #else
     ionik::metrics::proc_meminfo_provider pmp;
     ionik::metrics::proc_self_status_provider pssp;
-    ionik::metrics::process_times_provider ptp;
+    ionik::metrics::proc_stat_provider psp;
+    ionik::metrics::times_provider tp;
     ionik::metrics::sysinfo_provider sp;
     ionik::metrics::getrusage_provider grup;
 
     while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
-            && ptp_query(ptp) && rusage_query(grup)) {
+        && psp_query(psp) && tp_query(tp) && rusage_query(grup)) {
+
         std::this_thread::sleep_for(query_interval);
     }
 #endif

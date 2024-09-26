@@ -29,9 +29,11 @@ inline void skip_ws (pfs::string_view::const_iterator & pos, pfs::string_view::c
         ++pos;
 }
 
-bool advance_ws (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_ws0n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_ws1n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_until_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_token (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_word (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_colon (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_decimal_digits (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);

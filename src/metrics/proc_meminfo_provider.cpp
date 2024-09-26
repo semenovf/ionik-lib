@@ -59,11 +59,11 @@ bool proc_meminfo_provider::parse_record (string_view::const_iterator & pos
 
     auto success = advance_key(p, last, rec.key)
         && advance_colon(p, last)
-        && advance_ws(p, last)
+        && advance_ws0n(p, last)
         && advance_decimal_digits_value(p, last, rec.value)
-        && advance_ws(p, last)
+        && advance_ws0n(p, last)
         && advance_units(p, last, rec.units)
-        && advance_ws(p, last)
+        && advance_ws0n(p, last)
         && advance_nl(p, last);
 
     if (!success) {

@@ -52,9 +52,9 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
     }
 
     auto success = advance_key(p, last, rec.key)
-        && advance_ws(p, last)
+        && advance_ws0n(p, last)
         && advance_colon(p, last)
-        && advance_ws(p, last)
+        && advance_ws0n(p, last)
         && advance_unparsed_value(p, last, rec.value)
         && advance_nl(p, last);
 
@@ -81,7 +81,7 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
     return true;
 }
 
-process_times_provider::process_times_provider (error * perr)
+times_provider::times_provider (error * perr)
 {
     using pfs::to_string;
 
@@ -178,62 +178,61 @@ process_times_provider::process_times_provider (error * perr)
     _recent_usr = ticks.tms_utime;
 }
 
-double process_times_provider::calculate_cpu_usage (error * perr)
+pfs::optional<double> times_provider::calculate_cpu_usage ()
 {
     auto const cpu_count = _cpu_info.size();
     struct tms ticks;
-    double x = -1.0;
+    double result {-1};
 
     PFS__TERMINATE(cpu_count > 0, "");
 
     clock_t now = times(& ticks);
 
-    if (now == clock_t{-1}) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::f_("times() call failure")
-        });
+    if (now == clock_t{-1})
+        return pfs::nullopt;
 
-        return double{-1.0};
-    }
+    auto overflow = now <= _recent_ticks
+        || ticks.tms_stime < _recent_sys
+        || ticks.tms_utime < _recent_usr;
 
-    auto success = now > _recent_ticks
-        && ticks.tms_stime >= _recent_sys
-        && ticks.tms_utime >= _recent_usr;
-
-    if (success) {
-        x = (ticks.tms_stime - _recent_sys) + (ticks.tms_utime - _recent_usr);
-        x /= (now - _recent_ticks);
-        x /= cpu_count;
-        x *= 100;
+    if (overflow) {
+        result = double{-1};
     } else {
         //Overflow detection. Just skip this value.
-        x = -1.0;
+        result = (ticks.tms_stime - _recent_sys) + (ticks.tms_utime - _recent_usr);
+        result /= (now - _recent_ticks);
+        result /= cpu_count;
+        result *= 100;
     }
 
     _recent_ticks = now;
     _recent_sys = ticks.tms_stime;
     _recent_usr = ticks.tms_utime;
 
-    return x;
+    return result;
 }
 
-bool process_times_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+bool times_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
     , void * user_data_ptr, error * perr)
 {
     error err;
-    auto cpu_usage = calculate_cpu_usage(& err);
+    auto opt_cpu_usage = calculate_cpu_usage();
 
-    if (err) {
-        pfs::throw_or(perr, std::move(err));
+    if (!opt_cpu_usage) {
+        pfs::throw_or(perr, error {
+              pfs::get_last_system_error()
+            , tr::_("times() call failure")
+        });
+
         return false;
     }
 
-    if (cpu_usage < 0.0)
+    // Skip
+    if (*opt_cpu_usage < double{0})
         return true;
 
     if (f != nullptr)
-        f("cpu_usage", counter_t{cpu_usage}, user_data_ptr);
+        f("cpu_usage", counter_t{*opt_cpu_usage}, user_data_ptr);
 
     return true;
 }

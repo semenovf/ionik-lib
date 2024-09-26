@@ -58,7 +58,7 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
 
     auto success = advance_key(p, last, rec.key)
         && advance_colon(p, last)
-        && advance_ws(p, last);
+        && advance_ws0n(p, last);
 
     if (success) {
         auto key_with_units = (KEYS_WITH_UNITS.find(rec.key) != KEYS_WITH_UNITS.cend());
@@ -66,9 +66,9 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
         if (key_with_units) {
             rec.values.resize(2);
             success = advance_decimal_digits_value(p, last, rec.values[0])
-                && advance_ws(p, last)
+                && advance_ws0n(p, last)
                 && advance_units(p, last, rec.values[1])
-                && advance_ws(p, last)
+                && advance_ws0n(p, last)
                 && advance_nl(p, last);
         } else {
             rec.values.resize(1);
@@ -80,7 +80,7 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
     if (!success) {
         pfs::throw_or(perr, error {
               pfs::errc::unexpected_data
-            , tr::_("unexpected /proc/self/status record format")
+            , tr::_("unexpected `/proc/self/status` record format")
         });
 
         return false;
@@ -89,7 +89,7 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
     if (rec.key.empty()) {
         pfs::throw_or(perr, error {
               pfs::errc::unexpected_data
-            , tr::_("/proc/self/status record key is empty")
+            , tr::_("`/proc/self/status` record key is empty")
         });
 
         return false;
@@ -98,7 +98,7 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
     if (rec.values.empty()) {
         pfs::throw_or(perr, error {
               pfs::errc::unexpected_data
-            , tr::_("/proc/self/status record value is empty")
+            , tr::_("`/proc/self/status` record value is empty")
         });
 
         return false;

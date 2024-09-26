@@ -9,6 +9,7 @@
 #pragma once
 #include "counter.hpp"
 #include "pfs/ionik/error.hpp"
+#include <pfs/optional.hpp>
 #include <pfs/string_view.hpp>
 #include <time.h>
 #include <cstdint>
@@ -19,7 +20,7 @@ namespace metrics {
 
 // Provides CPU utilization by the current process based on `times(2)` call.
 
-class process_times_provider
+class times_provider
 {
 public:
     using string_view = pfs::string_view;
@@ -39,10 +40,17 @@ private:
     clock_t _recent_usr {-1};
 
 private:
-    double calculate_cpu_usage (error * perr = nullptr);
+    /**
+     * Calculates CPU usage.
+     *
+     * @return * @c nullopt - times() call failure;
+     *         * -1.0       - if overflow, need to skip value;
+     *         * > 0.0      - CPU usage in percents
+     */
+    pfs::optional<double> calculate_cpu_usage ();
 
 public:
-    process_times_provider (error * perr = nullptr);
+    times_provider (error * perr = nullptr);
 
 public:
     /**
