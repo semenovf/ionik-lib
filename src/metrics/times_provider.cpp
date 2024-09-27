@@ -9,10 +9,17 @@
 #include "ionik/metrics/times_provider.hpp"
 #include "proc_reader.hpp"
 #include "parser.hpp"
-#include <pfs/assert.hpp>
+#include <pfs/bits/operationsystem.h>
 #include <pfs/i18n.hpp>
 #include <pfs/split.hpp>
-#include <sys/times.h>
+
+#if PFS__OS_WIN
+#   include <pfs/windows.hpp>
+#elif PFS__OS_LINUX
+#   include <sys/times.h>
+#else
+#   error "Unsupported OS"
+#endif
 
 // References
 // 1. [/proc/cpuinfo](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/deployment_guide/s2-proc-cpuinfo)
@@ -21,6 +28,8 @@ namespace ionik {
 namespace metrics {
 
 using string_view = pfs::string_view;
+
+#if PFS__OS_LINUX
 
 struct record_view
 {
@@ -80,9 +89,24 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
     pos = p;
     return true;
 }
+#endif
 
 times_provider::times_provider (error * perr)
 {
+#if PFS__OS_WIN
+    SYSTEM_INFO sys_info;
+    FILETIME ftime, fsys, fuser;
+
+    GetSystemInfo(& sys_info);
+    _core_count = static_cast<std::uint32_t>(sys_info.dwNumberOfProcessors);
+
+    GetSystemTimeAsFileTime(& ftime);
+    memcpy(& _recent_time, & ftime, sizeof(FILETIME));
+
+    GetProcessTimes(GetCurrentProcess(), & ftime, & ftime, & fsys, & fuser);
+    memcpy(& _recent_sys, & fsys, sizeof(FILETIME));
+    memcpy(& _recent_usr, & fuser, sizeof(FILETIME));
+#elif PFS__OS_LINUX
     using pfs::to_string;
 
     error err;
@@ -176,13 +200,35 @@ times_provider::times_provider (error * perr)
 
     _recent_sys = ticks.tms_stime;
     _recent_usr = ticks.tms_utime;
+#endif
 }
 
 pfs::optional<double> times_provider::calculate_cpu_usage ()
 {
+    double result {-1};
+
+#if PFS__OS_WIN
+    FILETIME ftime, fsys, fuser;
+    ULARGE_INTEGER now, sys, user;
+
+    GetSystemTimeAsFileTime(& ftime);
+    memcpy(& now, & ftime, sizeof(FILETIME));
+
+    GetProcessTimes(GetCurrentProcess(), & ftime, & ftime, & fsys, & fuser);
+    memcpy(& sys, & fsys, sizeof(FILETIME));
+    memcpy(& user, & fuser, sizeof(FILETIME));
+
+    result = (sys.QuadPart - _recent_sys.QuadPart) + (user.QuadPart - _recent_usr.QuadPart);
+    result /= (now.QuadPart - _recent_time.QuadPart);
+    result /= _core_count;
+    _recent_time = now;
+    _recent_usr  = user;
+    _recent_sys  = sys;
+
+    result *= 100;
+#elif PFS__OS_LINUX
     auto const cpu_count = _cpu_info.size();
     struct tms ticks;
-    double result {-1};
 
     PFS__TERMINATE(cpu_count > 0, "");
 
@@ -208,6 +254,7 @@ pfs::optional<double> times_provider::calculate_cpu_usage ()
     _recent_ticks = now;
     _recent_sys = ticks.tms_stime;
     _recent_usr = ticks.tms_utime;
+#endif
 
     return result;
 }

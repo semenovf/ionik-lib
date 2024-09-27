@@ -38,6 +38,16 @@ static void sigterm_handler (int /*sig*/)
 using ionik::metrics::to_double;
 using ionik::metrics::to_integer;
 
+constexpr double to_kibs (std::int64_t value)
+{
+    return static_cast<double>(value) / 1024;
+}
+
+constexpr double to_mibs (std::int64_t value)
+{
+    return static_cast<double>(value) / (double{1024} * 1024);
+}
+
 #if _MSC_VER
 inline bool gms_query (ionik::metrics::gms_provider & gmsp)
 {
@@ -45,7 +55,7 @@ inline bool gms_query (ionik::metrics::gms_provider & gmsp)
         if (key == "MemoryLoad") {
             LOGD("[gms]", "{}: {} %", key, to_integer(value));
         } else if (key == "TotalPhys") {
-            LOGD("[gms]", "{}: {} MB", key, to_integer(value) / (1024 * 1024));
+            LOGD("[gms]", "{}: {} MiB", key, to_mibs(to_integer(value)));
         } else {
             LOGD("[gms]", "{}: {}", key, to_integer(value));
         }
@@ -65,11 +75,11 @@ inline bool psapi_query (ionik::metrics::psapi_provider & psapip)
 {
     return psapip.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void *) -> bool {
         if (key == "PrivateUsage" || key == "WorkingSetSize" || key == "PeakWorkingSetSize") {
-            LOGD("[psapi]", "{}: {:.1f} MB", key, to_double(value) / (1024 * 1024));
+            LOGD("[psapi]", "{}: {:.2f} MiB", key, to_mibs(to_integer(value)));
         } else if (key == "PhysicalTotal" || key == "PhysicalAvailable" || key == "SystemCache") {
-            LOGD("[psapi]", "{}: {} MB", key, to_integer(value) / (1024 * 1024));
+            LOGD("[psapi]", "{}: {:.2f} MiB", key, to_mibs(to_integer(value)));
         } else {
-            LOGD("[psapi]", "{}: {}", key, to_integer(value));
+            LOGD("[psapi]", "{}: {:.2f}", key, to_integer(value));
         }
         return false;
     }, nullptr);
@@ -135,16 +145,6 @@ inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
 
 #endif
 
-constexpr double to_kibs (std::int64_t value)
-{
-    return static_cast<double>(value) / 1024;
-}
-
-constexpr double to_mibs (std::int64_t value)
-{
-    return static_cast<double>(value) / (1024 * 1024);
-}
-
 inline bool default_query (int counter, ionik::metrics::default_counters & dc)
 {
     ionik::error err;
@@ -178,7 +178,7 @@ inline bool default_query (int counter, ionik::metrics::default_counters & dc)
     if (counters.swap_free)
         LOGD("[default]", "{:<22}: {:.2f} MiB", "Swap free", to_mibs(*counters.swap_free));
 
-    if (counters.ram_usage_total)
+    if (counters.swap_usage_total)
         LOGD("[default]", "{:<22}: {:.2f} %", "Swap usage total", *counters.swap_usage_total);
 
     if (counters.mem_usage)

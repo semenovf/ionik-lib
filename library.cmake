@@ -46,6 +46,7 @@ list(APPEND _ionik__sources
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/metrics/counter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/metrics/default_counters.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/metrics/times_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info.cpp)
 
 if (NOT ANDROID)
@@ -73,7 +74,6 @@ elseif (UNIX)
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_self_status_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_stat_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/sysinfo_provider.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/times_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_v4l2.cpp)
 
     list(APPEND _ionik__private_libs udev)

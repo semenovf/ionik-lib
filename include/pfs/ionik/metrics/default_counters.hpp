@@ -35,7 +35,7 @@ public:
         pfs::optional<double> swap_usage_total; // Swap used, in percents
 
         pfs::optional<std::int64_t> mem_usage;      // Current process memory usage, in bytes
-        pfs::optional<std::int64_t> mem_peak_usage; // Peak memory usage by the current process, in bytes
+        pfs::optional<std::int64_t> mem_peak_usage; // Peak memory usage by the current process, in bytes (Linux only)
         pfs::optional<std::int64_t> swap_usage;     // Current process swap usage, in bytes
     };
 

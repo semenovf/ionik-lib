@@ -35,7 +35,10 @@ public:
       *     * TotalVirtual  - total of virtual memory in bytes;
       *     * AvailVirtual  - free of virtual memory in bytes;
       *     * AvailExtendedVirtual - free of extended memory in bytes;
-      */
+      * 
+      *     * TotalSwap     - TotalPageFile-TotalPhys
+      *     * AvailSwap     - AvailPageFile-AvailPhys
+       */
     bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
 };

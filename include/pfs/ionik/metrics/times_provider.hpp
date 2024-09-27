@@ -15,6 +15,10 @@
 #include <cstdint>
 #include <vector>
 
+#if _MSC_VER
+#   include <minwindef.h>
+#endif
+
 namespace ionik {
 namespace metrics {
 
@@ -25,19 +29,29 @@ class times_provider
 public:
     using string_view = pfs::string_view;
 
+#if _MSC_VER
+#else
     struct cpu_core_info
     {
         std::string vendor_id;
         std::string model_name;
         counter_t   cache_size; // in bytes
     };
+#endif
 
 private:
+#if _MSC_VER
+    std::uint32_t _core_count {0};
+    ULARGE_INTEGER _recent_time;
+    ULARGE_INTEGER _recent_sys;
+    ULARGE_INTEGER _recent_usr;
+#else
     std::vector<cpu_core_info> _cpu_info;
 
     clock_t _recent_ticks {-1};
     clock_t _recent_sys {-1};
     clock_t _recent_usr {-1};
+#endif
 
 private:
     /**
