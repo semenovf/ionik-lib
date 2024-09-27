@@ -7,15 +7,13 @@
 //      2024.09.26 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #include "parser.hpp"
-#include "ionik/metrics/proc_provider.hpp"
+#include "proc_reader.hpp"
 #include "ionik/metrics/proc_stat_provider.hpp"
 #include <pfs/i18n.hpp>
 #include <pfs/integer.hpp>
 #include <pfs/numeric_cast.hpp>
 #include <iterator>
 #include <thread>
-
-#include <pfs/log.hpp>
 
 namespace ionik {
 namespace metrics {
@@ -29,7 +27,7 @@ inline int cpu_core_index (string_view key)
 
     auto index = pfs::to_integer<int>(key.cbegin() + 3, key.cend(), 10) + 1;
 
-    if (index <= 0 && index > 4096) {
+    if (index <= 0 || index > 4096) {
         throw error {
               pfs::errc::unexpected_data
             , tr::f_("too big number of CPU cores: {}", index)
@@ -71,11 +69,11 @@ proc_stat_provider::proc_stat_provider (error * perr)
             _cpu_recent_data.resize(index + 1);
             _cpu_recent_data[index] = *opt_cpu_data;
 
-            LOGD("[stat]", "CPU {}: {} {} {} {}", index
-                , _cpu_recent_data[index].usr
-                , _cpu_recent_data[index].usr_low
-                , _cpu_recent_data[index].sys
-                , _cpu_recent_data[index].idl);
+            // LOGD("[stat]", "CPU {}: {} {} {} {}", index
+            //     , _cpu_recent_data[index].usr
+            //     , _cpu_recent_data[index].usr_low
+            //     , _cpu_recent_data[index].sys
+            //     , _cpu_recent_data[index].idl);
         }
     }
 }
@@ -205,8 +203,14 @@ pfs::optional<double> proc_stat_provider::calculate_cpu_usage (record_view const
             + (current.sys - recent.sys);
         result = static_cast<double>(total);
         total += (current.idl - recent.idl);
-        result /= static_cast<double>(total);
-        result *= 100;
+
+        if (total == 0) {
+            // Skip this value.
+            result = double{-1};
+        } else {
+            result /= static_cast<double>(total);
+            result *= 100;
+        }
     }
 
     recent = current;

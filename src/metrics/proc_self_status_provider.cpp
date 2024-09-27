@@ -7,8 +7,8 @@
 //      2024.09.22 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #include "parser.hpp"
-#include "ionik/metrics/proc_provider.hpp"
-#include "ionik/local_file.hpp"
+#include "proc_reader.hpp"
+#include "ionik/metrics/proc_self_status_provider.hpp"
 #include <pfs/i18n.hpp>
 #include <pfs/numeric_cast.hpp>
 #include <cctype>

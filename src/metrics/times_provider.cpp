@@ -7,7 +7,7 @@
 //      2024.09.25 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #include "ionik/metrics/times_provider.hpp"
-#include "ionik/metrics/proc_provider.hpp"
+#include "proc_reader.hpp"
 #include "parser.hpp"
 #include <pfs/assert.hpp>
 #include <pfs/i18n.hpp>

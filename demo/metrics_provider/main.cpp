@@ -11,13 +11,15 @@
 #   include "ionik/metrics/pdh_provider.hpp"
 #   include "ionik/metrics/psapi_provider.hpp"
 #else
-#   include "ionik/metrics/proc_provider.hpp"
+#   include "ionik/metrics/proc_meminfo_provider.hpp"
+#   include "ionik/metrics/proc_self_status_provider.hpp"
 #   include "ionik/metrics/proc_stat_provider.hpp"
 #   include "ionik/metrics/sysinfo_provider.hpp"
 #   include "ionik/metrics/times_provider.hpp"
 #   include "ionik/metrics/getrusage_provider.hpp"
 #endif
 
+#include "ionik/metrics/default_counters.hpp"
 #include <pfs/assert.hpp>
 #include <pfs/i18n.hpp>
 #include <pfs/log.hpp>
@@ -133,7 +135,65 @@ inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
 
 #endif
 
-int main (int /*argc*/, char * /*argv*/[])
+constexpr double to_kibs (std::int64_t value)
+{
+    return static_cast<double>(value) / 1024;
+}
+
+constexpr double to_mibs (std::int64_t value)
+{
+    return static_cast<double>(value) / (1024 * 1024);
+}
+
+inline bool default_query (int counter, ionik::metrics::default_counters & dc)
+{
+    ionik::error err;
+    auto counters = dc.query(& err);
+
+    if (err) {
+        LOGE("", "{}", err.what());
+        return false;
+    }
+
+    LOGD("[default]", "-- Iteration: {:>4} {:-<{}}", counter, "", 60);
+
+    if (counters.cpu_usage_total)
+        LOGD("[default]", "{:<22}: {:.2f} %", "CPU usage total", *counters.cpu_usage_total);
+
+    if (counters.cpu_usage)
+        LOGD("[default]", "{:<22}: {:.2f} %", "Process CPU usage", *counters.cpu_usage);
+
+    if (counters.ram_total)
+        LOGD("[default]", "{:<22}: {:.2f} MiB", "RAM total", to_mibs(*counters.ram_total));
+
+    if (counters.ram_free)
+        LOGD("[default]", "{:<22}: {:.2f} MiB", "RAM free", to_mibs(*counters.ram_free));
+
+    if (counters.ram_usage_total)
+        LOGD("[default]", "{:<22}: {:.2f} %", "RAM usage total", *counters.ram_usage_total);
+
+    if (counters.swap_total)
+        LOGD("[default]", "{:<22}: {:.2f} MiB", "Swap total", to_mibs(*counters.swap_total));
+
+    if (counters.swap_free)
+        LOGD("[default]", "{:<22}: {:.2f} MiB", "Swap free", to_mibs(*counters.swap_free));
+
+    if (counters.ram_usage_total)
+        LOGD("[default]", "{:<22}: {:.2f} %", "Swap usage total", *counters.swap_usage_total);
+
+    if (counters.mem_usage)
+        LOGD("[default]", "{:<22}: {:.2f} KiB", "Process memory usage", to_kibs(*counters.mem_usage));
+
+    if (counters.mem_peak_usage)
+        LOGD("[default]", "{:<22}: {:.2f} KiB", "Peak memory usage", to_kibs(*counters.mem_peak_usage));
+
+    if (counters.swap_usage)
+        LOGD("[default]", "{:<22}: {:.2f} KiB", "Process swap usage", to_kibs(*counters.swap_usage));
+
+    return true;
+}
+
+int main (int argc, char * argv[])
 {
     signal(SIGINT, sigterm_handler);
     signal(SIGTERM, sigterm_handler);
@@ -149,37 +209,46 @@ int main (int /*argc*/, char * /*argv*/[])
         }
     }};
 
+    if (argc > 1 && pfs::string_view{argv[1]} == "--verbose") {
 #if _MSC_VER
-    try {
-        ionik::metrics::gms_provider gmsp;
-        ionik::metrics::pdh_provider pdhp;
-        ionik::metrics::psapi_provider psapip;
+        try {
+            ionik::metrics::gms_provider gmsp;
+            ionik::metrics::pdh_provider pdhp;
+            ionik::metrics::psapi_provider psapip;
 
-        while (!TERM_APP && gms_query(gmsp) && pdh_query(pdhp) && psapi_query(psapip)) {
-            std::this_thread::sleep_for(query_interval);
+            while (!TERM_APP && gms_query(gmsp) && pdh_query(pdhp) && psapi_query(psapip)) {
+                std::this_thread::sleep_for(query_interval);
+            }
+        } catch (pfs::error const & ex) {
+            LOGE("EXCEPTION", "{}", ex.what());
         }
-    } catch (pfs::error const & ex) {
-        LOGE("EXCEPTION", "{}", ex.what());
-    }
 
 #else
-    ionik::metrics::proc_meminfo_provider pmp;
-    ionik::metrics::proc_self_status_provider pssp;
-    ionik::metrics::proc_stat_provider psp;
-    ionik::metrics::times_provider tp;
-    ionik::metrics::sysinfo_provider sp;
-    ionik::metrics::getrusage_provider grup;
+        ionik::metrics::proc_meminfo_provider pmp;
+        ionik::metrics::proc_self_status_provider pssp;
+        ionik::metrics::proc_stat_provider psp;
+        ionik::metrics::times_provider tp;
+        ionik::metrics::sysinfo_provider sp;
+        ionik::metrics::getrusage_provider grup;
 
-    while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
-        && psp_query(psp) && tp_query(tp) && rusage_query(grup)) {
+        while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
+            && psp_query(psp) && tp_query(tp) && rusage_query(grup)) {
 
-        std::this_thread::sleep_for(query_interval);
-    }
+            std::this_thread::sleep_for(query_interval);
+        }
 #endif
+    } else {
+        int counter = 0;
+        ionik::metrics::default_counters dc;
+
+        while (!TERM_APP && default_query(++counter, dc)) {
+            std::this_thread::sleep_for(query_interval);
+        }
+    }
 
     busy_thread.join();
 
-    fmt::println("Finishing application");
+    LOGD("", "Finishing application");
 
     return EXIT_SUCCESS;
 }

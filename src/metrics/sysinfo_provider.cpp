@@ -33,14 +33,14 @@ bool sysinfo_provider::query (bool (* f) (string_view key, counter_t const & val
 
     if (f != nullptr) {
         (void)(!f("uptime", counter_t{pfs::numeric_cast<std::int64_t>(si.uptime)}, user_data_ptr)
-            && !f("totalram", counter_t{pfs::numeric_cast<std::int64_t>(si.totalram)}, user_data_ptr)
-            && !f("freeram", counter_t{pfs::numeric_cast<std::int64_t>(si.freeram)}, user_data_ptr)
-            && !f("sharedram", counter_t{pfs::numeric_cast<std::int64_t>(si.sharedram)}, user_data_ptr)
-            && !f("bufferram", counter_t{pfs::numeric_cast<std::int64_t>(si.bufferram)}, user_data_ptr)
-            && !f("totalswap", counter_t{pfs::numeric_cast<std::int64_t>(si.totalswap)}, user_data_ptr)
-            && !f("freeswap", counter_t{pfs::numeric_cast<std::int64_t>(si.freeswap)}, user_data_ptr)
-            && !f("totalhigh", counter_t{pfs::numeric_cast<std::int64_t>(si.totalhigh)}, user_data_ptr)
-            && !f("freehigh", counter_t{pfs::numeric_cast<std::int64_t>(si.freehigh)}, user_data_ptr));
+            && !f("totalram", counter_t{pfs::numeric_cast<std::int64_t>(si.totalram) * si.mem_unit}, user_data_ptr)
+            && !f("freeram", counter_t{pfs::numeric_cast<std::int64_t>(si.freeram) * si.mem_unit}, user_data_ptr)
+            && !f("sharedram", counter_t{pfs::numeric_cast<std::int64_t>(si.sharedram) * si.mem_unit}, user_data_ptr)
+            && !f("bufferram", counter_t{pfs::numeric_cast<std::int64_t>(si.bufferram) * si.mem_unit}, user_data_ptr)
+            && !f("totalswap", counter_t{pfs::numeric_cast<std::int64_t>(si.totalswap) * si.mem_unit}, user_data_ptr)
+            && !f("freeswap", counter_t{pfs::numeric_cast<std::int64_t>(si.freeswap) * si.mem_unit}, user_data_ptr)
+            && !f("totalhigh", counter_t{pfs::numeric_cast<std::int64_t>(si.totalhigh) * si.mem_unit}, user_data_ptr)
+            && !f("freehigh", counter_t{pfs::numeric_cast<std::int64_t>(si.freehigh) * si.mem_unit}, user_data_ptr));
     }
 
     return true;

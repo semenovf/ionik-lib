@@ -27,14 +27,14 @@ public:
     /**
      * Supported keys:
      *      * uptime    - seconds since boot;
-     *      * totalram  - total usable main memory size;
-     *      * freeram   - integral unshared data size;
-     *      * sharedram - amount of shared memory;
-     *      * bufferram - memory used by buffers;
-     *      * totalswap - total swap space size;
-     *      * freeswap  - swap space still available;
-     *      * totalhigh - total high memory size;
-     *      * freehigh  - available high memory size.
+     *      * totalram  - total usable main memory size, in bytes;
+     *      * freeram   - available memory size, in bytes;
+     *      * sharedram - amount of shared memory, in bytes;
+     *      * bufferram - memory used by buffers, in bytes;
+     *      * totalswap - total swap space size, in bytes;
+     *      * freeswap  - swap space still available, in bytes;
+     *      * totalhigh - total high memory size, in bytes;
+     *      * freehigh  - available high memory size, in bytes.
      */
     bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);

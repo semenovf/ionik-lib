@@ -6,8 +6,9 @@
 // Changelog:
 //      2024.09.12 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
+#include "ionik/metrics/proc_meminfo_provider.hpp"
 #include "parser.hpp"
-#include "ionik/metrics/proc_provider.hpp"
+#include "proc_reader.hpp"
 #include "ionik/local_file.hpp"
 #include <pfs/i18n.hpp>
 #include <pfs/numeric_cast.hpp>
@@ -22,22 +23,6 @@ namespace metrics {
 
 using string_view = proc_meminfo_provider::string_view;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// proc_reader
-////////////////////////////////////////////////////////////////////////////////////////////////////
-proc_reader::proc_reader (pfs::filesystem::path const & path, error * perr)
-{
-    auto proc_file = local_file::open_read_only(path, perr);
-
-    if (!proc_file)
-        return;
-
-    _content = proc_file.read_all(perr);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// proc_meminfo_provider
-////////////////////////////////////////////////////////////////////////////////////////////////////
 proc_meminfo_provider::proc_meminfo_provider () = default;
 
 bool proc_meminfo_provider::parse_record (string_view::const_iterator & pos
