@@ -58,11 +58,11 @@ private:
 
 public:
     impl (error * perr)
-        : _pdh_provider(perr)
+        : _times_provider(perr)
 #if PFS__OS_WIN
+        , _pdh_provider(perr)
 #elif PFS__OS_LINUX
-        : _stat_provider(perr)
-        , _times_provider(perr)
+        , _stat_provider(perr)
 #endif
     {}
 

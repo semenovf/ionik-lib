@@ -11,7 +11,6 @@
 #include "parser.hpp"
 #include <pfs/bits/operationsystem.h>
 #include <pfs/i18n.hpp>
-#include <pfs/split.hpp>
 
 #if PFS__OS_WIN
 #   include <pfs/windows.hpp>
