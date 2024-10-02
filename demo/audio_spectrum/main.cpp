@@ -107,6 +107,7 @@ int main (int argc, char * argv[])
     pfs::emitter<ionik::audio::wav_spectrum const &> spectrumCompleted;
     pfs::emitter<> spectrumFailure;
 
+#if IONIK__QT5_GUI_ENABLED
     spectrumCompleted.connect([auPath, & wavSpectrum] (ionik::audio::wav_spectrum const & spectrum) {
         wavSpectrum.setSpectrum(auPath, spectrum);
     });
@@ -114,6 +115,15 @@ int main (int argc, char * argv[])
     spectrumFailure.connect([& wavSpectrum] () {
         wavSpectrum.setFailure();
     });
+#else
+    spectrumCompleted.connect([auPath] (ionik::audio::wav_spectrum const & spectrum) {
+        LOGD("", "Spectrum completed: {}", auPath);
+    });
+
+    spectrumFailure.connect([] () {
+        LOGE("", "Spectrum failure");
+    });
+#endif
 
     std::thread buildSpectrumThread {
           build_spectrum

@@ -67,7 +67,7 @@ pdh_provider::pdh_provider (error * perr)
             // Can also may use "\\Processor Information(*)\\% Processor Time" 
             // and get individual CPU values with PdhGetFormattedCounterArray()
             
-/*0*/         COUNTER_ITEM(L"\\Processor Information(_Total)\\% Processor Utility", _processor_time, 2)
+/*0*/         COUNTER_ITEM(L"\\Processor Information(_Total)\\% Processor Utility", _processor_time, 1)
 /*1*/       , COUNTER_ITEM(L"\\Processor Information(_Total)\\% Processor Time", _processor_time, -1)
 
             //, COUNTER_ITEM(L"\\Memory\\Available Bytes", _mem_available)
