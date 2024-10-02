@@ -18,8 +18,16 @@
 namespace ionik {
 namespace metrics {
 
-#define COUNTER_ITEM(name, hcounter) \
-    std::pair<std::wstring, PDH_HCOUNTER *> { name, reinterpret_cast<PDH_HCOUNTER *>(& this->hcounter) }
+struct counter_item 
+{
+    std::wstring name;
+    PDH_HCOUNTER * hcounter;
+    int alt_index; // Alternative item index
+    bool processed;    // Set when counter is processed
+};
+
+#define COUNTER_ITEM(name, hcounter, altindex) \
+    counter_item { name, reinterpret_cast<PDH_HCOUNTER *>(& this->hcounter), altindex, false }
 
 static std::wstring make_counter_path (LPWSTR object_name, LPWSTR instance_name, LPWSTR counter_name)
 {
@@ -55,24 +63,49 @@ pdh_provider::pdh_provider (error * perr)
     auto rc = PdhOpenQueryW(NULL, user_data, & _hquery);
 
     if (rc == ERROR_SUCCESS) {
-        std::array<std::pair<std::wstring, PDH_HCOUNTER *>, 1> counters {
+        std::array<counter_item, 2> counters {
             // Can also may use "\\Processor Information(*)\\% Processor Time" 
             // and get individual CPU values with PdhGetFormattedCounterArray()
-              COUNTER_ITEM(L"\\Processor Information(_Total)\\% Processor Time", _processor_time)
+            
+/*0*/         COUNTER_ITEM(L"\\Processor Information(_Total)\\% Processor Utility", _processor_time, 2)
+/*1*/       , COUNTER_ITEM(L"\\Processor Information(_Total)\\% Processor Time", _processor_time, -1)
+
             //, COUNTER_ITEM(L"\\Memory\\Available Bytes", _mem_available)
         };
 
-        for (auto const & item : counters) {
-            auto rc1 = PdhValidatePathW(item.first.c_str());
+        for (auto & item : counters) {
+            if (item.processed)
+                continue;
+
+            item.processed = true;
+
+            PDH_STATUS rc1 = PdhValidatePathW(item.name.c_str());
 
             if (rc1 != ERROR_SUCCESS) {
+                if (rc1 == PDH_CSTATUS_NO_COUNTER) {
+                    if (item.alt_index >= 0)
+                        continue;
+                }
+
                 pfs::throw_or(perr, error {
                       errc::unsupported
-                    , tr::f_("perfomance counter is not valid: {}", pfs::windows::utf8_encode(item.first.c_str()))
+                    , tr::f_("perfomance counter is not valid: {}", pfs::windows::utf8_encode(item.name.c_str()))
                 });
             }
 
-            rc = PdhAddEnglishCounterW(_hquery, item.first.c_str(), user_data, item.second);
+            //
+            // Mark all alternatives as processed
+            //
+            auto alt_index = item.alt_index;
+
+            while (alt_index >= 0) {
+                counters[alt_index].processed = true;
+                PFS__TERMINATE(counters[alt_index].alt_index == -1 || alt_index < counters[alt_index].alt_index
+                    , "inconsistent counters array");
+                alt_index = counters[alt_index].alt_index;
+            }
+
+            rc = PdhAddEnglishCounterW(_hquery, item.name.c_str(), user_data, item.hcounter);
 
             if (rc != ERROR_SUCCESS) {
                 exception_cause = "PdhAddEnglishCounter";
