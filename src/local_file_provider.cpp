@@ -70,9 +70,29 @@ template <>
 handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 {
     if (!fs::exists(path)) {
-        pfs::throw_or(perr, make_error_code(std::errc::no_such_file_or_directory)
+        pfs::throw_or(perr
+            , make_error_code(std::errc::no_such_file_or_directory)
             , fs::utf8_encode(path));
         return INVALID_FILE_HANDLE;
+    }
+
+    if (!fs::is_regular_file(path)) {
+        if (fs::is_symlink(path)) {
+            std::error_code ec;
+            fs::path tmp {path};
+
+            while (!ec && fs::is_symlink(tmp))
+                tmp = fs::read_symlink(tmp, ec);
+
+            if (ec) {
+                pfs::throw_or(perr, ec, tr::_("open read only failure"), fs::utf8_encode(path));
+                return INVALID_FILE_HANDLE;
+            }
+        }  else {
+            pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
+                , tr::_("expected regular file"), fs::utf8_encode(path));
+            return INVALID_FILE_HANDLE;
+        }
     }
 
 #   if _MSC_VER
