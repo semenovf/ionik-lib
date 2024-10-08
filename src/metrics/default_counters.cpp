@@ -173,6 +173,8 @@ default_counters::default_counters (error * perr)
     : _d(new impl(perr))
 {}
 
+default_counters::default_counters (default_counters &&) = default;
+default_counters & default_counters::operator = (default_counters &&) = default;
 default_counters::~default_counters () = default;
 
 default_counters::counter_group

@@ -9,6 +9,7 @@
 #pragma once
 #include "counter.hpp"
 #include "pfs/ionik/error.hpp"
+#include "pfs/ionik/exports.hpp"
 #include <pfs/optional.hpp>
 #include <pfs/string_view.hpp>
 #include <time.h>
@@ -64,14 +65,14 @@ private:
     pfs::optional<double> calculate_cpu_usage ();
 
 public:
-    times_provider (error * perr = nullptr);
+    IONIK__EXPORT times_provider (error * perr = nullptr);
 
 public:
     /**
      * Supported keys:
      *      * cpu_usage - cpu utilization by the current process, in percents (double value);
      */
-    bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    IONIK__EXPORT bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
 };
 

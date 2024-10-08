@@ -46,6 +46,8 @@ list(APPEND _ionik__sources
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/metrics/counter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/metrics/default_counters.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/metrics/random_counters.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/metrics/random_metrics_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/metrics/times_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info.cpp)
 

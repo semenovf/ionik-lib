@@ -8,8 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include <pfs/ionik/error.hpp>
+#include <pfs/ionik/exports.hpp>
 #include <pfs/optional.hpp>
-#include <pfs/string_view.hpp>
 #include <memory>
 
 namespace ionik {
@@ -20,8 +20,6 @@ class default_counters
     class impl;
 
 public:
-    using string_view = pfs::string_view;
-
     struct counter_group
     {
         pfs::optional<double> cpu_usage_total;  // Total CPU usage, in percents
@@ -43,11 +41,16 @@ private:
     std::unique_ptr<impl> _d;
 
 public:
-    default_counters (error * perr = nullptr);
-    ~default_counters ();
+    IONIK__EXPORT default_counters (error * perr = nullptr);
+    IONIK__EXPORT ~default_counters ();
+    IONIK__EXPORT default_counters (default_counters &&);
+    IONIK__EXPORT default_counters & operator = (default_counters &&);
+
+    default_counters (default_counters const &) = delete;
+    default_counters & operator = (default_counters const &) = delete;
 
 public:
-    counter_group query (error * perr = nullptr);
+    IONIK__EXPORT counter_group query (error * perr = nullptr);
 };
 
 }} // namespace ionik::metrics

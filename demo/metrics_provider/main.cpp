@@ -20,6 +20,7 @@
 #endif
 
 #include "ionik/metrics/default_counters.hpp"
+#include "ionik/metrics/random_counters.hpp"
 #include <pfs/assert.hpp>
 #include <pfs/i18n.hpp>
 #include <pfs/log.hpp>
@@ -145,7 +146,8 @@ inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
 
 #endif
 
-inline bool default_query (int counter, ionik::metrics::default_counters & dc)
+template <typename CountersType>
+bool default_query (int counter, CountersType & dc)
 {
     ionik::error err;
     auto counters = dc.query(& err);
@@ -195,6 +197,11 @@ inline bool default_query (int counter, ionik::metrics::default_counters & dc)
 
 int main (int argc, char * argv[])
 {
+    if (argc > 1 && pfs::string_view{argv[1]} == "--help") {
+        fmt::println("{} [--help | --verbose | --random]", argv[0]);
+        return EXIT_SUCCESS;
+    }
+
     signal(SIGINT, sigterm_handler);
     signal(SIGTERM, sigterm_handler);
 
@@ -237,6 +244,13 @@ int main (int argc, char * argv[])
             std::this_thread::sleep_for(query_interval);
         }
 #endif
+    } else if (argc > 1 && pfs::string_view{argv[1]} == "--random") {
+        int counter = 0;
+        ionik::metrics::random_counters rc;
+
+        while (!TERM_APP && default_query(++counter, rc)) {
+            std::this_thread::sleep_for(query_interval);
+        }
     } else {
         int counter = 0;
         ionik::metrics::default_counters dc;

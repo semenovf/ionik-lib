@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "counter.hpp"
+#include <pfs/ionik/exports.hpp>
 #include <pfs/string_view.hpp>
 #include <pfs/ionik/error.hpp>
 #include <pdh.h>
@@ -28,15 +29,15 @@ private:
     //PDH_HCOUNTER _mem_available {INVALID_HANDLE_VALUE};
 
 public:
-    pdh_provider (error * perr = nullptr);
-    ~pdh_provider ();
+    IONIK__EXPORT pdh_provider (error * perr = nullptr);
+    IONIK__EXPORT ~pdh_provider ();
 
 public:
     /**
      * Supported keys:
      *      * ProcessorTime - total cpu utilization;
      */
-    bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    IONIK__EXPORT bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
 };
 

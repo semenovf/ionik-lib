@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "counter.hpp"
+#include <pfs/ionik/exports.hpp>
 #include <pfs/string_view.hpp>
 #include <pfs/ionik/error.hpp>
 
@@ -22,7 +23,7 @@ public:
     using string_view = pfs::string_view;
 
 public:
-    gms_provider ();
+    IONIK__EXPORT gms_provider ();
 
 public:
     /**
@@ -39,7 +40,7 @@ public:
       *     * TotalSwap     - TotalPageFile-TotalPhys
       *     * AvailSwap     - AvailPageFile-AvailPhys
        */
-    bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    IONIK__EXPORT bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
 };
 

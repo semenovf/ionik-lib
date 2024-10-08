@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "counter.hpp"
+#include <pfs/ionik/exports.hpp>
 #include <pfs/string_view.hpp>
 #include <pfs/ionik/error.hpp>
 
@@ -23,7 +24,7 @@ public:
     using string_view = pfs::string_view;
 
 public:
-    psapi_provider ();
+    IONIK__EXPORT psapi_provider ();
 
 public:
     /**
@@ -40,7 +41,7 @@ public:
      *      * ProcessCount       - the current number of processes;
      *      * ThreadCount        - the current number of threads.
      */
-    bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    IONIK__EXPORT bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
 };
 
