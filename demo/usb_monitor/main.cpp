@@ -8,11 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "pfs/ionik/device_observer.hpp"
 #include "pfs/fmt.hpp"
+#include "pfs/log.hpp"
 #include <cstdlib>
 #include <cstring>
-
-#define PFS__LOG_LEVEL 1
-#include "pfs/log.hpp"
 
 static constexpr char const * TAG = "ionik-lib";
 

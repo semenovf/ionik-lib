@@ -17,6 +17,7 @@
 #   include "ionik/metrics/sysinfo_provider.hpp"
 #   include "ionik/metrics/times_provider.hpp"
 #   include "ionik/metrics/getrusage_provider.hpp"
+#   include "ionik/metrics/sys_class_net_provider.hpp"
 #endif
 
 #include "ionik/metrics/default_counters.hpp"
@@ -27,6 +28,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <thread>
+#include <vector>
 #include <signal.h>
 
 static std::atomic_bool TERM_APP {false};
@@ -144,6 +146,23 @@ inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
     }, nullptr);
 }
 
+inline bool net_query (std::vector<ionik::metrics::sys_class_net_provider> & net)
+{
+    bool success = true;
+
+    for (auto & x: net) {
+        auto iface = x.iface_name();
+        x.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void * user_data_ptr) -> bool {
+            auto iface_ptr = static_cast<std::string const *>(user_data_ptr);
+            std::string tag = '[' + *iface_ptr + ']';
+            LOGD(tag, "{}: {}", key, to_integer(value));
+        return false;
+        }, & iface);
+    }
+
+    return success;
+}
+
 #endif
 
 template <typename CountersType>
@@ -237,9 +256,14 @@ int main (int argc, char * argv[])
         ionik::metrics::times_provider tp;
         ionik::metrics::sysinfo_provider sp;
         ionik::metrics::getrusage_provider grup;
+        std::vector<ionik::metrics::sys_class_net_provider> net;
+
+        for (auto const & iface: ionik::metrics::sys_class_net_provider::interfaces()) {
+            net.emplace_back(iface, iface);
+        }
 
         while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
-            && psp_query(psp) && tp_query(tp) && rusage_query(grup)) {
+            && psp_query(psp) && tp_query(tp) && rusage_query(grup) && net_query(net)) {
 
             std::this_thread::sleep_for(query_interval);
         }
