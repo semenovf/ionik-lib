@@ -12,6 +12,7 @@
 #include <pfs/i18n.hpp>
 #include <pfs/integer.hpp>
 #include <algorithm>
+#include <cstring>
 
 #include <pfs/log.hpp>
 
@@ -59,7 +60,7 @@ sys_class_net_provider::sys_class_net_provider (std::string iface, std::string r
         return;
     }
 
-    _net_recent_data.recent_checkpoint = time_point_type::clock::now();
+    _recent_checkpoint = time_point_type::clock::now();
 
     read_all(perr);
 }
@@ -123,21 +124,29 @@ bool sys_class_net_provider::read_all (error * perr)
     if (tx_bytes < 0)
         return false;
 
-    auto ptr = & _net_recent_data;
     auto now = time_point_type::clock::now();
-    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now - ptr->recent_checkpoint).count();
+    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now - _recent_checkpoint).count();
 
-    auto rx_speed = (ptr->rx_speed + static_cast<double>(rx_bytes - ptr->rx_bytes) * millis / 1000) / 2;
-    auto tx_speed = (ptr->tx_speed + static_cast<double>(tx_bytes - ptr->tx_bytes) * millis / 1000) / 2;
+    auto rx_speed = (_recent_data.rx_speed + static_cast<double>(rx_bytes - _recent_data.rx_bytes) * millis / 1000) / 2;
+    auto tx_speed = (_recent_data.tx_speed + static_cast<double>(tx_bytes - _recent_data.tx_bytes) * millis / 1000) / 2;
 
-    ptr->rx_bytes = rx_bytes;
-    ptr->tx_bytes = tx_bytes;
-    ptr->rx_speed_max = std::max(ptr->rx_speed_max, rx_speed);
-    ptr->tx_speed_max = std::max(ptr->tx_speed_max, tx_speed);
-    ptr->rx_speed = rx_speed;
-    ptr->tx_speed = tx_speed;
-    ptr->recent_checkpoint = now;
+    _recent_data.rx_bytes = rx_bytes;
+    _recent_data.tx_bytes = tx_bytes;
+    _recent_data.rx_speed = rx_speed;
+    _recent_data.tx_speed = tx_speed;
+    _recent_data.rx_speed_max = std::max(_recent_data.rx_speed_max, rx_speed);
+    _recent_data.tx_speed_max = std::max(_recent_data.tx_speed_max, tx_speed);
+    _recent_checkpoint = now;
 
+    return true;
+}
+
+bool sys_class_net_provider::query (counter_group & counters, error * perr)
+{
+    if (!read_all(perr))
+        return false;
+
+    std::memcpy(& counters, & _recent_data, sizeof(counters));
     return true;
 }
 
@@ -150,14 +159,12 @@ bool sys_class_net_provider::query (bool (* f) (string_view key, counter_t const
     if (!read_all(perr))
         return false;
 
-    auto ptr = & _net_recent_data;
-
-    (void)(!f("rx_bytes", counter_t{ptr->rx_bytes}, user_data_ptr)
-        && !f("tx_bytes", counter_t{ptr->tx_bytes}, user_data_ptr)
-        && !f("rx_speed", counter_t{ptr->rx_speed}, user_data_ptr)
-        && !f("tx_speed", counter_t{ptr->tx_speed}, user_data_ptr)
-        && !f("rx_speed_max", counter_t{ptr->rx_speed_max}, user_data_ptr)
-        && !f("tx_speed_max", counter_t{ptr->tx_speed_max}, user_data_ptr));
+    (void)(!f("rx_bytes", counter_t{_recent_data.rx_bytes}, user_data_ptr)
+        && !f("tx_bytes", counter_t{_recent_data.tx_bytes}, user_data_ptr)
+        && !f("rx_speed", counter_t{_recent_data.rx_speed}, user_data_ptr)
+        && !f("tx_speed", counter_t{_recent_data.tx_speed}, user_data_ptr)
+        && !f("rx_speed_max", counter_t{_recent_data.rx_speed_max}, user_data_ptr)
+        && !f("tx_speed_max", counter_t{_recent_data.tx_speed_max}, user_data_ptr));
 
     return true;
 }

@@ -66,4 +66,35 @@ random_counters::query (error *)
     return counter_group{};
 }
 
+std::vector<random_counters::net_counter_group>
+random_counters::query_net_counters (error *)
+{
+    std::vector<net_counter_group> result;
+    result.resize(1);
+
+    auto & x = result[0];
+    x.iface = "eth0";
+    x.readable_name = x.iface;
+
+    _rmp.query_net_counters([] (pfs::string_view key, counter_t const & value, void * pcounters) -> bool {
+        if (key == "rx_bytes") {
+            static_cast<net_counter_group *>(pcounters)->rx_bytes = to_integer(value);
+        } else if (key == "tx_bytes") {
+            static_cast<net_counter_group *>(pcounters)->tx_bytes = to_integer(value);
+        } else if (key == "rx_speed") {
+            static_cast<net_counter_group *>(pcounters)->rx_speed = to_double(value);
+        } else if (key == "tx_speed") {
+            static_cast<net_counter_group *>(pcounters)->tx_speed = to_double(value);
+        } else if (key == "rx_speed_max") {
+            static_cast<net_counter_group *>(pcounters)->rx_speed_max = to_double(value);
+        } else if (key == "tx_speed_max") {
+            static_cast<net_counter_group *>(pcounters)->tx_speed_max = to_double(value);
+        }
+
+        return false;
+    }, & x);
+
+    return result;
+}
+
 }} // namespace ionic::metrics

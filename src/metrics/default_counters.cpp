@@ -11,16 +11,17 @@
 #include <pfs/bits/operationsystem.h>
 #include <pfs/optional.hpp>
 
-#if _MSC_VER
+#if PFS__OS_WIN
 #   include "ionik/metrics/gms_provider.hpp"
 #   include "ionik/metrics/pdh_provider.hpp"
 #   include "ionik/metrics/psapi_provider.hpp"
 #   include "ionik/metrics/times_provider.hpp"
 #else
-#   include "ionik/metrics/proc_meminfo_provider.hpp"
-#   include "ionik/metrics/sysinfo_provider.hpp"
+// #   include "ionik/metrics/proc_meminfo_provider.hpp"
 #   include "ionik/metrics/proc_self_status_provider.hpp"
 #   include "ionik/metrics/proc_stat_provider.hpp"
+#   include "ionik/metrics/sys_class_net_provider.hpp"
+#   include "ionik/metrics/sysinfo_provider.hpp"
 #   include "ionik/metrics/times_provider.hpp"
 #endif
 
@@ -54,6 +55,9 @@ private:
 
     // Provides self memory usage
     proc_self_status_provider _self_status_provider;
+
+    // Network statistics provider
+    std::vector<sys_class_net_provider> _net_providers;
 #endif
 
 public:
@@ -67,10 +71,8 @@ public:
     {}
 
 public:
-    counter_group query (error * perr)
+    bool query (counter_group & counters, error * perr)
     {
-        counter_group counters;
-
         auto r1 = _times_provider.query([] (pfs::string_view key, counter_t const & value, void * pcounters) -> bool {
             if (key == "cpu_usage") {
                 static_cast<counter_group *>(pcounters)->cpu_usage = to_double(value);
@@ -161,11 +163,55 @@ public:
                 counters.swap_usage_total = ((static_cast<double>(*counters.swap_total) - *counters.swap_free)
                     / *counters.swap_total) * 100.0;
             }
-
-            return counters;
         }
 
-        return counter_group{};
+        return success;
+    }
+
+    bool query (std::vector<net_counter_group> & counters, error * perr)
+    {
+        if (_net_providers.empty())
+            return true;
+
+        if (counters.size() != _net_providers.size())
+            counters.resize(_net_providers.size());
+
+        std::size_t index = 0;
+        bool success = true;
+
+        for (auto & x: _net_providers) {
+            sys_class_net_provider::counter_group tmp;
+
+            if (!x.query(tmp, perr)) {
+                success = false;
+                break;
+            }
+
+            auto ptr = & counters[index++];
+            ptr->iface = x.iface_name();
+            ptr->readable_name = ptr->iface;
+            ptr->rx_bytes = tmp.rx_bytes;
+            ptr->rx_bytes = tmp.rx_bytes;
+            ptr->rx_speed = tmp.rx_speed;
+            ptr->tx_speed = tmp.tx_speed;
+            ptr->rx_speed_max = tmp.rx_speed_max;
+            ptr->tx_speed_max = tmp.tx_speed_max;
+        }
+
+        return success;
+    }
+
+    void monitor_net_interface (std::string const & iface, error * perr)
+    {
+        error err;
+        sys_class_net_provider provider{iface, iface, & err};
+
+        if (err) {
+            pfs::throw_or(perr, std::move(err));
+            return;
+        }
+
+        _net_providers.push_back(std::move(provider));
     }
 };
 
@@ -177,10 +223,69 @@ default_counters::default_counters (default_counters &&) = default;
 default_counters & default_counters::operator = (default_counters &&) = default;
 default_counters::~default_counters () = default;
 
+void default_counters::monitor_net_interface (std::string const & iface, error * perr)
+{
+    _d->monitor_net_interface(iface, perr);
+}
+
+void default_counters::monitor_all_net_interfaces (error * perr)
+{
+    error err;
+    auto ifaces = net_interfaces(& err);
+
+    if (!err) {
+        for (auto const & iface: ifaces) {
+            monitor_net_interface(iface, & err);
+
+            if (err)
+                break;
+        }
+    }
+
+    if (err)
+        pfs::throw_or(perr, std::move(err));
+}
+
 default_counters::counter_group
 default_counters::query (error * perr)
 {
-    return _d->query(perr);
+    counter_group result;
+
+    if (_d->query(result, perr))
+        return result;
+
+    return counter_group{};
+}
+
+std::vector<default_counters::net_counter_group>
+default_counters::query_net_counters (error * perr)
+{
+    std::vector<default_counters::net_counter_group> result;
+
+    if (_d->query(result, perr))
+        return result;
+
+    return std::vector<default_counters::net_counter_group>{};
+}
+
+bool default_counters::query (counter_group & counters, error * perr)
+{
+    return _d->query(counters, perr);
+}
+
+bool default_counters::query (std::vector<net_counter_group> & counters, error * perr)
+{
+    return _d->query(counters, perr);
+}
+
+std::vector<std::string> default_counters::net_interfaces (error * perr)
+{
+#if PFS__OS_WIN
+    // TODO Implement
+    return std::vector<std::string>{};
+#else
+    return sys_class_net_provider::interfaces();
+#endif
 }
 
 }} // namespace ionic::metrics

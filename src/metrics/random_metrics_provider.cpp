@@ -7,6 +7,7 @@
 //      2024.10.08 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #include "ionik/metrics/random_metrics_provider.hpp"
+#include <algorithm>
 #include <random>
 
 namespace ionik {
@@ -53,10 +54,12 @@ double random_double (std::int64_t from, std::int64_t to, int precision)
 
 random_metrics_provider::random_metrics_provider ()
     : _ml(metric_limits{})
+    , _recent_checkpoint(time_point_type::clock::now())
 {}
 
 random_metrics_provider::random_metrics_provider (metric_limits && ml)
     : _ml(std::move(ml))
+    , _recent_checkpoint(time_point_type::clock::now())
 {}
 
 bool random_metrics_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
@@ -78,6 +81,37 @@ bool random_metrics_provider::query (bool (* f) (string_view key, counter_t cons
             && !f("swap_total", _ml.swap_total, user_data_ptr)
             && !f("swap_free", swap_free, user_data_ptr)
             && !f("mem_usage", mem_usage, user_data_ptr));
+    }
+
+    return true;
+}
+
+bool random_metrics_provider::query_net_counters (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+    , void * user_data_ptr, error * /*perr*/)
+{
+    if (f != nullptr) {
+        auto now = time_point_type::clock::now();
+        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now - _recent_checkpoint).count();
+
+        auto rx_bytes = _rx_bytes + random_int64(_ml.rx_bytes_inc.first, _ml.rx_bytes_inc.second);
+        auto tx_bytes = _tx_bytes + random_int64(_ml.tx_bytes_inc.first, _ml.tx_bytes_inc.second);
+        auto rx_speed = (_rx_speed + static_cast<double>(rx_bytes - _rx_bytes) * millis / 1000) / 2;
+        auto tx_speed = (_tx_speed + static_cast<double>(tx_bytes - _tx_bytes) * millis / 1000) / 2;
+
+        _rx_bytes = rx_bytes;
+        _tx_bytes = tx_bytes;
+        _rx_speed = rx_speed;
+        _tx_speed = tx_speed;
+        _rx_speed_max = std::max(_rx_speed_max, rx_speed);
+        _tx_speed_max = std::max(_tx_speed_max, tx_speed);
+        _recent_checkpoint = now;
+
+        (void)(!f("rx_bytes", _rx_bytes, user_data_ptr)
+            && !f("tx_bytes", _tx_bytes, user_data_ptr)
+            && !f("rx_speed", _rx_speed, user_data_ptr)
+            && !f("tx_speed", _tx_speed, user_data_ptr)
+            && !f("rx_speed_max", _rx_speed_max, user_data_ptr)
+            && !f("tx_speed_max", _tx_speed_max, user_data_ptr));
     }
 
     return true;

@@ -24,8 +24,7 @@ public:
     using string_view = pfs::string_view;
     using time_point_type = std::chrono::time_point<std::chrono::steady_clock>;
 
-private:
-    struct net_data
+    struct counter_group
     {
         std::int64_t rx_bytes {0};     // received bytes totally
         std::int64_t tx_bytes {0};     // transferred bytes totally
@@ -33,19 +32,26 @@ private:
         double tx_speed {0};           // transfer speed, in bytes per second
         double rx_speed_max {0};       // max receive speed, in bytes per second
         double tx_speed_max {0};       // max transfer speed, in bytes per second
-        time_point_type recent_checkpoint; // time point to calculate speed
     };
 
 private:
     std::string _iface;         // network interface name (subdirectory name in /sys/class/net)
     std::string _readable_name;
-    net_data _net_recent_data;
+    counter_group _recent_data;
+    time_point_type _recent_checkpoint; // time point to calculate speed
 
 private:
     bool read_all (error * perr);
 
 public:
     sys_class_net_provider (std::string iface, std::string readable_name, error * perr = nullptr);
+
+    ~sys_class_net_provider () = default;
+    sys_class_net_provider (sys_class_net_provider &&) = default;
+    sys_class_net_provider & operator = (sys_class_net_provider &&) = default;
+
+    sys_class_net_provider (sys_class_net_provider const &) = delete;
+    sys_class_net_provider & operator = (sys_class_net_provider const &) = delete;
 
 public:
     std::string const & iface_name () const noexcept
@@ -71,6 +77,8 @@ public:
      */
     bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
+
+    bool query (counter_group & counters, error * perr = nullptr);
 
 public: // static
     static std::vector<std::string> interfaces (error * perr = nullptr);

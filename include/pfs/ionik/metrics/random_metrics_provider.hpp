@@ -11,6 +11,7 @@
 #include <pfs/ionik/error.hpp>
 #include <pfs/ionik/exports.hpp>
 #include <pfs/string_view.hpp>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -20,7 +21,11 @@ namespace metrics {
 
 class random_metrics_provider
 {
+    using time_point_type = std::chrono::time_point<std::chrono::steady_clock>;
+
 public:
+    using string_view = pfs::string_view;
+
     struct metric_limits
     {
         int precision {2};
@@ -31,13 +36,23 @@ public:
         std::int64_t swap_total {2L * 1024 * 1024 * 1024};  // absolute value (2 GiB)
         std::pair<int, int> swap_free_range {98, 100};      // percents (min, max)
         std::pair<int, int> mem_usage {3, 5};               // percents (min, max)
+
+        std::pair<int, int> rx_bytes_inc {150, 2000};
+        std::pair<int, int> tx_bytes_inc {150, 2000};
     };
 
 private:
     metric_limits _ml;
 
-public:
-    using string_view = pfs::string_view;
+    // Network specific variables
+    std::int64_t _rx_bytes {0}; // Received bytes totally
+    std::int64_t _tx_bytes {0}; // Transferred bytes totally
+    double _rx_speed {0};
+    double _tx_speed {0};
+    double _rx_speed_max {0};
+    double _tx_speed_max {0};
+
+    time_point_type _recent_checkpoint; // time point to calculate speed
 
 public:
     IONIK__EXPORT random_metrics_provider ();
@@ -55,6 +70,18 @@ public:
      *      * mem_usage        - current process memory usage, in bytes (std::int64_t);
      */
     IONIK__EXPORT bool query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+        , void * user_data_ptr, error * perr = nullptr);
+
+    /**
+     * Supported keys:
+     *      * rx_bytes - received bytes totally (std::uint64_t);
+     *      * tx_bytes - transferred bytes totally (std::uint64_t);
+     *      * rx_speed - receive speed, in bytes per second (double);
+     *      * tx_speed - transfer speed, in bytes per second (double).
+     *      * rx_speed_max - max receive speed, in bytes per second (double);
+     *      * tx_speed_max - max transfer speed, in bytes per second (double).
+     */
+    IONIK__EXPORT bool query_net_counters (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
         , void * user_data_ptr, error * perr = nullptr);
 };
 

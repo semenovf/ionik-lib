@@ -156,7 +156,7 @@ inline bool net_query (std::vector<ionik::metrics::sys_class_net_provider> & net
             auto iface_ptr = static_cast<std::string const *>(user_data_ptr);
             std::string tag = '[' + *iface_ptr + ']';
             LOGD(tag, "{}: {}", key, to_integer(value));
-        return false;
+            return false;
         }, & iface);
     }
 
@@ -169,7 +169,15 @@ template <typename CountersType>
 bool default_query (int counter, CountersType & dc)
 {
     ionik::error err;
+
     auto counters = dc.query(& err);
+
+    if (err) {
+        LOGE("", "{}", err.what());
+        return false;
+    }
+
+    auto net_counters = dc.query_net_counters(& err);
 
     if (err) {
         LOGE("", "{}", err.what());
@@ -211,13 +219,35 @@ bool default_query (int counter, CountersType & dc)
     if (counters.swap_usage)
         LOGD("[default]", "{:<22}: {:.2f} KiB", "Process swap usage", to_kibs(*counters.swap_usage));
 
+    for (auto const & x: net_counters) {
+        std::string tag = '[' + x.iface + ']';
+
+        LOGD(tag, "{:<22}: {:.2f} KiB", "Received", to_kibs(x.rx_bytes));
+        LOGD(tag, "{:<22}: {:.2f} KiB", "Transferred", to_kibs(x.tx_bytes));
+        LOGD(tag, "{:<22}: {:.2f} bps", "Receive speed", x.rx_speed);
+        LOGD(tag, "{:<22}: {:.2f} bps", "Transfer speed", x.tx_speed);
+        LOGD(tag, "{:<22}: {:.2f} bps", "Max receive speed", x.rx_speed_max);
+        LOGD(tag, "{:<22}: {:.2f} bps", "Max transfer speed", x.tx_speed_max);
+    }
+
     return true;
 }
 
 int main (int argc, char * argv[])
 {
     if (argc > 1 && pfs::string_view{argv[1]} == "--help") {
-        fmt::println("{} [--help | --verbose | --random]", argv[0]);
+        fmt::println("{} [--help | --verbose | --random | --net-interfaces]", argv[0]);
+        return EXIT_SUCCESS;
+    }
+
+    if (argc > 1 && pfs::string_view{argv[1]} == "--net-interfaces") {
+        auto ifaces = ionik::metrics::default_counters::net_interfaces();
+
+        fmt::println("Network interfaces available:");
+
+        for (auto const & iface: ifaces)
+            fmt::println("  {}", iface);
+
         return EXIT_SUCCESS;
     }
 
@@ -278,6 +308,7 @@ int main (int argc, char * argv[])
     } else {
         int counter = 0;
         ionik::metrics::default_counters dc;
+        dc.monitor_all_net_interfaces();
 
         while (!TERM_APP && default_query(++counter, dc)) {
             std::this_thread::sleep_for(query_interval);

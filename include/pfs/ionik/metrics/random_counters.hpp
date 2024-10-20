@@ -19,6 +19,7 @@ class random_counters
 {
 public:
     using counter_group = default_counters::counter_group;
+    using net_counter_group = default_counters::net_counter_group;
     using metric_limits = random_metrics_provider::metric_limits;
 
 private:
@@ -35,7 +36,11 @@ public:
     random_counters & operator = (random_counters const &) = delete;
 
 public:
-    IONIK__EXPORT counter_group query (error *);
+    IONIK__EXPORT counter_group query (error * = nullptr);
+    IONIK__EXPORT std::vector<net_counter_group> query_net_counters (error * = nullptr);
+
+    IONIK__EXPORT bool query (counter_group & counters, error * perr = nullptr);
+    IONIK__EXPORT bool query (std::vector<net_counter_group> & counters, error * perr = nullptr);
 };
 
 }} // namespace ionik::metrics

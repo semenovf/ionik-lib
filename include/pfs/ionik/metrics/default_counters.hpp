@@ -11,6 +11,8 @@
 #include <pfs/ionik/exports.hpp>
 #include <pfs/optional.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace ionik {
 namespace metrics {
@@ -37,6 +39,18 @@ public:
         pfs::optional<std::int64_t> swap_usage;     // Current process swap usage, in bytes
     };
 
+    struct net_counter_group
+    {
+        std::string iface;         // network interface name (subdirectory name in /sys/class/net)
+        std::string readable_name; // network interface readable name
+        std::int64_t rx_bytes;     // Received bytes totally
+        std::int64_t tx_bytes;     // Transferred bytes totally
+        double rx_speed;           // Receive speed, in bytes per second
+        double tx_speed;           // Transfer speed, in bytes per second
+        double rx_speed_max;       // Max receive speed, in bytes per second
+        double tx_speed_max;       // Max transfer speed, in bytes per second
+    };
+
 private:
     std::unique_ptr<impl> _d;
 
@@ -50,7 +64,24 @@ public:
     default_counters & operator = (default_counters const &) = delete;
 
 public:
+    /**
+     * Add specified network interface @a iface to monitoring statistics. List of available
+     * interfaces can be obtained by default_counters::net_interfaces() method call.
+     *
+     * @see default_counters::net_interfaces.
+     */
+    IONIK__EXPORT void monitor_net_interface (std::string const & iface, error * perr = nullptr);
+
+    IONIK__EXPORT void monitor_all_net_interfaces (error * perr = nullptr);
+
     IONIK__EXPORT counter_group query (error * perr = nullptr);
+    IONIK__EXPORT std::vector<net_counter_group> query_net_counters (error * = nullptr);
+
+    IONIK__EXPORT bool query (counter_group & counters, error * perr = nullptr);
+    IONIK__EXPORT bool query (std::vector<net_counter_group> & counters, error * perr = nullptr);
+
+public: // static
+    IONIK__EXPORT static std::vector<std::string> net_interfaces (error * perr = nullptr);
 };
 
 }} // namespace ionik::metrics
