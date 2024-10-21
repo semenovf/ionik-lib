@@ -31,9 +31,9 @@ public:
         int precision {2};
         std::pair<int, int> cpu_usage_total_range {15, 20}; // percents (min, max)
         std::pair<int, int> cpu_usage_range {5, 10};        // percents (min, max)
-        std::int64_t ram_total {16L * 1024 * 1024 * 1024};  // absolute value (16 GiB)
+        std::int64_t ram_total {std::int64_t{16} * 1024 * 1024 * 1024};  // absolute value (16 GiB)
         std::pair<int, int> ram_free_range {90, 95};        // percents (min, max)
-        std::int64_t swap_total {2L * 1024 * 1024 * 1024};  // absolute value (2 GiB)
+        std::int64_t swap_total {std::int64_t{2} * 1024 * 1024 * 1024};  // absolute value (2 GiB)
         std::pair<int, int> swap_free_range {98, 100};      // percents (min, max)
         std::pair<int, int> mem_usage {3, 5};               // percents (min, max)
 

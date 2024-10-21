@@ -13,6 +13,7 @@
 
 #if PFS__OS_WIN
 #   include "ionik/metrics/gms_provider.hpp"
+#   include "ionik/metrics/netioapi_provider.hpp"
 #   include "ionik/metrics/pdh_provider.hpp"
 #   include "ionik/metrics/psapi_provider.hpp"
 #   include "ionik/metrics/times_provider.hpp"
@@ -45,6 +46,9 @@ private:
 
     // Provides memory usage
     psapi_provider _psapi_provider;
+
+    // Network statistics provider
+    std::vector<netioapi_provider> _net_providers;
 
 #elif PFS__OS_LINUX
     // Provides total CPU utilization
@@ -180,8 +184,11 @@ public:
         bool success = true;
 
         for (auto & x: _net_providers) {
+#if PFS__OS_WIN
+            netioapi_provider::counter_group tmp;
+#elif PFS__OS_LINUX
             sys_class_net_provider::counter_group tmp;
-
+#endif
             if (!x.query(tmp, perr)) {
                 success = false;
                 break;
@@ -204,7 +211,12 @@ public:
     void monitor_net_interface (std::string const & iface, error * perr)
     {
         error err;
+
+#if PFS__OS_WIN
+        netioapi_provider provider {iface, & err};
+#elif PFS__OS_LINUX
         sys_class_net_provider provider{iface, iface, & err};
+#endif
 
         if (err) {
             pfs::throw_or(perr, std::move(err));
@@ -219,8 +231,8 @@ default_counters::default_counters (error * perr)
     : _d(new impl(perr))
 {}
 
-default_counters::default_counters (default_counters &&) = default;
-default_counters & default_counters::operator = (default_counters &&) = default;
+default_counters::default_counters (default_counters &&) noexcept = default;
+default_counters & default_counters::operator = (default_counters &&) noexcept = default;
 default_counters::~default_counters () = default;
 
 void default_counters::monitor_net_interface (std::string const & iface, error * perr)
@@ -281,8 +293,7 @@ bool default_counters::query (std::vector<net_counter_group> & counters, error *
 std::vector<std::string> default_counters::net_interfaces (error * perr)
 {
 #if PFS__OS_WIN
-    // TODO Implement
-    return std::vector<std::string>{};
+    return netioapi_provider::interfaces();
 #else
     return sys_class_net_provider::interfaces();
 #endif

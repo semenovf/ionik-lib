@@ -89,13 +89,14 @@ elseif (MSVC)
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_win32.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/pdh_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/gms_provider.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/netioapi_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/psapi_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_win.cpp)
 
     list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
     list(APPEND _ionik__private_libs Setupapi 
         Mf Mfplat Mfreadwrite Mfuuid # Media Foundation library
-        Pdh) 
+        Pdh iphlpapi) 
 else()
     message (FATAL_ERROR "Unsupported platform")
 endif()

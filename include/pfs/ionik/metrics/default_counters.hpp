@@ -41,7 +41,7 @@ public:
 
     struct net_counter_group
     {
-        std::string iface;         // network interface name (subdirectory name in /sys/class/net)
+        std::string iface;         // network interface name (subdirectory name in /sys/class/net for Linux and LUID (locally unique identifier) for Windows)
         std::string readable_name; // network interface readable name
         std::int64_t rx_bytes;     // Received bytes totally
         std::int64_t tx_bytes;     // Transferred bytes totally
@@ -57,8 +57,8 @@ private:
 public:
     IONIK__EXPORT default_counters (error * perr = nullptr);
     IONIK__EXPORT ~default_counters ();
-    IONIK__EXPORT default_counters (default_counters &&);
-    IONIK__EXPORT default_counters & operator = (default_counters &&);
+    IONIK__EXPORT default_counters (default_counters &&) noexcept;
+    IONIK__EXPORT default_counters & operator = (default_counters &&) noexcept;
 
     default_counters (default_counters const &) = delete;
     default_counters & operator = (default_counters const &) = delete;

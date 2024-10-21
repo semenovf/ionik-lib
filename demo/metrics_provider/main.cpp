@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #if _MSC_VER
 #   include "ionik/metrics/gms_provider.hpp"
+#   include "ionik/metrics/netioapi_provider.hpp"
 #   include "ionik/metrics/pdh_provider.hpp"
 #   include "ionik/metrics/psapi_provider.hpp"
 #else
@@ -146,7 +147,10 @@ inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
     }, nullptr);
 }
 
-inline bool net_query (std::vector<ionik::metrics::sys_class_net_provider> & net)
+#endif
+
+template <typename NetProvider>
+inline bool net_query (std::vector<NetProvider> & net)
 {
     bool success = true;
 
@@ -157,13 +161,11 @@ inline bool net_query (std::vector<ionik::metrics::sys_class_net_provider> & net
             std::string tag = '[' + *iface_ptr + ']';
             LOGD(tag, "{}: {}", key, to_integer(value));
             return false;
-        }, & iface);
+            }, & iface);
     }
 
     return success;
 }
-
-#endif
 
 template <typename CountersType>
 bool default_query (int counter, CountersType & dc)
@@ -271,8 +273,15 @@ int main (int argc, char * argv[])
             ionik::metrics::gms_provider gmsp;
             ionik::metrics::pdh_provider pdhp;
             ionik::metrics::psapi_provider psapip;
+            std::vector<ionik::metrics::netioapi_provider> net;
 
-            while (!TERM_APP && gms_query(gmsp) && pdh_query(pdhp) && psapi_query(psapip)) {
+            for (auto const & iface: ionik::metrics::netioapi_provider::interfaces()) {
+                net.emplace_back(iface);
+            }
+
+            while (!TERM_APP && gms_query(gmsp) && pdh_query(pdhp) && psapi_query(psapip) 
+                && net_query<ionik::metrics::netioapi_provider>(net)) {
+
                 std::this_thread::sleep_for(query_interval);
             }
         } catch (pfs::error const & ex) {
@@ -293,7 +302,8 @@ int main (int argc, char * argv[])
         }
 
         while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
-            && psp_query(psp) && tp_query(tp) && rusage_query(grup) && net_query(net)) {
+            && psp_query(psp) && tp_query(tp) && rusage_query(grup) 
+            && net_query<ionik::metrics::sys_class_net_provider>(net)) {
 
             std::this_thread::sleep_for(query_interval);
         }
