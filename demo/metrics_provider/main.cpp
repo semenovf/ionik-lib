@@ -159,9 +159,9 @@ inline bool net_query (std::vector<NetProvider> & net)
         x.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void * user_data_ptr) -> bool {
             auto iface_ptr = static_cast<std::string const *>(user_data_ptr);
             std::string tag = '[' + *iface_ptr + ']';
-            LOGD(tag, "{}: {}", key, to_integer(value));
+            LOGD(tag, "{}: {:.2f}", key, to_double(value));
             return false;
-            }, & iface);
+        }, & iface);
     }
 
     return success;

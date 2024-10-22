@@ -7,38 +7,18 @@
 //      2024.10.19 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "counter.hpp"
-#include <pfs/string_view.hpp>
+#include "basic_net_statistics.hpp"
 #include <pfs/ionik/error.hpp>
-#include <chrono>
-#include <cstdint>
 #include <string>
-#include <vector>
 
 namespace ionik {
 namespace metrics {
 
-class sys_class_net_provider
+class sys_class_net_provider: public basic_net_statistics
 {
-public:
-    using string_view = pfs::string_view;
-    using time_point_type = std::chrono::time_point<std::chrono::steady_clock>;
-
-    struct counter_group
-    {
-        std::int64_t rx_bytes {0};     // received bytes totally
-        std::int64_t tx_bytes {0};     // transferred bytes totally
-        double rx_speed {0};           // receive speed, in bytes per second
-        double tx_speed {0};           // transfer speed, in bytes per second
-        double rx_speed_max {0};       // max receive speed, in bytes per second
-        double tx_speed_max {0};       // max transfer speed, in bytes per second
-    };
-
 private:
     std::string _iface;         // network interface name (subdirectory name in /sys/class/net)
     std::string _readable_name;
-    counter_group _recent_data;
-    time_point_type _recent_checkpoint; // time point to calculate speed
 
 private:
     bool read_all (error * perr);

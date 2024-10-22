@@ -17,7 +17,7 @@
 namespace ionik {
 namespace metrics {
 
-class basic_net_provider
+class basic_net_statistics
 {
 public:
     using string_view = pfs::string_view;

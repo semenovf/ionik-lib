@@ -7,7 +7,7 @@
 //      2024.10.21 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "basic_net_provider.hpp"
+#include "basic_net_statistics.hpp"
 #include <pfs/ionik/exports.hpp>
 #include <wtypes.h>
 #include <string>
@@ -15,7 +15,7 @@
 namespace ionik {
 namespace metrics {
 
-class netioapi_provider: public basic_net_provider
+class netioapi_provider: public basic_net_statistics
 {
 private:
     int _if_index {0};

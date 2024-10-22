@@ -198,7 +198,7 @@ public:
             ptr->iface = x.iface_name();
             ptr->readable_name = ptr->iface;
             ptr->rx_bytes = tmp.rx_bytes;
-            ptr->rx_bytes = tmp.rx_bytes;
+            ptr->tx_bytes = tmp.tx_bytes;
             ptr->rx_speed = tmp.rx_speed;
             ptr->tx_speed = tmp.tx_speed;
             ptr->rx_speed_max = tmp.rx_speed_max;

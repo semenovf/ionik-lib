@@ -118,6 +118,3 @@ bool random_metrics_provider::query_net_counters (bool (* f) (string_view key, c
 }
 
 }} // namespace ionik::metrics
-
-
-
