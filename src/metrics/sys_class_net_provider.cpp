@@ -14,8 +14,6 @@
 #include <algorithm>
 #include <cstring>
 
-#include <pfs/log.hpp>
-
 namespace fs = pfs::filesystem;
 
 namespace ionik {
