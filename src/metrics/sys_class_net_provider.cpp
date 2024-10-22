@@ -145,8 +145,6 @@ bool sys_class_net_provider::query (counter_group & counters, error * perr)
         return false;
 
     std::memcpy(& counters, & _recent_data, sizeof(counters));
-
-    LOGD("~~", "{}: recent tx_bytes={}; tx_bytes={}", _iface, _recent_data.tx_bytes, counters.tx_bytes);
     return true;
 }
 
