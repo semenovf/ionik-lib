@@ -66,6 +66,14 @@ random_system_counters::query (error *)
     return counter_group{};
 }
 
+random_network_counters::random_network_counters ()
+    : random_network_counters(metric_limits{})
+{}
+
+random_network_counters::random_network_counters (metric_limits && ml)
+    : _p(std::move(ml))
+{}
+
 random_network_counters::counter_group
 random_network_counters::query (error *)
 {
