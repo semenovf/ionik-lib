@@ -21,13 +21,16 @@
 #   include "ionik/metrics/sys_class_net_provider.hpp"
 #endif
 
-#include "ionik/metrics/default_counters.hpp"
+#include "ionik/metrics/system_counters.hpp"
+#include "ionik/metrics/network_counters.hpp"
 #include "ionik/metrics/random_counters.hpp"
 #include <pfs/assert.hpp>
 #include <pfs/i18n.hpp>
 #include <pfs/log.hpp>
+#include <pfs/memory.hpp>
 #include <atomic>
 #include <cstdlib>
+#include <memory>
 #include <thread>
 #include <vector>
 #include <signal.h>
@@ -41,6 +44,24 @@ static void sigterm_handler (int /*sig*/)
 
 using ionik::metrics::to_double;
 using ionik::metrics::to_integer;
+
+static void print_help (char const * program)
+{
+    fmt::println("{} --help", program);
+    fmt::println("{} --net-interfaces", program);
+    fmt::println("{} [--verbose | --random] [--iface IFACE]", program);
+}
+
+static void print_net_interfaces ()
+{
+    int counter = 1;
+    auto ifaces = ionik::metrics::network_counters::interfaces();
+
+    fmt::println("Network interfaces available:");
+
+    for (auto const & iface: ifaces)
+        fmt::println("  {}. {}", counter++, iface);
+}
 
 constexpr double to_kibs (std::int64_t value)
 {
@@ -150,19 +171,17 @@ inline bool rusage_query (ionik::metrics::getrusage_provider & grup)
 #endif
 
 template <typename NetProvider>
-inline bool net_query (std::vector<NetProvider> & net)
+inline bool net_provider_query (NetProvider & net)
 {
     bool success = true;
 
-    for (auto & x: net) {
-        auto iface = x.iface_name();
-        x.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void * user_data_ptr) -> bool {
-            auto iface_ptr = static_cast<std::string const *>(user_data_ptr);
-            std::string tag = '[' + *iface_ptr + ']';
-            LOGD(tag, "{}: {:.2f}", key, to_double(value));
-            return false;
-        }, & iface);
-    }
+    auto iface = net.iface_name();
+    net.query([] (pfs::string_view key, ionik::metrics::counter_t const & value, void * user_data_ptr) -> bool {
+        auto iface_ptr = static_cast<std::string const *>(user_data_ptr);
+        std::string tag = '[' + *iface_ptr + ']';
+        LOGD(tag, "{}: {:.2f}", key, to_double(value));
+        return false;
+    }, & iface);
 
     return success;
 }
@@ -173,13 +192,6 @@ bool default_query (int counter, CountersType & dc)
     ionik::error err;
 
     auto counters = dc.query(& err);
-
-    if (err) {
-        LOGE("", "{}", err.what());
-        return false;
-    }
-
-    auto net_counters = dc.query_net_counters(& err);
 
     if (err) {
         LOGE("", "{}", err.what());
@@ -221,36 +233,60 @@ bool default_query (int counter, CountersType & dc)
     if (counters.swap_usage)
         LOGD("[default]", "{:<22}: {:.2f} KiB", "Process swap usage", to_kibs(*counters.swap_usage));
 
-    for (auto const & x: net_counters) {
-        std::string tag = '[' + x.iface + ']';
+    return true;
+}
 
-        LOGD(tag, "{:<22}: {:.2f} KiB", "Received", to_kibs(x.rx_bytes));
-        LOGD(tag, "{:<22}: {:.2f} KiB", "Transferred", to_kibs(x.tx_bytes));
-        LOGD(tag, "{:<22}: {:.2f} bps", "Receive speed", x.rx_speed);
-        LOGD(tag, "{:<22}: {:.2f} bps", "Transfer speed", x.tx_speed);
-        LOGD(tag, "{:<22}: {:.2f} bps", "Max receive speed", x.rx_speed_max);
-        LOGD(tag, "{:<22}: {:.2f} bps", "Max transfer speed", x.tx_speed_max);
+template <typename CountersType>
+bool network_query (CountersType & net)
+{
+    ionik::error err;
+
+    auto counters = net.query(& err);
+
+    if (err) {
+        LOGE("", "{}", err.what());
+        return false;
     }
+
+    std::string tag = '[' + counters.iface + ']';
+
+    LOGD(tag, "{:<22}: {:.2f} KiB", "Received", to_kibs(counters.rx_bytes));
+    LOGD(tag, "{:<22}: {:.2f} KiB", "Transferred", to_kibs(counters.tx_bytes));
+    LOGD(tag, "{:<22}: {:.2f} bps", "Receive speed", counters.rx_speed);
+    LOGD(tag, "{:<22}: {:.2f} bps", "Transfer speed", counters.tx_speed);
+    LOGD(tag, "{:<22}: {:.2f} bps", "Max receive speed", counters.rx_speed_max);
+    LOGD(tag, "{:<22}: {:.2f} bps", "Max transfer speed", counters.tx_speed_max);
 
     return true;
 }
 
+
 int main (int argc, char * argv[])
 {
-    if (argc > 1 && pfs::string_view{argv[1]} == "--help") {
-        fmt::println("{} [--help | --verbose | --random | --net-interfaces]", argv[0]);
-        return EXIT_SUCCESS;
-    }
+    bool is_random_counters = false;
+    bool is_verbose = false;
+    std::string iface;
 
-    if (argc > 1 && pfs::string_view{argv[1]} == "--net-interfaces") {
-        auto ifaces = ionik::metrics::default_counters::net_interfaces();
-
-        fmt::println("Network interfaces available:");
-
-        for (auto const & iface: ifaces)
-            fmt::println("  {}", iface);
-
-        return EXIT_SUCCESS;
+    for (int i = 1; i < argc; i++) {
+        if (std::strcmp(argv[i], "--help") == 0) {
+            print_help(argv[0]);
+            return EXIT_SUCCESS;
+        } else if (std::strcmp(argv[i], "--net-interfaces") == 0) {
+            print_net_interfaces();
+            return EXIT_SUCCESS;
+        } else if (std::strcmp(argv[i], "--random") == 0) {
+            is_random_counters = true;
+        } else if (std::strcmp(argv[i], "--verbose") == 0) {
+            is_verbose = true;
+        } else if (std::strcmp(argv[i], "--iface") == 0) {
+            if (i + 1 < argc) {
+                iface = argv[i + 1];
+                i++;
+            } else {
+                fmt::println(stderr, "Error: expected network interface for --iface option");
+                return EXIT_FAILURE;
+            }
+        }
     }
 
     signal(SIGINT, sigterm_handler);
@@ -267,61 +303,76 @@ int main (int argc, char * argv[])
         }
     }};
 
-    if (argc > 1 && pfs::string_view{argv[1]} == "--verbose") {
-#if _MSC_VER
+    if (is_verbose) {
         try {
+#if _MSC_VER
             ionik::metrics::gms_provider gmsp;
             ionik::metrics::pdh_provider pdhp;
             ionik::metrics::psapi_provider psapip;
-            std::vector<ionik::metrics::netioapi_provider> net;
+            auto net = iface.empty()
+                ? std::unique_ptr<ionik::metrics::netioapi_provider>{}
+                : pfs::make_unique<ionik::metrics::netioapi_provider>(iface);
 
-            for (auto const & iface: ionik::metrics::netioapi_provider::interfaces()) {
-                net.emplace_back(iface);
+            while (!TERM_APP && gms_query(gmsp) && pdh_query(pdhp) && psapi_query(psapip)) {
+                if (net) {
+                    if (!net_provider_query<ionik::metrics::netioapi_provider>(*net))
+                        break;
+                }
+
+                std::this_thread::sleep_for(query_interval);
             }
+#else
+            ionik::metrics::proc_meminfo_provider pmp;
+            ionik::metrics::proc_self_status_provider pssp;
+            ionik::metrics::proc_stat_provider psp;
+            ionik::metrics::times_provider tp;
+            ionik::metrics::sysinfo_provider sp;
+            ionik::metrics::getrusage_provider grup;
+            auto net = iface.empty()
+                ? std::unique_ptr<ionik::metrics::sys_class_net_provider>{}
+                : pfs::make_unique<ionik::metrics::sys_class_net_provider>(iface, iface);
 
-            while (!TERM_APP && gms_query(gmsp) && pdh_query(pdhp) && psapi_query(psapip) 
-                && net_query<ionik::metrics::netioapi_provider>(net)) {
+            while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
+                && psp_query(psp) && tp_query(tp) && rusage_query(grup)) {
+
+                if (net) {
+                    if (!net_provider_query<ionik::metrics::sys_class_net_provider>(*net))
+                        break;
+                }
+
+                std::this_thread::sleep_for(query_interval);
+            }
+#endif
+        } catch (pfs::error const & ex) {
+            LOGE("EXCEPTION", "{}", ex.what());
+            TERM_APP = true;
+        }
+    } else if (is_random_counters) {
+        int counter = 0;
+        ionik::metrics::random_system_counters rdc;
+
+        while (!TERM_APP && default_query(++counter, rdc)) {
+            std::this_thread::sleep_for(query_interval);
+        }
+    } else {
+        try {
+            int counter = 0;
+            ionik::metrics::system_counters dc;
+            auto nc = iface.empty()
+                ? std::unique_ptr<ionik::metrics::network_counters>{}
+                : pfs::make_unique<ionik::metrics::network_counters>(iface);
+
+            while (!TERM_APP && default_query(++counter, dc)) {
+                if (nc) {
+                    if (!network_query(*nc))
+                        break;
+                }
 
                 std::this_thread::sleep_for(query_interval);
             }
         } catch (pfs::error const & ex) {
             LOGE("EXCEPTION", "{}", ex.what());
-        }
-
-#else
-        ionik::metrics::proc_meminfo_provider pmp;
-        ionik::metrics::proc_self_status_provider pssp;
-        ionik::metrics::proc_stat_provider psp;
-        ionik::metrics::times_provider tp;
-        ionik::metrics::sysinfo_provider sp;
-        ionik::metrics::getrusage_provider grup;
-        std::vector<ionik::metrics::sys_class_net_provider> net;
-
-        for (auto const & iface: ionik::metrics::sys_class_net_provider::interfaces()) {
-            net.emplace_back(iface, iface);
-        }
-
-        while (!TERM_APP && sysinfo_query(sp) && pmp_query(pmp) && pssp_query(pssp)
-            && psp_query(psp) && tp_query(tp) && rusage_query(grup) 
-            && net_query<ionik::metrics::sys_class_net_provider>(net)) {
-
-            std::this_thread::sleep_for(query_interval);
-        }
-#endif
-    } else if (argc > 1 && pfs::string_view{argv[1]} == "--random") {
-        int counter = 0;
-        ionik::metrics::random_counters rc;
-
-        while (!TERM_APP && default_query(++counter, rc)) {
-            std::this_thread::sleep_for(query_interval);
-        }
-    } else {
-        int counter = 0;
-        ionik::metrics::default_counters dc;
-        dc.monitor_all_net_interfaces();
-
-        while (!TERM_APP && default_query(++counter, dc)) {
-            std::this_thread::sleep_for(query_interval);
+            TERM_APP = true;
         }
     }
 

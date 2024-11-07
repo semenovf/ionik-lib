@@ -52,17 +52,27 @@ double random_double (std::int64_t from, std::int64_t to, int precision)
     return static_cast<double>(integral_part(rnd)) + 1 / static_cast<double>(fractional_part(rnd));
 }
 
-random_metrics_provider::random_metrics_provider ()
+random_default_provider::random_default_provider ()
     : _ml(metric_limits{})
     , _recent_checkpoint(time_point_type::clock::now())
 {}
 
-random_metrics_provider::random_metrics_provider (metric_limits && ml)
+random_default_provider::random_default_provider (metric_limits && ml)
     : _ml(std::move(ml))
     , _recent_checkpoint(time_point_type::clock::now())
 {}
 
-bool random_metrics_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+random_network_provider::random_network_provider ()
+    : _ml(metric_limits{})
+    , _recent_checkpoint(time_point_type::clock::now())
+{}
+
+random_network_provider::random_network_provider (metric_limits && ml)
+    : _ml(std::move(ml))
+    , _recent_checkpoint(time_point_type::clock::now())
+{}
+
+bool random_default_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
     , void * user_data_ptr, error * /*perr*/)
 {
     if (f != nullptr) {
@@ -86,7 +96,7 @@ bool random_metrics_provider::query (bool (* f) (string_view key, counter_t cons
     return true;
 }
 
-bool random_metrics_provider::query_net_counters (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
+bool random_network_provider::query (bool (* f) (string_view key, counter_t const & value, void * user_data_ptr)
     , void * user_data_ptr, error * /*perr*/)
 {
     if (f != nullptr) {

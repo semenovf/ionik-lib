@@ -7,7 +7,8 @@
 //      2024.10.08 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "default_counters.hpp"
+#include "system_counters.hpp"
+#include "network_counters.hpp"
 #include <pfs/ionik/error.hpp>
 #include <pfs/ionik/exports.hpp>
 #include <pfs/ionik/metrics/random_metrics_provider.hpp>
@@ -15,32 +16,52 @@
 namespace ionik {
 namespace metrics {
 
-class random_counters
+class random_system_counters
 {
 public:
-    using counter_group = default_counters::counter_group;
-    using net_counter_group = default_counters::net_counter_group;
-    using metric_limits = random_metrics_provider::metric_limits;
+    using counter_group = system_counters::counter_group;
+    using metric_limits = random_default_provider::metric_limits;
 
 private:
-    random_metrics_provider _rmp;
+    random_default_provider _p;
 
 public:
-    IONIK__EXPORT random_counters ();
-    IONIK__EXPORT random_counters (metric_limits && ml);
-    IONIK__EXPORT ~random_counters () = default;
-    IONIK__EXPORT random_counters (random_counters &&) = default;
-    IONIK__EXPORT random_counters & operator = (random_counters &&) = default;
+    IONIK__EXPORT random_system_counters ();
+    IONIK__EXPORT random_system_counters (metric_limits && ml);
+    IONIK__EXPORT ~random_system_counters () = default;
+    IONIK__EXPORT random_system_counters (random_system_counters &&) = default;
+    IONIK__EXPORT random_system_counters & operator = (random_system_counters &&) = default;
 
-    random_counters (random_counters const &) = delete;
-    random_counters & operator = (random_counters const &) = delete;
+    random_system_counters (random_system_counters const &) = delete;
+    random_system_counters & operator = (random_system_counters const &) = delete;
 
 public:
     IONIK__EXPORT counter_group query (error * = nullptr);
-    IONIK__EXPORT std::vector<net_counter_group> query_net_counters (error * = nullptr);
-
     IONIK__EXPORT bool query (counter_group & counters, error * perr = nullptr);
-    IONIK__EXPORT bool query (std::vector<net_counter_group> & counters, error * perr = nullptr);
+};
+
+class random_network_counters
+{
+public:
+    using counter_group = network_counters::counter_group;
+    using metric_limits = random_network_provider::metric_limits;
+
+private:
+    random_network_provider _p;
+
+public:
+    IONIK__EXPORT random_network_counters ();
+    IONIK__EXPORT random_network_counters (metric_limits && ml);
+    IONIK__EXPORT ~random_network_counters () = default;
+    IONIK__EXPORT random_network_counters (random_network_counters &&) = default;
+    IONIK__EXPORT random_network_counters & operator = (random_network_counters &&) = default;
+
+    random_network_counters (random_network_counters const &) = delete;
+    random_network_counters & operator = (random_network_counters const &) = delete;
+
+public:
+    IONIK__EXPORT counter_group query (error * = nullptr);
+    IONIK__EXPORT bool query (counter_group & counters, error * perr = nullptr);
 };
 
 }} // namespace ionik::metrics
