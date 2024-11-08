@@ -71,6 +71,9 @@ public:
     }
 };
 
+network_counters::network_counters (error * /*perr*/)
+{}
+
 network_counters::network_counters (std::string const & iface, error * perr)
     : _d(new impl(iface, perr))
 {}
@@ -79,13 +82,20 @@ network_counters::network_counters (network_counters &&) noexcept = default;
 network_counters & network_counters::operator = (network_counters &&) noexcept = default;
 network_counters::~network_counters () = default;
 
+void network_counters::set_interface (std::string const & iface, error * perr)
+{
+    _d.reset(new impl(iface, perr));
+}
+
 network_counters::counter_group
 network_counters::query (error * perr)
 {
-    counter_group result;
+    if (_d) {
+        counter_group result;
 
-    if (_d->query(result, perr))
-        return result;
+        if (_d->query(result, perr))
+            return result;
+    }
 
     return counter_group{};
 }

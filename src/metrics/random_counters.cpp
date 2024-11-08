@@ -48,7 +48,6 @@ random_system_counters::query (error *)
         return false;
     }, & counters);
 
-
     if (success) {
         if (counters.ram_total && counters.ram_free) {
             counters.ram_usage_total = ((static_cast<double>(*counters.ram_total) - *counters.ram_free)

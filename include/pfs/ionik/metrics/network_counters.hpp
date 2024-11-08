@@ -38,6 +38,7 @@ private:
     std::unique_ptr<impl> _d;
 
 public:
+    IONIK__EXPORT network_counters (error * perr = nullptr);
     IONIK__EXPORT network_counters (std::string const & iface, error * perr = nullptr);
     IONIK__EXPORT ~network_counters ();
     IONIK__EXPORT network_counters (network_counters &&) noexcept;
@@ -47,6 +48,7 @@ public:
     network_counters & operator = (network_counters const &) = delete;
 
 public:
+    IONIK__EXPORT void set_interface (std::string const & iface, error * perr = nullptr);
     IONIK__EXPORT counter_group query (error * perr = nullptr);
     IONIK__EXPORT bool query (counter_group & counters, error * perr = nullptr);
 
@@ -55,4 +57,3 @@ public: // static
 };
 
 }} // namespace ionik::metrics
-

@@ -250,6 +250,7 @@ bool network_query (CountersType & net)
 
     std::string tag = '[' + counters.iface + ']';
 
+    LOGD(tag, "{:<22}: {}"        , "Name", counters.iface);
     LOGD(tag, "{:<22}: {:.2f} KiB", "Received", to_kibs(counters.rx_bytes));
     LOGD(tag, "{:<22}: {:.2f} KiB", "Transferred", to_kibs(counters.tx_bytes));
     LOGD(tag, "{:<22}: {:.2f} bps", "Receive speed", counters.rx_speed);
@@ -349,25 +350,22 @@ int main (int argc, char * argv[])
         }
     } else if (is_random_counters) {
         int counter = 0;
-        ionik::metrics::random_system_counters rdc;
+        ionik::metrics::random_system_counters rsc;
+        ionik::metrics::random_network_counters rnc;
 
-        while (!TERM_APP && default_query(++counter, rdc)) {
+        while (!TERM_APP && default_query(++counter, rsc) && network_query(rnc)) {
             std::this_thread::sleep_for(query_interval);
         }
     } else {
         try {
             int counter = 0;
             ionik::metrics::system_counters dc;
-            auto nc = iface.empty()
-                ? std::unique_ptr<ionik::metrics::network_counters>{}
-                : pfs::make_unique<ionik::metrics::network_counters>(iface);
+            ionik::metrics::network_counters nc;
 
-            while (!TERM_APP && default_query(++counter, dc)) {
-                if (nc) {
-                    if (!network_query(*nc))
-                        break;
-                }
+            if (!iface.empty())
+                nc.set_interface(iface);
 
+            while (!TERM_APP && default_query(++counter, dc) && network_query(nc)) {
                 std::this_thread::sleep_for(query_interval);
             }
         } catch (pfs::error const & ex) {
