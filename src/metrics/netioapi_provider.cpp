@@ -34,7 +34,7 @@ static int index_by_alias (std::string const & alias)
     if (rc != NO_ERROR)
         return -1;
 
-    auto walias = pfs::windows::utf8_decode(alias.c_str(), alias.size());
+    auto walias = pfs::windows::utf8_decode(alias.c_str(), pfs::numeric_cast<int>(alias.size()));
 
     for (ULONG i = 0; i < iftable->NumEntries; i++) {
         if (walias == iftable->Table[i].Alias)
@@ -101,8 +101,8 @@ bool netioapi_provider::read_all (error * perr)
     _recent_data.tx_bytes = tx_bytes;
     _recent_data.rx_speed = rx_speed;
     _recent_data.tx_speed = tx_speed;
-    _recent_data.rx_speed_max = std::max(_recent_data.rx_speed_max, rx_speed);
-    _recent_data.tx_speed_max = std::max(_recent_data.tx_speed_max, tx_speed);
+    _recent_data.rx_speed_max = (std::max)(_recent_data.rx_speed_max, rx_speed);
+    _recent_data.tx_speed_max = (std::max)(_recent_data.tx_speed_max, tx_speed);
     _recent_checkpoint = now;
 
     return true;
