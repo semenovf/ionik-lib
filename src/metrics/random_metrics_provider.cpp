@@ -34,7 +34,7 @@ std::int64_t random_int64 (std::int64_t from, std::int64_t to)
 double random_double (std::int64_t from, std::int64_t to, int precision)
 {
     if (from == to)
-        return from;
+        return static_cast<double>(from);
 
     if (precision > 6)
         precision = 6;
@@ -112,8 +112,8 @@ bool random_network_provider::query (bool (* f) (string_view key, counter_t cons
         _tx_bytes = tx_bytes;
         _rx_speed = rx_speed;
         _tx_speed = tx_speed;
-        _rx_speed_max = std::max(_rx_speed_max, rx_speed);
-        _tx_speed_max = std::max(_tx_speed_max, tx_speed);
+        _rx_speed_max = (std::max)(_rx_speed_max, rx_speed);
+        _tx_speed_max = (std::max)(_tx_speed_max, tx_speed);
         _recent_checkpoint = now;
 
         (void)(!f("rx_bytes", _rx_bytes, user_data_ptr)

@@ -217,7 +217,7 @@ pfs::optional<double> times_provider::calculate_cpu_usage ()
     memcpy(& sys, & fsys, sizeof(FILETIME));
     memcpy(& user, & fuser, sizeof(FILETIME));
 
-    result = (sys.QuadPart - _recent_sys.QuadPart) + (user.QuadPart - _recent_usr.QuadPart);
+    result = static_cast<double>((sys.QuadPart - _recent_sys.QuadPart) + (user.QuadPart - _recent_usr.QuadPart));
     result /= (now.QuadPart - _recent_time.QuadPart);
     result /= _core_count;
     _recent_time = now;
