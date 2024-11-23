@@ -1,10 +1,11 @@
 ################################################################################
-# Copyright (c) 2023 Vladislav Trifochkin
+# Copyright (c) 2023-2024 Vladislav Trifochkin
 #
 # This file is part of `ionik-lib`.
 #
 # Changelog:
-#      2023.10.12 Initial version.
+#       2023.10.12 Initial version.
+#       2024.11.23 Removed `portable_target` dependency.
 ################################################################################
 project(ionik-TESTS CXX C)
 
@@ -16,12 +17,6 @@ if (IONIK__ENABLE_COVERAGE)
 
     set(CMAKE_CXX_FLAGS "-g -O0 --coverage")
     set(CMAKE_C_FLAGS "-g -O0 --coverage")
-endif()
-
-if (TARGET pfs::ionik)
-    set(_ionik_lib pfs::ionik)
-elseif(TARGET pfs::ionik::static)
-    set(_ionik_lib pfs::ionik::static)
 endif()
 
 # Copy test files to build folder
@@ -47,7 +42,7 @@ foreach (name ${TEST_NAMES})
         target_link_libraries(${name} PRIVATE -g -O0 --coverage)
     endif()
 
-    target_link_libraries(${name} PRIVATE ${_ionik_lib})
+    target_link_libraries(${name} PRIVATE pfs::ionik)
     add_test(NAME ${name} COMMAND ${name})
 endforeach()
 

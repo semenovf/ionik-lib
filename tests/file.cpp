@@ -9,8 +9,8 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "pfs/ionik/local_file.hpp"
-#include "pfs/standard_paths.hpp"
-#include "pfs/universal_id.hpp"
+#include <pfs/standard_paths.hpp>
+#include <pfs/universal_id.hpp>
 #include <algorithm>
 #include <numeric>
 

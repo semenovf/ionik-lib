@@ -4,14 +4,9 @@
 # This file is part of `ionik-lib`.
 #
 # Changelog:
-#      2021.08.03 Initial version.
+#       2021.08.03 Initial version.
 ################################################################################
 project(available_audio_devices)
 
 add_executable(${PROJECT_NAME} main.cpp)
-
-if (TARGET pfs::ionik)
-    target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)
-elseif (TARGET pfs::ionik::static)
-    target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik::static)
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)

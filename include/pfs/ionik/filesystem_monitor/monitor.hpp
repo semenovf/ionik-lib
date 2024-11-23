@@ -7,7 +7,7 @@
 //      2024.06.30 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "error.hpp"
+#include "pfs/ionik/error.hpp"
 #include <pfs/filesystem.hpp>
 #include <chrono>
 

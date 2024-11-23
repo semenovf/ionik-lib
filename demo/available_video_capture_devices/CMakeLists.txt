@@ -4,17 +4,12 @@
 # This file is part of `ionik-lib`.
 #
 # Changelog:
-#      2024.03.06 Initial version.
+#       2024.03.06 Initial version.
+#       2024.11.23 Removed `portable_target` dependency.
 ####################################################################################################
 project(available_video_capture_devices C CXX)
 
-portable_target(ADD_EXECUTABLE ${PROJECT_NAME})
-portable_target(SOURCES ${PROJECT_NAME} main.cpp)
-
-if (TARGET pfs::ionik)
-    portable_target(LINK ${PROJECT_NAME} PRIVATE pfs::ionik)
-elseif (TARGET pfs::ionik::static)
-    portable_target(LINK ${PROJECT_NAME} PRIVATE pfs::ionik::static)
-endif()
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)
 
 

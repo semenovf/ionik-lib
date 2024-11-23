@@ -7,23 +7,23 @@
 //      2024.09.11 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #if _MSC_VER
-#   include "ionik/metrics/gms_provider.hpp"
-#   include "ionik/metrics/netioapi_provider.hpp"
-#   include "ionik/metrics/pdh_provider.hpp"
-#   include "ionik/metrics/psapi_provider.hpp"
+#   include "pfs/ionik/metrics/gms_provider.hpp"
+#   include "pfs/ionik/metrics/netioapi_provider.hpp"
+#   include "pfs/ionik/metrics/pdh_provider.hpp"
+#   include "pfs/ionik/metrics/psapi_provider.hpp"
 #else
-#   include "ionik/metrics/proc_meminfo_provider.hpp"
-#   include "ionik/metrics/proc_self_status_provider.hpp"
-#   include "ionik/metrics/proc_stat_provider.hpp"
-#   include "ionik/metrics/sysinfo_provider.hpp"
-#   include "ionik/metrics/times_provider.hpp"
-#   include "ionik/metrics/getrusage_provider.hpp"
-#   include "ionik/metrics/sys_class_net_provider.hpp"
+#   include "pfs/ionik/metrics/proc_meminfo_provider.hpp"
+#   include "pfs/ionik/metrics/proc_self_status_provider.hpp"
+#   include "pfs/ionik/metrics/proc_stat_provider.hpp"
+#   include "pfs/ionik/metrics/sysinfo_provider.hpp"
+#   include "pfs/ionik/metrics/times_provider.hpp"
+#   include "pfs/ionik/metrics/getrusage_provider.hpp"
+#   include "pfs/ionik/metrics/sys_class_net_provider.hpp"
 #endif
 
-#include "ionik/metrics/system_counters.hpp"
-#include "ionik/metrics/network_counters.hpp"
-#include "ionik/metrics/random_counters.hpp"
+#include "pfs/ionik/metrics/system_counters.hpp"
+#include "pfs/ionik/metrics/network_counters.hpp"
+#include "pfs/ionik/metrics/random_counters.hpp"
 #include <pfs/assert.hpp>
 #include <pfs/i18n.hpp>
 #include <pfs/log.hpp>

@@ -7,12 +7,12 @@
 //      2024.07.01 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "filesystem_monitor/monitor.hpp"
+#include "pfs/ionik/filesystem_monitor/monitor.hpp"
 
 #if IONIK__HAS_INOTIFY
-#   include "filesystem_monitor/backend/inotify.hpp"
+#   include "pfs/ionik/filesystem_monitor/backend/inotify.hpp"
 #elif _MSC_VER
-#   include "filesystem_monitor/backend/win32.hpp"
+#   include "pfs/ionik/filesystem_monitor/backend/win32.hpp"
 #else
 #   error "Filesystem monitor not implemented for this platform"
 #endif

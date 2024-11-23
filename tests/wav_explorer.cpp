@@ -8,8 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "pfs/filesystem.hpp"
-#include "pfs/ionik/audio/wav_explorer.hpp"
+#include <pfs/filesystem.hpp>
+#include <pfs/ionik/audio/wav_explorer.hpp>
 
 // Source of test audio files
 // https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples.html

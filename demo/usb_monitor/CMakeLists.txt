@@ -1,5 +1,5 @@
 ################################################################################
-# Copyright (c) 2022 Vladislav Trifochkin
+# Copyright (c) 2022-2024 Vladislav Trifochkin
 #
 # This file is part of `ionik-lib`.
 #
@@ -9,10 +9,5 @@
 project(usb_monitor)
 
 add_executable(${PROJECT_NAME} main.cpp)
-
-if (TARGET pfs::ionik)
-    target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)
-elseif (TARGET pfs::ionik::static)
-    target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik::static)
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)
 

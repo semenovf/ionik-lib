@@ -4,40 +4,34 @@
 # This file is part of `ionik-lib`.
 #
 # Changelog:
-#      2022.08.21 Initial version.
-#      2023.03.27 Separated static and shared builds.
-#      2023.03.31 Added audio devices info support (from obsolete `multimedia-lib`).
+#       2022.08.21 Initial version.
+#       2023.03.27 Separated static and shared builds.
+#       2023.03.31 Added audio devices info support (from obsolete `multimedia-lib`).
+#       2024.11.23 Removed `portable_target` dependency.
 ################################################################################
-cmake_minimum_required (VERSION 3.11)
+cmake_minimum_required (VERSION 3.19)
 project(ionik CXX C)
 
 include(CheckIncludeFile)
 
 option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
-option(IONIK__BUILD_STATIC "Enable build static library" ON)
-
 option(IONIK__ENABLE_PULSEAUDIO "Enable PulseAudio as backend" ON)
 option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
 
 set(_ionik__audio_backend_FOUND OFF)
 
-if (NOT PORTABLE_TARGET__CURRENT_PROJECT_DIR)
-    set(PORTABLE_TARGET__CURRENT_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-endif()
-
 if (IONIK__BUILD_SHARED)
-    portable_target(ADD_SHARED ${PROJECT_NAME} ALIAS pfs::ionik EXPORTS IONIK__EXPORTS)
-    list(APPEND _ionik__targets ${PROJECT_NAME})
+    add_library(ionik SHARED)
+    target_compile_definitions(ionik PRIVATE IONIK__EXPORTS)
+else()
+    add_library(ionik STATIC)
+    target_compile_definitions(ionik PRIVATE IONIK__STATIC)
 endif()
 
-if (IONIK__BUILD_STATIC)
-    set(STATIC_PROJECT_NAME ${PROJECT_NAME}-static)
-    portable_target(ADD_STATIC ${STATIC_PROJECT_NAME} ALIAS pfs::ionik::static EXPORTS IONIK__STATIC)
-    list(APPEND _ionik__targets ${STATIC_PROJECT_NAME})
-endif()
+add_library(pfs::ionik ALIAS ionik)
 
-if (PFS__LOG_LEVEL)
-    list(APPEND _ionik__definitions "PFS__LOG_LEVEL=${PFS__LOG_LEVEL}")
+if (MSVC)
+    target_compile_definitions(ionik PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
 list(APPEND _ionik__sources
@@ -56,10 +50,7 @@ if (NOT ANDROID)
     list(APPEND _ionik__sources ${CMAKE_CURRENT_LIST_DIR}/src/already_running.cpp)
 endif()
 
-list(APPEND _ionik__include_dirs
-    ${CMAKE_CURRENT_LIST_DIR}/include
-    ${CMAKE_CURRENT_LIST_DIR}/include/pfs
-    ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
+list(APPEND _ionik__include_dirs ${CMAKE_CURRENT_LIST_DIR}/include)
 
 if (ANDROID)
     list(APPEND _ionik__sources
@@ -95,9 +86,9 @@ elseif (MSVC)
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_win.cpp)
 
     list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
-    list(APPEND _ionik__private_libs Setupapi 
+    list(APPEND _ionik__private_libs Setupapi
         Mf Mfplat Mfreadwrite Mfuuid # Media Foundation library
-        Pdh iphlpapi) 
+        Pdh iphlpapi)
 else()
     message (FATAL_ERROR "Unsupported platform")
 endif()
@@ -164,8 +155,15 @@ if (NOT _ionik__audio_backend_FOUND)
 endif()
 
 if (NOT TARGET pfs::common)
-    portable_target(INCLUDE_PROJECT
-        ${CMAKE_CURRENT_LIST_DIR}/2ndparty/common/library.cmake)
+    set(FETCHCONTENT_UPDATES_DISCONNECTED_COMMON ON)
+
+    include(FetchContent)
+    FetchContent_Declare(common
+        GIT_REPOSITORY https://github.com/semenovf/common-lib.git
+        GIT_TAG master
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/2ndparty/common
+        SUBBUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/2ndparty/common)
+    FetchContent_MakeAvailable(common)
 endif()
 
 list(REMOVE_DUPLICATES _ionik__sources)
@@ -177,22 +175,21 @@ if (_ionik__definitions)
     list(REMOVE_DUPLICATES _ionik__definitions)
 endif()
 
-foreach(_target IN LISTS _ionik__targets)
-    portable_target(SOURCES ${_target} ${_ionik__sources})
-    portable_target(INCLUDE_DIRS ${_target} PUBLIC ${_ionik__include_dirs})
-    portable_target(INCLUDE_DIRS ${_target} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik)
-    portable_target(INCLUDE_DIRS ${_target} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs)
-    portable_target(LINK ${_target} PUBLIC pfs::common)
+target_sources(ionik PRIVATE ${_ionik__sources})
+target_include_directories(ionik
+    PUBLIC ${_ionik__include_dirs}
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs/ionik
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include/pfs)
+target_link_libraries(ionik PUBLIC pfs::common)
 
-    if (_ionik__compile_options)
-        portable_target(COMPILE_OPTIONS ${_target} PRIVATE ${_ionik__compile_options})
-    endif()
+if (_ionik__compile_options)
+    target_compile_options(ionik PRIVATE ${_ionik__compile_options})
+endif()
 
-    if (_ionik__definitions)
-        portable_target(DEFINITIONS ${_target} PUBLIC ${_ionik__definitions})
-    endif()
+if (_ionik__definitions)
+    target_compile_definitions(ionik PUBLIC ${_ionik__definitions})
+endif()
 
-    if (_ionik__private_libs)
-        portable_target(LINK ${_target} PRIVATE ${_ionik__private_libs})
-    endif()
-endforeach()
+if (_ionik__private_libs)
+    target_link_libraries(ionik PRIVATE ${_ionik__private_libs})
+endif()
