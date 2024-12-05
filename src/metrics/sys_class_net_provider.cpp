@@ -28,39 +28,34 @@ sys_class_net_provider::sys_class_net_provider (std::string iface, std::string r
     if (_readable_name.empty())
         _readable_name = _iface;
 
-    std::error_code ec;
+    fs::path const net_dir = PFS__LITERAL_PATH("/sys/class/net");
+    fs::path const root_dir = net_dir / fs::utf8_decode(_iface) / PFS__LITERAL_PATH("statistics");
+    _rx_bytes_path = root_dir / PFS__LITERAL_PATH("rx_bytes");
+    _tx_bytes_path = root_dir / PFS__LITERAL_PATH("tx_bytes");
 
-    fs::path const dir = PFS__LITERAL_PATH("/sys/class/net");
+    for (auto const & p: {net_dir, root_dir, _rx_bytes_path, _tx_bytes_path}) {
+        std::error_code ec;
 
-    if (!fs::exists(dir, ec)) {
+        if (fs::exists(p, ec))
+            continue;
+
         if (ec) {
-            pfs::throw_or(perr, error {ec, tr::f_("check path failure: {}", dir)});
-        } else {
-            pfs::throw_or(perr, error {
-                  std::make_error_code(std::errc::no_such_file_or_directory)
-                , fs::utf8_encode(dir)
-            });
+            pfs::throw_or(perr, error {ec, tr::f_("check path failure: {}", p)});
+            return;
         }
+
+        pfs::throw_or(perr, error {
+              std::make_error_code(std::errc::no_such_file_or_directory)
+            , fs::utf8_encode(p)
+        });
 
         return;
     }
 
-    if (!fs::is_directory(dir)) {
-        if (ec) {
-            pfs::throw_or(perr, error {ec, tr::f_("check directory failure: {}", dir)});
-        } else {
-            pfs::throw_or(perr, error {
-                  std::make_error_code(std::errc::not_a_directory)
-                , fs::utf8_encode(dir)
-            });
-        }
-
+    if (!read(_recent_data.rx_bytes, _recent_data.tx_bytes, perr))
         return;
-    }
 
     _recent_checkpoint = time_point_type::clock::now();
-
-    read_all(perr);
 }
 
 static std::int64_t read_integer (fs::path const & path, error * perr)
@@ -105,28 +100,37 @@ static std::int64_t read_integer (fs::path const & path, error * perr)
     return n;
 }
 
-bool sys_class_net_provider::read_all (error * perr)
+bool sys_class_net_provider::read (std::int64_t & rx_bytes, std::int64_t & tx_bytes, error * perr)
 {
-    error err;
-
-    fs::path const root_dir = PFS__LITERAL_PATH("/sys/class/net") / fs::utf8_decode(_iface)
-        / PFS__LITERAL_PATH("statistics");
-
-    auto rx_bytes = read_integer(root_dir / PFS__LITERAL_PATH("rx_bytes"), perr);
+    rx_bytes = read_integer(_rx_bytes_path, perr);
 
     if (rx_bytes < 0)
         return false;
 
-    auto tx_bytes = read_integer(root_dir / PFS__LITERAL_PATH("tx_bytes"), perr);
+    tx_bytes = read_integer(_tx_bytes_path, perr);
 
     if (tx_bytes < 0)
+        return false;
+
+    return true;
+}
+
+bool sys_class_net_provider::read_all (error * perr)
+{
+    std::int64_t rx_bytes = 0;
+    std::int64_t tx_bytes = 0;
+
+    if (!read(rx_bytes, tx_bytes, perr))
         return false;
 
     auto now = time_point_type::clock::now();
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now - _recent_checkpoint).count();
 
-    auto rx_speed = (_recent_data.rx_speed + static_cast<double>(rx_bytes - _recent_data.rx_bytes) * millis / 1000) / 2;
-    auto tx_speed = (_recent_data.tx_speed + static_cast<double>(tx_bytes - _recent_data.tx_bytes) * millis / 1000) / 2;
+    if (millis <= 0)
+        return false;
+
+    auto rx_speed = static_cast<double>(rx_bytes - _recent_data.rx_bytes) * 1000 / millis;
+    auto tx_speed = static_cast<double>(tx_bytes - _recent_data.tx_bytes) * 1000 / millis;
 
     _recent_data.rx_bytes = rx_bytes;
     _recent_data.tx_bytes = tx_bytes;

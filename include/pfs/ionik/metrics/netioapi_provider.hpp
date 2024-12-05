@@ -23,6 +23,7 @@ private:
     std::string _desc;
 
 private:
+    bool read (std::int64_t & rx_bytes, std::int64_t & tx_bytes, error * perr);
     bool read_all (error * perr);
 
 public:

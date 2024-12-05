@@ -157,13 +157,16 @@ endif()
 if (NOT TARGET pfs::common)
     set(FETCHCONTENT_UPDATES_DISCONNECTED_COMMON ON)
 
+    message(STATUS "Fetching pfs::common ...")
     include(FetchContent)
     FetchContent_Declare(common
         GIT_REPOSITORY https://github.com/semenovf/common-lib.git
         GIT_TAG master
+        GIT_PROGRESS TRUE
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/2ndparty/common
         SUBBUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/2ndparty/common)
     FetchContent_MakeAvailable(common)
+    message(STATUS "Fetching pfs::common complete")
 endif()
 
 list(REMOVE_DUPLICATES _ionik__sources)

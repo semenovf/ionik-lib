@@ -21,8 +21,10 @@ namespace metrics {
 netioapi_provider::netioapi_provider (int if_index, error * perr)
     : _if_index(if_index)
 {
+    if (!read(_recent_data.rx_bytes, _recent_data.tx_bytes, perr))
+        return;
+
     _recent_checkpoint = time_point_type::clock::now();
-    read_all(perr);
 }
 
 static int index_by_alias (std::string const & alias)
@@ -59,11 +61,13 @@ netioapi_provider::netioapi_provider (std::string const & alias, error * perr)
 
     _if_index = if_index;
 
+    if (!read(_recent_data.rx_bytes, _recent_data.tx_bytes, perr))
+        return;
+
     _recent_checkpoint = time_point_type::clock::now();
-    read_all(perr);
 }
 
-bool netioapi_provider::read_all (error * perr)
+bool netioapi_provider::read (std::int64_t & rx_bytes, std::int64_t & tx_bytes, error * perr)
 {
     MIB_IF_ROW2 ifrow;
 
@@ -91,11 +95,25 @@ bool netioapi_provider::read_all (error * perr)
     auto rx_bytes = pfs::numeric_cast<std::int64_t>(ifrow.InOctets);
     auto tx_bytes = pfs::numeric_cast<std::int64_t>(ifrow.OutOctets);
 
+    return true;
+}
+
+bool netioapi_provider::read_all (error * perr)
+{
+    std::int64_t rx_bytes = 0;
+    std::int64_t tx_bytes = 0;
+
+    if (!read(rx_bytes, tx_bytes, perr))
+        return false;
+
     auto now = time_point_type::clock::now();
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now - _recent_checkpoint).count();
 
-    auto rx_speed = (_recent_data.rx_speed + static_cast<double>(rx_bytes - _recent_data.rx_bytes) * millis / 1000) / 2;
-    auto tx_speed = (_recent_data.tx_speed + static_cast<double>(tx_bytes - _recent_data.tx_bytes) * millis / 1000) / 2;
+    if (millis <= 0)
+        return false;
+
+    auto rx_speed = static_cast<double>(rx_bytes - _recent_data.rx_bytes) * 1000 / millis;
+    auto tx_speed = static_cast<double>(tx_bytes - _recent_data.tx_bytes) * 1000 / millis;
 
     _recent_data.rx_bytes = rx_bytes;
     _recent_data.tx_bytes = tx_bytes;

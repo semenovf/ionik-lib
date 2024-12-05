@@ -9,6 +9,7 @@
 #pragma once
 #include "basic_net_statistics.hpp"
 #include <pfs/ionik/error.hpp>
+#include <pfs/filesystem.hpp>
 #include <string>
 
 namespace ionik {
@@ -19,8 +20,11 @@ class sys_class_net_provider: public basic_net_statistics
 private:
     std::string _iface;         // network interface name (subdirectory name in /sys/class/net)
     std::string _readable_name;
+    pfs::filesystem::path _rx_bytes_path;
+    pfs::filesystem::path _tx_bytes_path;
 
 private:
+    bool read (std::int64_t & rx_bytes, std::int64_t & tx_bytes, error * perr);
     bool read_all (error * perr);
 
 public:
