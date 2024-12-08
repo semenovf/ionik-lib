@@ -15,8 +15,10 @@ project(ionik-ALL CXX)
 option(IONIK__BUILD_STRICT "Build with strict policies: C++ standard required, C++ extension is OFF etc" ON)
 option(IONIK__BUILD_TESTS "Build tests" OFF)
 option(IONIK__BUILD_DEMO "Build examples/demo" OFF)
-option(IONIK__ENABLE_COVERAGE "Build tests with coverage support" OFF)
-option(IONIK__ENABLE_PROFILER "Build with profiling support" OFF)
+
+option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
+option(IONIK__ENABLE_PULSEAUDIO "Enable PulseAudio as backend" OFF)
+option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
 
 if (IONIK__BUILD_STRICT)
     if (NOT CMAKE_CXX_STANDARD)
@@ -29,10 +31,6 @@ endif()
 
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "C++ compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
-
-if (IONIK__BUILD_TESTS)
-    set(IONIK__BUILD_SHARED ON)
-endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
@@ -47,17 +45,6 @@ endif()
 
 if (IONIK__BUILD_DEMO AND EXISTS ${CMAKE_CURRENT_LIST_DIR}/demo)
     add_subdirectory(demo)
-endif()
-
-if (IONIK__ENABLE_PROFILER)
-    message(STATUS "Profiler feature enabled")
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "-pg")
-        set(CMAKE_C_FLAGS "-pg")
-    else()
-        message(FATAL_ERROR "Profiler feature requires GCC")
-    endif()
 endif()
 
 include(GNUInstallDirs)
