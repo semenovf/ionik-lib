@@ -17,7 +17,6 @@ option(IONIK__BUILD_TESTS "Build tests" OFF)
 option(IONIK__BUILD_DEMO "Build examples/demo" OFF)
 
 option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
-option(IONIK__ENABLE_PULSEAUDIO "Enable PulseAudio as backend" OFF)
 option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
 
 if (IONIK__BUILD_STRICT)

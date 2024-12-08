@@ -79,7 +79,7 @@ elseif (MSVC)
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/psapi_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_win.cpp)
 
-    list(APPEND _ionik__compile_options "/wd4251" "/wd4267" "/wd4244")
+    target_compile_options(ionik PRIVATE "/wd4251" "/wd4267" "/wd4244")
     target_link_libraries(ionik PRIVATE Setupapi
         Mf Mfplat Mfreadwrite Mfuuid # Media Foundation library
         Pdh iphlpapi)
@@ -97,19 +97,17 @@ endif(IONIK__ENABLE_QT5)
 if (NOT _ionik__audio_backend_FOUND)
     #if (UNIX AND NOT APPLE AND NOT CYGWIN)
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        if (IONIK__ENABLE_PULSEAUDIO)
-            # In Ubuntu it is a part of 'libpulse-dev' package
-            find_package(PulseAudio)
+        # In Ubuntu it is a part of 'libpulse-dev' package
+        find_package(PulseAudio)
 
-            if (PULSEAUDIO_FOUND)
-                message(STATUS "PulseAudio version: ${PULSEAUDIO_VERSION}")
+        if (PULSEAUDIO_FOUND)
+            message(STATUS "PulseAudio version: ${PULSEAUDIO_VERSION}")
 
-                target_sources(ionik PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_pulseaudio.cpp)
+            target_sources(ionik PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_pulseaudio.cpp)
 
-                target_include_directories(ionik PUBLIC ${PULSEAUDIO_INCLUDE_DIR})
-                target_link_libraries(ionik PRIVATE ${PULSEAUDIO_LIBRARY})
-                set(_ionik__audio_backend_FOUND ON)
-            endif()
+            target_include_directories(ionik PUBLIC ${PULSEAUDIO_INCLUDE_DIR})
+            target_link_libraries(ionik PRIVATE ${PULSEAUDIO_LIBRARY})
+            set(_ionik__audio_backend_FOUND ON)
         endif()
     elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_sources(ionik PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_win32.cpp)
@@ -133,7 +131,7 @@ if (MSVC)
 endif(MSVC)
 
 if (NOT _ionik__audio_backend_FOUND)
-    message(FATAL_ERROR
+    message(WARNING
         " No any Audio backend found\n"
         " For Debian-based distributions it may be PulseAudio ('libpulse-dev' package)")
 endif()
