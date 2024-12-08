@@ -54,7 +54,6 @@ if (ANDROID)
     target_link_libraries(ionik PRIVATE camera2ndk)
 elseif (UNIX)
     target_sources(ionik PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/getrusage_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/parser.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_meminfo_provider.cpp
@@ -65,11 +64,22 @@ elseif (UNIX)
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/sysinfo_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_v4l2.cpp)
 
-    target_link_libraries(ionik PRIVATE udev)
+    check_include_file(libudev.h _has_libudev_h)
 
-    if (NOT EXISTS /usr/include/libudev.h)
-        target_include_directories(ionik PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
+    if (_has_libudev_h)
+        target_sources(ionik PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_libudev.cpp)
+        target_link_libraries(ionik PRIVATE udev)
+    else()
+        message(WARNING
+            "No 'udev' library found\n"
+            "For Debian-based distributions try to install 'libudev-dev' package"
+            "Device observer based on 'udev' library disabled")
+
+        #if (NOT EXISTS /usr/include/libudev.h)
+        #    target_include_directories(ionik PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
+        #endif()
     endif()
+
 elseif (MSVC)
     target_sources(ionik PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src/device_observer_win32.cpp
