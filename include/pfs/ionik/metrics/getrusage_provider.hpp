@@ -8,10 +8,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "counter.hpp"
+#include "pfs/ionik/error.hpp"
+#include "pfs/ionik/namespace.hpp"
 #include <pfs/string_view.hpp>
-#include <pfs/ionik/error.hpp>
 
-namespace ionik {
+IONIK__NAMESPACE_BEGIN
+
 namespace metrics {
 
 // See man getrusage(2)
@@ -37,4 +39,6 @@ public:
 
 };
 
-}} // namespace ionik::metrics
+} // namespace metrics
+
+IONIK__NAMESPACE_END

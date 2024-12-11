@@ -104,7 +104,7 @@ bool proc_stat_provider::parse_record (string_view::const_iterator & pos
             p = tmp;
         }
 
-        advance_nl(p, last);
+        advance_nl1n(p, last);
     }
 
     if (!success) {

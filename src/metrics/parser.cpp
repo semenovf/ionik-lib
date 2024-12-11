@@ -54,6 +54,32 @@ bool advance_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const
 
     ++pos;
 
+    return true;
+}
+
+bool advance_nl_or_endp (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
+{
+    if (pos == last)
+        return true;
+
+    if (*pos != '\n')
+        return false;
+
+    ++pos;
+
+    return true;
+}
+
+bool advance_nl1n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
+{
+    if (pos == last)
+        return false;
+
+    if (*pos != '\n')
+        return false;
+
+    ++pos;
+
     while (pos != last && *pos == '\n')
         ++pos;
 
@@ -104,6 +130,19 @@ bool advance_colon (pfs::string_view::const_iterator & pos, pfs::string_view::co
         return false;
 
     if (*pos != ':')
+        return false;
+
+    ++pos;
+
+    return true;
+}
+
+bool advance_assign (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last)
+{
+    if (pos == last)
+        return false;
+
+    if (*pos != '=')
         return false;
 
     ++pos;

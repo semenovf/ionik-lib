@@ -49,7 +49,7 @@ bool proc_meminfo_provider::parse_record (string_view::const_iterator & pos
         && advance_ws0n(p, last)
         && advance_units(p, last, rec.units)
         && advance_ws0n(p, last)
-        && advance_nl(p, last);
+        && advance_nl1n(p, last);
 
     if (!success) {
         pfs::throw_or(perr, error {

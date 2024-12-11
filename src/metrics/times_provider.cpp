@@ -55,7 +55,7 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
     // Empty string, ignore
     if (is_nl(*p)) {
         pos = p;
-        advance_nl(pos, last);
+        advance_nl1n(pos, last);
         return true;
     }
 
@@ -64,7 +64,7 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
         && advance_colon(p, last)
         && advance_ws0n(p, last)
         && advance_unparsed_value(p, last, rec.value)
-        && advance_nl(p, last);
+        && advance_nl1n(p, last);
 
     if (!success) {
         pfs::throw_or(perr, error {

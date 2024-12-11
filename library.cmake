@@ -54,6 +54,7 @@ if (ANDROID)
     target_link_libraries(ionik PRIVATE camera2ndk)
 elseif (UNIX)
     target_sources(ionik PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/freedesktop_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/getrusage_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/parser.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/proc_meminfo_provider.cpp

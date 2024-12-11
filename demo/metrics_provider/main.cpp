@@ -11,7 +11,8 @@
 #   include "pfs/ionik/metrics/netioapi_provider.hpp"
 #   include "pfs/ionik/metrics/pdh_provider.hpp"
 #   include "pfs/ionik/metrics/psapi_provider.hpp"
-#else
+#elif __linux__
+#   include "pfs/ionik/metrics/freedesktop_provider.hpp"
 #   include "pfs/ionik/metrics/proc_meminfo_provider.hpp"
 #   include "pfs/ionik/metrics/proc_self_status_provider.hpp"
 #   include "pfs/ionik/metrics/proc_stat_provider.hpp"
@@ -19,6 +20,8 @@
 #   include "pfs/ionik/metrics/times_provider.hpp"
 #   include "pfs/ionik/metrics/getrusage_provider.hpp"
 #   include "pfs/ionik/metrics/sys_class_net_provider.hpp"
+#else
+#   error "Unsupported operation system"
 #endif
 
 #include "pfs/ionik/metrics/system_counters.hpp"
@@ -50,6 +53,7 @@ static void print_help (char const * program)
     fmt::println("{} --help", program);
     fmt::println("{} --net-interfaces", program);
     fmt::println("{} [--verbose | --random] [--iface IFACE]", program);
+    fmt::println("{} --os", program);
 }
 
 static void print_net_interfaces ()
@@ -61,6 +65,15 @@ static void print_net_interfaces ()
 
     for (auto const & iface: ifaces)
         fmt::println("  {}. {}", counter++, iface);
+}
+
+static void print_os ()
+{
+#if __linux__
+    ionik::metrics::freedesktop_provider fp;
+    fmt::println("OS: {}", fp.os_name());
+    fmt::println("OS name: {}", fp.os_pretty_name());
+#endif
 }
 
 constexpr double to_kibs (std::int64_t value)
@@ -274,6 +287,9 @@ int main (int argc, char * argv[])
             return EXIT_SUCCESS;
         } else if (std::strcmp(argv[i], "--net-interfaces") == 0) {
             print_net_interfaces();
+            return EXIT_SUCCESS;
+        } else if (std::strcmp(argv[i], "--os") == 0) {
+            print_os();
             return EXIT_SUCCESS;
         } else if (std::strcmp(argv[i], "--random") == 0) {
             is_random_counters = true;

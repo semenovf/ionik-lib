@@ -69,11 +69,11 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
                 && advance_ws0n(p, last)
                 && advance_units(p, last, rec.values[1])
                 && advance_ws0n(p, last)
-                && advance_nl(p, last);
+                && advance_nl1n(p, last);
         } else {
             rec.values.resize(1);
             success = advance_unparsed_value(p, last, rec.values[0])
-                && advance_nl(p, last);
+                && advance_nl1n(p, last);
         }
     }
 

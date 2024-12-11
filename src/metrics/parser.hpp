@@ -32,10 +32,13 @@ inline void skip_ws (pfs::string_view::const_iterator & pos, pfs::string_view::c
 bool advance_ws0n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_ws1n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_nl_or_endp (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_nl1n (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_until_nl (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_token (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_word (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_colon (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
+bool advance_assign (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_decimal_digits (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last);
 bool advance_key (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & key);
 bool advance_decimal_digits_value (pfs::string_view::const_iterator & pos, pfs::string_view::const_iterator last, pfs::string_view & value);
