@@ -13,7 +13,7 @@
 #include <pfs/filesystem.hpp>
 #include <pfs/i18n.hpp>
 #include <pfs/string_view.hpp>
-// #include "pfs/numeric_cast.hpp"
+#include <algorithm>
 
 IONIK__NAMESPACE_BEGIN
 
@@ -22,6 +22,9 @@ namespace metrics {
 namespace fs = pfs::filesystem;
 using string_view = pfs::string_view;
 
+//
+// https://www.freedesktop.org/software/systemd/man/latest/os-release.html
+//
 // Example:
 //--------------------------------------------------------------------------------------------------
 // PRETTY_NAME="Ubuntu 22.04.5 LTS"
@@ -173,9 +176,10 @@ static error parse_os_release (os_release_info & osi)
     os_release_record rec;
 
     while (parse_record(pos, last, rec, & err)) {
-        if (rec.key == "PRETTY_NAME")
+        if (rec.key == "PRETTY_NAME") {
             osi.PRETTY_NAME = to_string(rec.value);
-        else if (rec.key == "NAME")
+            std::replace(osi.PRETTY_NAME.begin(), osi.PRETTY_NAME.end(), '_', ' ');
+        } else if (rec.key == "NAME")
             osi.NAME = to_string(rec.value);
         else if (rec.key == "VERSION_ID")
             osi.VERSION_ID = to_string(rec.value);
@@ -203,9 +207,6 @@ static error parse_os_release (os_release_info & osi)
     return err;
 }
 
-//
-// https://www.freedesktop.org/software/systemd/man/latest/os-release.html
-//
 freedesktop_provider::freedesktop_provider (error * perr)
 {
     os_release_info osi;
@@ -216,8 +217,13 @@ freedesktop_provider::freedesktop_provider (error * perr)
         return;
     }
 
-    _os_name = osi.NAME;
-    _os_pretty_name = osi.PRETTY_NAME;
+    _os_release.name        = std::move(osi.NAME);
+    _os_release.pretty_name = std::move(osi.PRETTY_NAME);
+    _os_release.version     = std::move(osi.VERSION);
+    _os_release.version_id  = std::move(osi.VERSION_ID);
+    _os_release.codename    = std::move(osi.VERSION_CODENAME);
+    _os_release.id          = std::move(osi.ID);
+    _os_release.id_like     = std::move(osi.ID_LIKE);
 }
 
 } // namespace metrics

@@ -69,7 +69,7 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
     if (!success) {
         pfs::throw_or(perr, error {
               pfs::errc::unexpected_data
-            , tr::_("`/proc/cpuinfo` record has unexpected format")
+            , tr::_("'/proc/cpuinfo' record has unexpected format")
         });
 
         return false;
@@ -79,7 +79,7 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
     if (rec.key.empty()) {
         pfs::throw_or(perr, error {
               pfs::errc::unexpected_data
-            , tr::_("`/proc/cpuinfo` record key is empty")
+            , tr::_("'/proc/cpuinfo' record key is empty")
         });
 
         return false;

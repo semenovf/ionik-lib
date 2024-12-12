@@ -71,8 +71,14 @@ static void print_os ()
 {
 #if __linux__
     ionik::metrics::freedesktop_provider fp;
-    fmt::println("OS: {}", fp.os_name());
-    fmt::println("OS name: {}", fp.os_pretty_name());
+    auto const & osr = fp.os_release();
+    fmt::println("OS           : {}", osr.name);
+    fmt::println("OS name      : {}", osr.pretty_name);
+    fmt::println("OS version   : {}", osr.version);
+    fmt::println("OS version ID: {}", osr.version_id);
+    fmt::println("OS codename  : {}", osr.codename);
+    fmt::println("OS ID        : {}", osr.id);
+    fmt::println("OS ID LIKE   : {}", osr.id_like);
 #endif
 }
 
