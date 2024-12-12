@@ -87,3 +87,18 @@ TEST_CASE("local_file") {
 
     fs::remove(test_file_path);
 }
+
+TEST_CASE("initial size") {
+    auto test_file_path = unique_temp_file_path();
+    MESSAGE("Test file path: ", pfs::filesystem::utf8_encode(test_file_path));
+
+    ionik::local_file::filesize_type initial_size = 10UL * 1024 * 1024 * 1024; // 10 Mib
+
+    auto test_file = ionik::local_file::open_write_only(test_file_path, ionik::truncate_enum::on
+        , initial_size);
+
+    test_file.close();
+
+    CHECK_EQ(fs::file_size(test_file_path), initial_size);
+    fs::remove(test_file_path);
+}

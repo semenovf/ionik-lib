@@ -31,7 +31,8 @@ public:
     static bool is_invalid (handle_type const & h) noexcept;
     static filesize_type size (filepath_type const & path, error * perr);
     static handle_type open_read_only (filepath_type const & path, error * perr);
-    static handle_type open_write_only (filepath_type const & path, truncate_enum trunc, error * perr);
+    static handle_type open_write_only (filepath_type const & path, truncate_enum trunc
+        , filesize_type initial_size, error * perr);
     static void close (handle_type & h);
     static offset_result_type offset (handle_type const & h, error * perr);
     static bool set_pos (handle_type & h, filesize_type offset, error * perr);

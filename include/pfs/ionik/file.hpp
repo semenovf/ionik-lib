@@ -70,7 +70,7 @@ public:
 
     operator bool () const noexcept
     {
-        return _h >= 0;
+        return _h != FileProvider::invalid();
     }
 
     handle_type native () const noexcept
@@ -181,12 +181,7 @@ public: // static
    /**
     * @brief Open file for reading.
     *
-    * @return Input file handle or @c INVALID_FILE_HANDLE on error. In last case
-    *         @a ec set to appropriate error code:
-    *         - @c std::errc::no_such_file_or_directory if file not found;
-    *         - @c std::errc::invalid_argument if @a offset has unsuitable value;
-    *         - other POSIX-specific error codes returned by @c ::open and
-    *           @c ::lseek calls.
+    * @return Input file handle.
     */
     static file open_read_only (filepath_type const & path, error * perr = nullptr)
     {
@@ -199,23 +194,25 @@ public: // static
     /**
     * @brief Open file for writing.
     *
-    * @return Output file handle or @c INVALID_FILE_HANDLE on error. In last case
-    *         @a ec set to appropriate error code:
-    *         - POSIX-specific error codes returned by @c ::open and
-    *           @c ::lseek calls.
+    * @param path File path to open.
+    * @param trunc Truncation flag.
+    * @param initial_size Initial size. If @a trunc is @c on then the file will be resized to the
+    *        specified size.
+    *
+    * @return Output file handle.
     */
     static file open_write_only (filepath_type const & path, truncate_enum trunc
-        , error * perr = nullptr)
+        , filesize_type initial_size = 0, error * perr = nullptr)
     {
         return file {
-              FileProvider::open_write_only(path, trunc, perr)
+              FileProvider::open_write_only(path, trunc, initial_size, perr)
             , trunc == truncate_enum::on ? 0 : FileProvider::size(path, perr)
         };
     }
 
     static file open_write_only (filepath_type const & path, error * perr = nullptr)
     {
-        return open_write_only(path, truncate_enum::off, perr);
+        return open_write_only(path, truncate_enum::off, 0, perr);
     }
 
     /**

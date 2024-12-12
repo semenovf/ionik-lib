@@ -67,6 +67,16 @@ filesize_t file_provider_t::size (filepath_t const & path, error * perr)
 }
 
 template <>
+void file_provider_t::close (handle_t & h)
+{
+#if _MSC_VER
+    _close(h);
+#else
+    ::close(h);
+#endif
+}
+
+template <>
 handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 {
     if (!fs::exists(path)) {
@@ -113,12 +123,12 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 }
 
 template <>
-handle_t file_provider_t::open_write_only (filepath_t const & path
-    , truncate_enum trunc, error * perr)
+handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enum trunc
+    , filesize_type initial_size, error * perr)
 {
     int oflags = O_WRONLY | O_CREAT;
 
-    if (trunc == truncate_enum::on)
+    if (trunc == truncate_enum::on && initial_size == 0)
         oflags |= O_TRUNC;
 
 #if _MSC_VER
@@ -133,21 +143,47 @@ handle_t file_provider_t::open_write_only (filepath_t const & path
 
     if (h < 0) {
         pfs::throw_or(perr, std::error_code(errno, std::generic_category())
-            , tr::f_("open write only file: {}", path));
+            , tr::f_("open write only file failure: {}", path));
         return INVALID_FILE_HANDLE;
     }
 
-    return h;
-}
+    if (trunc == truncate_enum::on && initial_size > 0) {
+        std::error_code ec;
 
-template <>
-void file_provider_t::close (handle_t & h)
-{
 #if _MSC_VER
-    _close(h);
+        LARGE_INTEGER large_initial_size;
+        large_initial_size.QuadPart = static_cast<LONGLONG>(initial_size);
+
+        if (large_initial_size.QuadPart >= 0) {
+
+            auto success = SetFilePointerEx(h, large_initial_size, NULL, FILE_BEGIN) == 0
+                || SetEndOfFile(h) == 0;
+
+            if (!success)
+                ec = pfs::get_last_system_error();
+        } else {
+            ec = std::make_error_code(std::errc::file_too_large);
+        }
 #else
-    ::close(h);
+        auto rc = ::truncate(fs::utf8_encode(path).c_str(), static_cast<off_t>(initial_size));
+
+        if (rc != 0)
+            ec = pfs::get_last_system_error();
 #endif
+
+        if (ec) {
+            pfs::throw_or(perr, error {
+                  ec
+                , tr::_("resize file failure while open write only file")
+                , fs::utf8_encode(path)
+            });
+
+            file_provider_t::close(h);
+            return INVALID_FILE_HANDLE;
+        }
+    }
+
+    return h;
 }
 
 template <>
