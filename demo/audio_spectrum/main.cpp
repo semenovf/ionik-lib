@@ -32,7 +32,8 @@ bool build_spectrum (fs::path const & auPath
 
     std::size_t chunk_count = 25;
     std::size_t frame_step = 1;    // step by every frame
-    auto res = spectrum_builder(chunk_count, frame_step);
+    ionik::error err;
+    auto res = spectrum_builder(chunk_count, frame_step, & err);
 
     if (res) {
         LOGD("", "Spectrum size: {}", res->data.size());
@@ -59,7 +60,7 @@ bool build_spectrum (fs::path const & auPath
         return true;
     }
 
-    LOGE("", "{}", res.error().what());
+    LOGE("", "{}", err.what());
 
     spectrumFailure();
     return false;

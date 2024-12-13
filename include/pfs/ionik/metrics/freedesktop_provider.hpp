@@ -18,7 +18,7 @@ namespace metrics {
 class freedesktop_provider
 {
 public:
-    struct os_release_record
+    struct os_release_info
     {
         std::string name;
         std::string pretty_name;
@@ -30,13 +30,13 @@ public:
     };
 
 private:
-    os_release_record _os_release;
+    os_release_info _os_release;
 
 public:
     freedesktop_provider (error * perr = nullptr);
 
 public:
-    os_release_record const & os_release () const noexcept
+    os_release_info const & os_release () const noexcept
     {
         return _os_release;
     }

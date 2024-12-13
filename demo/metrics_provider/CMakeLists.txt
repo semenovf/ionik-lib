@@ -13,5 +13,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE pfs::ionik)
 
 if (MSVC)
     add_executable(pdh_browse_counters pdh_browse_counters.cpp)
-    target_compile_definitions(pdh_browse_counters PRIVATE UNICODE "utf-8")
+    target_compile_definitions(pdh_browse_counters PRIVATE UNICODE _UNICODE)
+    target_compile_options(pdh_browse_counters PRIVATE "/utf-8")
 endif()

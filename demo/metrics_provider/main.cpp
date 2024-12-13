@@ -11,6 +11,7 @@
 #   include "pfs/ionik/metrics/netioapi_provider.hpp"
 #   include "pfs/ionik/metrics/pdh_provider.hpp"
 #   include "pfs/ionik/metrics/psapi_provider.hpp"
+#   include "pfs/ionik/metrics/windowsinfo_provider.hpp"
 #elif __linux__
 #   include "pfs/ionik/metrics/freedesktop_provider.hpp"
 #   include "pfs/ionik/metrics/proc_meminfo_provider.hpp"
@@ -69,17 +70,33 @@ static void print_net_interfaces ()
 
 static void print_os ()
 {
-#if __linux__
-    ionik::metrics::freedesktop_provider fp;
-    auto const & osr = fp.os_release();
-    fmt::println("OS           : {}", osr.name);
-    fmt::println("OS name      : {}", osr.pretty_name);
-    fmt::println("OS version   : {}", osr.version);
-    fmt::println("OS version ID: {}", osr.version_id);
-    fmt::println("OS codename  : {}", osr.codename);
-    fmt::println("OS ID        : {}", osr.id);
-    fmt::println("OS ID LIKE   : {}", osr.id_like);
+    try {
+#if _MSC_VER
+        ionik::metrics::windowsinfo_provider vvi;
+        auto const & osr = vvi.os_release();
+#elif __linux__
+        ionik::metrics::freedesktop_provider fp;
+        auto const & osr = fp.os_release();
 #endif
+        fmt::println("OS           : {}", osr.name);
+        fmt::println("OS name      : {}", osr.pretty_name);
+        fmt::println("OS version   : {}", osr.version);
+        fmt::println("OS version ID: {}", osr.version_id);
+        fmt::println("OS codename  : {}", osr.codename);
+        fmt::println("OS ID        : {}", osr.id);
+        fmt::println("OS ID LIKE   : {}", osr.id_like);
+
+#if _MSC_VER
+        fmt::println("Device name : {}", osr.device_name);
+        fmt::println("CPU vendor  : {}", osr.cpu_vendor);
+        fmt::println("CPU         : {}", osr.cpu_brand);
+        fmt::println("RAM, GB     : {:.2f} ", osr.ram_installed / 1024);
+        fmt::println("OS bits     : {}", osr.os_bits);
+        fmt::println("CPU bits    : {}", osr.cpu_bits);
+#endif
+    } catch (ionik::error const & ex) {
+        LOGE("", "{}", ex.what());
+    }
 }
 
 constexpr double to_kibs (std::int64_t value)

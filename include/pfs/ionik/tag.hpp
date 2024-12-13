@@ -1,0 +1,16 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2024 Vladislav Trifochkin
+//
+// This file is part of `ionik-lib`.
+//
+// Changelog:
+//      2024.12.13 Initial version.
+////////////////////////////////////////////////////////////////////////////////
+#pragma once
+#include "namespace.hpp"
+
+IONIK__NAMESPACE_BEGIN
+
+constexpr char const * TAG = "IONIK";
+
+IONIK__NAMESPACE_END

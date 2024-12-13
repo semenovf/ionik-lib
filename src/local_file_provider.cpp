@@ -17,6 +17,7 @@
 #   include <sys/types.h>
 #   include <sys/stat.h>
 #   include <fcntl.h>
+#   include <io.h>
 
 #   ifndef S_IRUSR
 #       define S_IRUSR _S_IREAD
@@ -155,9 +156,9 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
         large_initial_size.QuadPart = static_cast<LONGLONG>(initial_size);
 
         if (large_initial_size.QuadPart >= 0) {
-
-            auto success = SetFilePointerEx(h, large_initial_size, NULL, FILE_BEGIN) == 0
-                || SetEndOfFile(h) == 0;
+            auto hh = reinterpret_cast<HANDLE>(_get_osfhandle(h));
+            auto success = SetFilePointerEx(hh, large_initial_size, NULL, FILE_BEGIN) == 0
+                || SetEndOfFile(hh) == 0;
 
             if (!success)
                 ec = pfs::get_last_system_error();

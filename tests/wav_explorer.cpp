@@ -127,34 +127,35 @@ TEST_CASE("wav_explorer") {
             / fs::utf8_decode(elem.filename)
         };
 
-        auto expected = wav_explorer.read_header();
+        ionik::error err;
+        auto hdr = wav_explorer.read_header(& err);
 
-        if (!expected) {
-            fmt::println(stderr, "ERROR: {}", expected.error().what());
+        if (!hdr) {
+            fmt::println(stderr, "ERROR: {}", err.what());
         }
 
-        REQUIRE_EQ(expected.has_value(), true);
-        CHECK_EQ(expected->byte_order, elem.info.byte_order);
-        CHECK_EQ(expected->audio_format, elem.info.audio_format);
-        CHECK_EQ(expected->num_channels, elem.info.num_channels);
-        CHECK_EQ(expected->sample_rate, elem.info.sample_rate);
-        CHECK_EQ(expected->sample_size, elem.info.sample_size);
-        CHECK_EQ(expected->byte_rate, elem.info.byte_rate);
-        CHECK_EQ(expected->sample_count, elem.info.sample_count);
-        CHECK_EQ(expected->frame_count, elem.info.frame_count);
-        CHECK_EQ(expected->duration, elem.info.duration);
-        CHECK_EQ(expected->data.id, elem.info.data.id);
-        CHECK_EQ(expected->data.size, elem.info.data.size);
-        CHECK_EQ(expected->data.start_offset, elem.info.data.start_offset);
+        REQUIRE_EQ(hdr.has_value(), true);
+        CHECK_EQ(hdr->byte_order, elem.info.byte_order);
+        CHECK_EQ(hdr->audio_format, elem.info.audio_format);
+        CHECK_EQ(hdr->num_channels, elem.info.num_channels);
+        CHECK_EQ(hdr->sample_rate, elem.info.sample_rate);
+        CHECK_EQ(hdr->sample_size, elem.info.sample_size);
+        CHECK_EQ(hdr->byte_rate, elem.info.byte_rate);
+        CHECK_EQ(hdr->sample_count, elem.info.sample_count);
+        CHECK_EQ(hdr->frame_count, elem.info.frame_count);
+        CHECK_EQ(hdr->duration, elem.info.duration);
+        CHECK_EQ(hdr->data.id, elem.info.data.id);
+        CHECK_EQ(hdr->data.size, elem.info.data.size);
+        CHECK_EQ(hdr->data.start_offset, elem.info.data.start_offset);
 
-        REQUIRE_EQ(expected->extra.size(), elem.info.extra.size());
+        REQUIRE_EQ(hdr->extra.size(), elem.info.extra.size());
 
-        for (std::size_t i = 0; i < expected->extra.size(); i++) {
-            CHECK_EQ(expected->extra[i].id, elem.info.extra[i].id);
+        for (std::size_t i = 0; i < hdr->extra.size(); i++) {
+            CHECK_EQ(hdr->extra[i].id, elem.info.extra[i].id);
         }
 
         fmt::println("Duration ({}): {}", elem.filename
-            , ionik::audio::stringify_duration(expected->duration
+            , ionik::audio::stringify_duration(hdr->duration
                 , ionik::audio::duration_precision::milliseconds));
     }
 }
@@ -171,28 +172,29 @@ TEST_CASE("QAudioDecoder") {
         / PFS__LITERAL_PATH("stereol.wav");
     ionik::audio::wav_explorer wav_explorer { au_path };
 
-    auto res = wav_explorer.read_header();
+    ionik::error err;
+    auto hdr = wav_explorer.read_header(& err);
 
-    if (!res) {
-        fmt::println(stderr, "ERROR: {}", res.error().what());
+    if (!hdr) {
+        fmt::println(stderr, "ERROR: {}", err.what());
     }
 
-    REQUIRE_EQ(res.has_value(), true);
-    REQUIRE_EQ(res->audio_format, 1); // PCM
+    REQUIRE_EQ(hdr.has_value(), true);
+    REQUIRE_EQ(hdr->audio_format, 1); // PCM
 
     // Make sure the data we receive is in correct PCM format.
     // Our wav file writer only supports SignedInt sample type.
     QAudioFormat audioFormat;
     audioFormat.setCodec("audio/pcm");
-    audioFormat.setChannelCount(res->num_channels);
-    audioFormat.setSampleRate(res->sample_rate);
-    audioFormat.setSampleSize(res->sample_size);
-    audioFormat.setSampleType(res->sample_size == 8
+    audioFormat.setChannelCount(hdr->num_channels);
+    audioFormat.setSampleRate(hdr->sample_rate);
+    audioFormat.setSampleSize(hdr->sample_size);
+    audioFormat.setSampleType(hdr->sample_size == 8
         ? QAudioFormat::UnSignedInt
-        : res->sample_size == 16
+        : hdr->sample_size == 16
             ? QAudioFormat::SignedInt
             : QAudioFormat::Float);
-    audioFormat.setByteOrder(res->byte_order == pfs::endian::little
+    audioFormat.setByteOrder(hdr->byte_order == pfs::endian::little
         ? QAudioFormat::LittleEndian : QAudioFormat::BigEndian);
 
     int argc = 0;

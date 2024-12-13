@@ -10,11 +10,10 @@
 #include "pfs/ionik/error.hpp"
 #include "pfs/ionik/exports.hpp"
 #include "pfs/ionik/local_file.hpp"
-#include "pfs/expected.hpp"
+#include "pfs/optional.hpp"
 #include "pfs/endian.hpp"
 #include "pfs/filesystem.hpp"
 #include "pfs/iterator.hpp"
-#include "pfs/expected.hpp"
 #include <functional>
 #include <limits>
 #include <utility>
@@ -86,7 +85,7 @@ public:
     IONIK__EXPORT wav_explorer (local_file && wav_file);
     IONIK__EXPORT wav_explorer (pfs::filesystem::path const & path, error * perr = nullptr);
 
-    IONIK__EXPORT pfs::expected<wav_info, error> read_header ();
+    IONIK__EXPORT pfs::optional<wav_info> read_header (error * perr = nullptr);
     IONIK__EXPORT bool decode (std::size_t frames_chunk_size = 1024);
 };
 
@@ -231,8 +230,13 @@ public:
         : _explorer(& explorer)
     {}
 
-    pfs::expected<wav_spectrum, error> operator () (std::size_t chunk_count
-        , std::size_t frame_step = (std::numeric_limits<std::size_t>::max)());
+    pfs::optional<wav_spectrum> operator () (std::size_t chunk_count, std::size_t frame_step
+        , error * perr = nullptr);
+
+    pfs::optional<wav_spectrum> operator () (std::size_t chunk_count, error * perr = nullptr)
+    {
+        return operator () (chunk_count, (std::numeric_limits<std::size_t>::max)(), perr);
+    }
 };
 
 enum class duration_precision

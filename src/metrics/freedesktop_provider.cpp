@@ -34,11 +34,7 @@ using string_view = pfs::string_view;
 // VERSION_CODENAME=jammy
 // ID=ubuntu
 // ID_LIKE=debian
-// HOME_URL="https://www.ubuntu.com/"
-// SUPPORT_URL="https://help.ubuntu.com/"
-// BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-// PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-// UBUNTU_CODENAME=jammy
+// ...
 //--------------------------------------------------------------------------------------------------
 struct os_release_info
 {

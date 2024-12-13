@@ -92,8 +92,8 @@ bool netioapi_provider::read (std::int64_t & rx_bytes, std::int64_t & tx_bytes, 
         _desc = pfs::windows::utf8_encode(ifrow.Description);
     }
 
-    auto rx_bytes = pfs::numeric_cast<std::int64_t>(ifrow.InOctets);
-    auto tx_bytes = pfs::numeric_cast<std::int64_t>(ifrow.OutOctets);
+    rx_bytes = pfs::numeric_cast<std::int64_t>(ifrow.InOctets);
+    tx_bytes = pfs::numeric_cast<std::int64_t>(ifrow.OutOctets);
 
     return true;
 }

@@ -16,12 +16,12 @@
 //      7. [WAVE Sample Files](https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples.html)
 //
 ////////////////////////////////////////////////////////////////////////////////
-#include "pfs/ionik/audio/wav_explorer.hpp"
-#include "pfs/binary_istream.hpp"
-#include "pfs/endian.hpp"
-#include "pfs/numeric_cast.hpp"
-#include "pfs/string_view.hpp"
-#include "pfs/ionik/local_file.hpp"
+#include "ionik/audio/wav_explorer.hpp"
+#include <pfs/binary_istream.hpp>
+#include <pfs/endian.hpp>
+#include <pfs/numeric_cast.hpp>
+#include <pfs/string_view.hpp>
+#include <pfs/ionik/local_file.hpp>
 #include <cstdint>
 
 namespace ionik {
@@ -86,7 +86,7 @@ wav_explorer::wav_explorer (pfs::filesystem::path const & path, error * perr)
         return;
 }
 
-pfs::expected<wav_info, error> wav_explorer::read_header ()
+pfs::optional<wav_info> wav_explorer::read_header (error * perr)
 {
     wav_info info;
     char buffer[WAV_HEADER_SIZE];
@@ -94,11 +94,15 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
     error err;
     auto res = _wav_file.read(buffer, WAV_HEADER_SIZE, & err);
 
-    if (!res.second)
-        return pfs::make_unexpected(err);
+    if (!res.second) {
+        pfs::throw_or(perr, std::move(err));
+        return pfs::nullopt;
+    }
 
-    if (res.first < WAV_HEADER_SIZE)
-        return pfs::make_unexpected(error {errc::bad_data_format});
+    if (res.first < WAV_HEADER_SIZE) {
+        pfs::throw_or(perr, error {errc::bad_data_format});
+        return pfs::nullopt;
+    }
 
     pfs::binary_istream<pfs::endian::little> is {buffer
         , pfs::numeric_cast<std::size_t>(WAV_HEADER_SIZE)};
@@ -125,20 +129,25 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
     } else if (chunk_id == "RIFX") {
         info.byte_order = pfs::endian::big;
     } else {
-        return pfs::make_unexpected(error {errc::unsupported, tr::_("file format")});
+        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        return pfs::nullopt;
     }
 
     pfs::string_view format{reinterpret_cast<char const *>(& header.format)
         , sizeof(header.format)};
 
-    if (format != "WAVE")
-        return pfs::make_unexpected(error {errc::unsupported, tr::_("file format")});
+    if (format != "WAVE") {
+        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        return pfs::nullopt;
+    }
 
     pfs::string_view subchunk1_id{reinterpret_cast<char const *>(& header.subchunk1_id)
         , sizeof(header.subchunk1_id)};
 
-    if (subchunk1_id != "fmt ")
-        return pfs::make_unexpected(error {errc::unsupported, tr::_("file format")});
+    if (subchunk1_id != "fmt ") {
+        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        return pfs::nullopt;
+    }
 
     switch (header.audio_format) {
         case 1:   // PCM - Pulse Code Modulation Format (codec=audio/pcm)
@@ -150,8 +159,8 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
             info.audio_format = header.audio_format;
             break;
         default:
-            return pfs::make_unexpected(error {errc::unsupported
-                , tr::f_("audio format: {}", header.audio_format)});
+            pfs::throw_or(perr, error {errc::unsupported, tr::f_("audio format: {}", header.audio_format)});
+            return pfs::nullopt;
     }
 
     switch (header.num_channels) {
@@ -160,14 +169,16 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
             info.num_channels = header.num_channels;
             break;
         default:
-            return pfs::make_unexpected(error { errc::unsupported
-                , tr::f_("number of channels: {}", header.num_channels)});
+            pfs::throw_or(perr, error {errc::unsupported, tr::f_("number of channels: {}", header.num_channels)});
+            return pfs::nullopt;
     }
 
     // Skip data if common "fmt " subchunk is less than count specified in subchunk1_size
     if (header.subchunk1_size > WAV_SUBCHUNK1_SIZE) {
-        if (!_wav_file.skip(header.subchunk1_size - WAV_SUBCHUNK1_SIZE, & err))
-            return pfs::make_unexpected(err);
+        if (!_wav_file.skip(header.subchunk1_size - WAV_SUBCHUNK1_SIZE, & err)) {
+            pfs::throw_or(perr, std::move(err));
+            return pfs::nullopt;
+        }
     }
 
     std::uint32_t subchunk2_id;
@@ -180,11 +191,16 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
         // `buffer` already not need here, it can be reused.
         res = _wav_file.read(buffer, chunk_header_size, & err);
 
-        if (!res.second)
-            return pfs::make_unexpected(err);
+        if (!res.second) {
+            pfs::throw_or(perr, std::move(err));
+            return pfs::nullopt;
+        }
 
-        if (res.first < chunk_header_size)
-            return pfs::make_unexpected(error {errc::bad_data_format});
+        if (res.first < chunk_header_size) {
+            pfs::throw_or(perr, error {errc::bad_data_format});
+            return pfs::nullopt;
+
+        }
 
         pfs::binary_istream<pfs::endian::little> is {buffer, chunk_header_size};
         is >> subchunk2_id >> subchunk2_size;
@@ -198,11 +214,15 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
 
         auto off_res = _wav_file.offset(& err);
 
-        if (!off_res.second)
-            return pfs::make_unexpected(err);
+        if (!off_res.second) {
+            pfs::throw_or(perr, std::move(err));
+            return pfs::nullopt;
+        }
 
-        if (!_wav_file.skip(subchunk2_size, & err))
-            return pfs::make_unexpected(err);
+        if (!_wav_file.skip(subchunk2_size, & err)) {
+            pfs::throw_or(perr, std::move(err));
+            return pfs::nullopt;
+        }
 
         info.extra.emplace_back(wav_chunk_info {
               subchunk2_id
@@ -213,15 +233,19 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
 
     // The "data" subchunk contains the size of the data and the actual sound:
     // the number of bytes in the data: NumSamples * num_channels * sample_size/8
-    if (subchunk2_id != 0x64617461) // "data"
-        return pfs::make_unexpected(error {errc::unsupported, tr::_("file format")});
+    if (subchunk2_id != 0x64617461) { // "data"
+        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        return pfs::nullopt;
+    }
 
     // "data" subchunk
     {
         auto off_res = _wav_file.offset(& err);
 
-        if (!off_res.second)
-            return pfs::make_unexpected(err);
+        if (!off_res.second) {
+            pfs::throw_or(perr, std::move(err));
+            return pfs::nullopt;
+        }
 
         info.data.id = subchunk2_id;
         info.data.size = subchunk2_size;
@@ -241,10 +265,11 @@ pfs::expected<wav_info, error> wav_explorer::read_header ()
 
 bool wav_explorer::decode (std::size_t frames_chunk_size)
 {
-    auto hdr = read_header();
+    error err;
+    auto hdr = read_header(& err);
 
     if (!hdr) {
-        on_error(hdr.error());
+        on_error(err);
         return false;
     }
 
@@ -257,8 +282,6 @@ bool wav_explorer::decode (std::size_t frames_chunk_size)
         on_error(error {errc::unsupported, tr::_("sample size: {} bits (only size <= 16 bits supported now)")});
         return false;
     }
-
-    error err;
 
     // Interrupted
     if (!on_wav_info(*hdr, & frames_chunk_size))
@@ -307,15 +330,15 @@ bool wav_explorer::decode (std::size_t frames_chunk_size)
     return true;
 }
 
-pfs::expected<wav_spectrum, error>
-wav_spectrum_builder::operator () (std::size_t chunk_count
-    , std::size_t frame_step)
+pfs::optional<wav_spectrum>
+wav_spectrum_builder::operator () (std::size_t chunk_count, std::size_t frame_step, error * perr)
 {
     if (chunk_count == 0) {
-        return pfs::unexpected<error>(error{
+        pfs::throw_or(perr, error {
               std::make_error_code(std::errc::invalid_argument)
             , tr::_("chunk count must be greater than 0")
         });
+        return pfs::nullopt;
     }
 
     builder_context ctx;
@@ -374,8 +397,10 @@ wav_spectrum_builder::operator () (std::size_t chunk_count
         return (this->*_build_proc)(ctx, raw_samples, size);
     };
 
-    if (!_explorer->decode())
-        return pfs::unexpected<error>(ctx.err);
+    if (!_explorer->decode()) {
+        pfs::throw_or(perr, std::move(ctx.err));
+        return pfs::nullopt;
+    }
 
     return ctx.spectrum;
 }

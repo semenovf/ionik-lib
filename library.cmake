@@ -21,7 +21,7 @@ if (IONIK__BUILD_SHARED)
     target_compile_definitions(ionik PRIVATE IONIK__EXPORTS)
 else()
     add_library(ionik STATIC)
-    target_compile_definitions(ionik PRIVATE IONIK__STATIC)
+    target_compile_definitions(ionik PUBLIC IONIK__STATIC)
 endif()
 
 add_library(pfs::ionik ALIAS ionik)
@@ -88,6 +88,7 @@ elseif (MSVC)
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/gms_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/netioapi_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/metrics/psapi_provider.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/metrics/windowsinfo_provider.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/video/capture_device_info_win.cpp)
 
     target_compile_options(ionik PRIVATE "/wd4251" "/wd4267" "/wd4244")
