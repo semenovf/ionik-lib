@@ -9,7 +9,6 @@
 #pragma once
 #include "os_info.hpp"
 #include "pfs/ionik/error.hpp"
-#include "pfs/ionik/namespace.hpp"
 #include <cstdlib>
 #include <string>
 

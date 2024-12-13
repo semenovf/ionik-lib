@@ -13,7 +13,6 @@
 #   include "pfs/ionik/metrics/psapi_provider.hpp"
 #   include "pfs/ionik/metrics/windowsinfo_provider.hpp"
 #elif __linux__
-#   include "pfs/ionik/metrics/linuxinfo_provider.hpp"
 #   include "pfs/ionik/metrics/proc_meminfo_provider.hpp"
 #   include "pfs/ionik/metrics/proc_self_status_provider.hpp"
 #   include "pfs/ionik/metrics/proc_stat_provider.hpp"
@@ -25,6 +24,7 @@
 #   error "Unsupported operation system"
 #endif
 
+#include "pfs/ionik/metrics/os_info_provider.hpp"
 #include "pfs/ionik/metrics/system_counters.hpp"
 #include "pfs/ionik/metrics/network_counters.hpp"
 #include "pfs/ionik/metrics/random_counters.hpp"
@@ -71,13 +71,8 @@ static void print_net_interfaces ()
 static void print_os ()
 {
     try {
-#if _MSC_VER
-        ionik::metrics::windowsinfo_provider wp;
-        auto const & osr = wp.get_info();
-#elif __linux__
-        ionik::metrics::linuxinfo_provider fp;
-        auto const & osr = fp.get_info();
-#endif
+        ionik::metrics::os_info_provider oip;
+        auto const & osr = oip.get_info();
         fmt::println("OS           : {}", osr.name);
         fmt::println("OS name      : {}", osr.pretty_name);
         fmt::println("OS version   : {}", osr.version);

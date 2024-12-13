@@ -4,32 +4,43 @@
 // This file is part of `ionik-lib`.
 //
 // Changelog:
-//      2024.12.11 Initial version.
+//      2024.12.13 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "os_info.hpp"
-#include "pfs/ionik/error.hpp"
-#include <string>
+#if _MSC_VER
+#   include "windowsinfo_provider.hpp"
+#elif __linux__
+#   include "linuxinfo_provider.hpp"
+#else
+#   error "Unsupported operation system for OS provider"
+#endif
 
 IONIK__NAMESPACE_BEGIN
 
 namespace metrics {
 
-class linuxinfo_provider
+class os_info_provider
 {
 private:
-    os_info _os_info;
+#if _MSC_VER
+    windowsinfo_provider _d;
+#elif __linux__
+    linuxinfo_provider _d;
+#endif
 
 public:
-    linuxinfo_provider (error * perr = nullptr);
+    os_info_provider (error * perr = nullptr)
+        : _d(perr)
+    {}
 
 public:
     os_info const & get_info () const noexcept
     {
-        return _os_info;
+        return _d.get_info();
     }
 };
 
 } // namespace metrics
 
 IONIK__NAMESPACE_END
+

@@ -213,17 +213,6 @@ struct cpu_info
     std::string brand;
 };
 
-// inline void __cpuid (int regs[4], int function_id)
-// {
-//     asm("cpuid": "=a" (regs[0]), "=b" (regs[1]), "=c" (regs[2]), "=d" (regs[3]): "a" (function_id));
-// }
-//
-// inline void __cpuidex (int regs[4], int function_id, int subfunction_id)
-// {
-//     asm("cpuid" : "=a" (regs[0]), "=b" (regs[1]), "=c" (regs[2]), "=d" (regs[3])
-//         : "a" (function_id), "c" (subfunction_id));
-// }
-
 static pfs::optional<cpu_info> cpu_info_from_cpuid ()
 {
     std::array<int, 4> cpui;
