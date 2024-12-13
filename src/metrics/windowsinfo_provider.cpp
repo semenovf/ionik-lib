@@ -10,7 +10,6 @@
 #include "ionik/metrics/windowsinfo_provider.hpp"
 #include <pfs/getenv.hpp>
 #include <pfs/log.hpp>
-#include <pfs/numeric_cast.hpp>
 #include <pfs/optional.hpp>
 #include <windows.h>
 #include <winnt.h>
@@ -271,6 +270,7 @@ static pfs::optional<cpu_info> cpu_info_from_cpuid ()
     n = cpui[0];
 
     char brand[0x40];
+    char * pbrand = brand;
     std::memset(brand, 0, sizeof(brand));
 
     for (int i = 0x80000000; i <= n; ++i) {
@@ -280,12 +280,16 @@ static pfs::optional<cpu_info> cpu_info_from_cpuid ()
 
     // Interpret CPU brand string if reported
     if (n >= 0x80000004) {
-        std::memcpy(brand, extdata[2].data(), sizeof(cpui));
-        std::memcpy(brand + 16, extdata[3].data(), sizeof(cpui));
-        std::memcpy(brand + 32, extdata[4].data(), sizeof(cpui));
+        std::memcpy(brand, extdata[2].data(), 16);
+        std::memcpy(brand + 16, extdata[3].data(), 16);
+        std::memcpy(brand + 32, extdata[4].data(), 16);
+
+        // Trim prefix spaces
+        while (*pbrand == ' ')
+            pbrand++;
     }
 
-    return cpu_info {vendor, brand};
+    return cpu_info {vendor, pbrand};
 }
 
 windowsinfo_provider::windowsinfo_provider (error * perr)
@@ -350,14 +354,14 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     success = GetComputerNameA(compname_buffer, & compname_buffer_size);
 
     if (success) {
-        _os_release.device_name = std::string(compname_buffer, compname_buffer_size);
+        _os_info.device_name = std::string(compname_buffer, compname_buffer_size);
     } else {
         LOGW(TAG, "GetComputerNameA: {}, error ignored", pfs::get_last_system_error().message());
 
         auto computer_name_opt = pfs::getenv("COMPUTERNAME");
 
         if (computer_name_opt) {
-            _os_release.device_name = std::move(*computer_name_opt);
+            _os_info.device_name = std::move(*computer_name_opt);
         }
     }
 
@@ -366,44 +370,44 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     if (version_info) {
         if (version_info->dwMajorVersion == 11) {
             if (version_info->dwMinorVersion == 0)
-                _os_release.version_id = "11";
+                _os_info.version_id = "11";
             else
-                _os_release.version_id = fmt::format("11.{}", version_info->dwMinorVersion);
+                _os_info.version_id = fmt::format("11.{}", version_info->dwMinorVersion);
         } else if (version_info->dwMajorVersion == 10) {
             if (version_info->dwMinorVersion == 0)
-                _os_release.version_id = "10";
+                _os_info.version_id = "10";
             else
-                _os_release.version_id = fmt::format("10.{}", version_info->dwMinorVersion);
+                _os_info.version_id = fmt::format("10.{}", version_info->dwMinorVersion);
         } else if (version_info->dwMajorVersion == 6) {
             if (version_info->dwMinorVersion == 3)
-                _os_release.version_id = "8.1";
+                _os_info.version_id = "8.1";
             else if (version_info->dwMinorVersion == 2)
-                _os_release.version_id = "8";
+                _os_info.version_id = "8";
             else if (version_info->dwMinorVersion == 1) // Windows 7 or Windows Server 2008 R2
-                _os_release.version_id = "7";
+                _os_info.version_id = "7";
         } else {
-            _os_release.version_id = fmt::format("{}.{}", version_info->dwMajorVersion
+            _os_info.version_id = fmt::format("{}.{}", version_info->dwMajorVersion
                 , version_info->dwMinorVersion);
         }
         
-        _os_release.version = fmt::format("{} Build {}", _os_release.version_id, version_info->dwBuildNumber);
+        _os_info.version = fmt::format("{} Build {}", _os_info.version_id, version_info->dwBuildNumber);
 
         auto product_type_cstr = stringify_product_type(product_type);
 
         if (std::strlen(product_type_cstr) == 0) {
-            _os_release.pretty_name = fmt::format("Windows {}", _os_release.version);
+            _os_info.pretty_name = fmt::format("Windows {}", _os_info.version);
         } else {
-            _os_release.pretty_name = fmt::format("Windows {} {}", stringify_product_type(product_type)
-                , _os_release.version);
+            _os_info.pretty_name = fmt::format("Windows {} {}", stringify_product_type(product_type)
+                , _os_info.version);
         }
     }
 
-    _os_release.name    = "Windows";
-    _os_release.id      = "windows";
-    _os_release.id_like = _os_release.id;
+    _os_info.name    = "Windows";
+    _os_info.id      = "windows";
+    _os_info.id_like = _os_info.id;
 
-    if (_os_release.pretty_name.empty())
-        _os_release.pretty_name = _os_release.name;
+    if (_os_info.pretty_name.empty())
+        _os_info.pretty_name = _os_info.name;
 
     /////////////////////////////////////////////////
     // RAM installed
@@ -412,10 +416,10 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     success = GetPhysicallyInstalledSystemMemory(& installed_ram_kibs);
 
     if (success) {
-        _os_release.ram_installed = pfs::numeric_cast<decltype(_os_release.ram_installed)>(installed_ram_kibs) / 1024;
+        _os_info.ram_installed = static_cast<decltype(_os_info.ram_installed)>(installed_ram_kibs) / 1024;
     } else {
         LOGW(TAG, "GetPhysicallyInstalledSystemMemory: {}, error ignored", pfs::get_last_system_error().message());
-        _os_release.ram_installed = 0;
+        _os_info.ram_installed = 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -425,17 +429,17 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     auto cpu_info_opt = cpu_info_from_cpuid();
 
     if (cpu_info_opt) {
-        _os_release.cpu_vendor = std::move(cpu_info_opt->vendor);
-        _os_release.cpu_brand = std::move(cpu_info_opt->brand);
+        _os_info.cpu_vendor = std::move(cpu_info_opt->vendor);
+        _os_info.cpu_brand = std::move(cpu_info_opt->brand);
     }
 
-    if (_os_release.cpu_brand.empty()) {
+    if (_os_info.cpu_brand.empty()) {
         //auto cpu_arch_opt = pfs::getenv("PROCESSOR_ARCHITECTURE"); // e.g. AMD64
         //auto cpu_ncores_opt = pfs::getenv("NUMBER_OF_PROCESSORS"); // e.g. 6 
         auto cpu_ident_opt = pfs::getenv("PROCESSOR_IDENTIFIER");  // e.,g. Intel64 Family 6 Model 158 Stepping 12, GenuineIntel
 
         if (cpu_ident_opt)
-            _os_release.cpu_brand = std::move(*cpu_ident_opt);
+            _os_info.cpu_brand = std::move(*cpu_ident_opt);
     }
 }
 

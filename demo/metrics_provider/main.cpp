@@ -13,7 +13,7 @@
 #   include "pfs/ionik/metrics/psapi_provider.hpp"
 #   include "pfs/ionik/metrics/windowsinfo_provider.hpp"
 #elif __linux__
-#   include "pfs/ionik/metrics/freedesktop_provider.hpp"
+#   include "pfs/ionik/metrics/linuxinfo_provider.hpp"
 #   include "pfs/ionik/metrics/proc_meminfo_provider.hpp"
 #   include "pfs/ionik/metrics/proc_self_status_provider.hpp"
 #   include "pfs/ionik/metrics/proc_stat_provider.hpp"
@@ -72,11 +72,11 @@ static void print_os ()
 {
     try {
 #if _MSC_VER
-        ionik::metrics::windowsinfo_provider vvi;
-        auto const & osr = vvi.os_release();
+        ionik::metrics::windowsinfo_provider wp;
+        auto const & osr = wp.get_info();
 #elif __linux__
-        ionik::metrics::freedesktop_provider fp;
-        auto const & osr = fp.os_release();
+        ionik::metrics::linuxinfo_provider fp;
+        auto const & osr = fp.get_info();
 #endif
         fmt::println("OS           : {}", osr.name);
         fmt::println("OS name      : {}", osr.pretty_name);
@@ -86,14 +86,12 @@ static void print_os ()
         fmt::println("OS ID        : {}", osr.id);
         fmt::println("OS ID LIKE   : {}", osr.id_like);
 
-#if _MSC_VER
-        fmt::println("Device name : {}", osr.device_name);
-        fmt::println("CPU vendor  : {}", osr.cpu_vendor);
-        fmt::println("CPU         : {}", osr.cpu_brand);
-        fmt::println("RAM, GB     : {:.2f} ", osr.ram_installed / 1024);
-        fmt::println("OS bits     : {}", osr.os_bits);
-        fmt::println("CPU bits    : {}", osr.cpu_bits);
-#endif
+        fmt::println("Device name  : {}", osr.device_name);
+        fmt::println("CPU vendor   : {}", osr.cpu_vendor);
+        fmt::println("CPU          : {}", osr.cpu_brand);
+        fmt::println("RAM, GB      : {:.2f} ", osr.ram_installed / 1024);
+        // fmt::println("OS bits     : {}", osr.os_bits);
+        // fmt::println("CPU bits    : {}", osr.cpu_bits);
     } catch (ionik::error const & ex) {
         LOGE("", "{}", ex.what());
     }

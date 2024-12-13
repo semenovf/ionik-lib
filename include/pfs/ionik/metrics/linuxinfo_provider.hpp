@@ -7,6 +7,7 @@
 //      2024.12.11 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include "os_info.hpp"
 #include "pfs/ionik/error.hpp"
 #include "pfs/ionik/namespace.hpp"
 #include <string>
@@ -15,30 +16,18 @@ IONIK__NAMESPACE_BEGIN
 
 namespace metrics {
 
-class freedesktop_provider
+class linuxinfo_provider
 {
-public:
-    struct os_release_info
-    {
-        std::string name;
-        std::string pretty_name;
-        std::string version;
-        std::string version_id;
-        std::string codename;
-        std::string id;
-        std::string id_like;
-    };
-
 private:
-    os_release_info _os_release;
+    os_info _os_info;
 
 public:
-    freedesktop_provider (error * perr = nullptr);
+    linuxinfo_provider (error * perr = nullptr);
 
 public:
-    os_release_info const & os_release () const noexcept
+    os_info const & get_info () const noexcept
     {
-        return _os_release;
+        return _os_info;
     }
 };
 

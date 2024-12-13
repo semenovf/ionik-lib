@@ -9,10 +9,13 @@
 #include "parser.hpp"
 #include "ionik/error.hpp"
 #include "ionik/local_file.hpp"
-#include "ionik/metrics/freedesktop_provider.hpp"
+#include "ionik/metrics/linuxinfo_provider.hpp"
 #include <pfs/filesystem.hpp>
 #include <pfs/i18n.hpp>
+#include <pfs/optional.hpp>
 #include <pfs/string_view.hpp>
+#include <sys/sysinfo.h>
+#include <cpuid.h>
 #include <algorithm>
 
 IONIK__NAMESPACE_BEGIN
@@ -203,7 +206,75 @@ static error parse_os_release (os_release_info & osi)
     return err;
 }
 
-freedesktop_provider::freedesktop_provider (error * perr)
+
+struct cpu_info
+{
+    std::string vendor;
+    std::string brand;
+};
+
+// inline void __cpuid (int regs[4], int function_id)
+// {
+//     asm("cpuid": "=a" (regs[0]), "=b" (regs[1]), "=c" (regs[2]), "=d" (regs[3]): "a" (function_id));
+// }
+//
+// inline void __cpuidex (int regs[4], int function_id, int subfunction_id)
+// {
+//     asm("cpuid" : "=a" (regs[0]), "=b" (regs[1]), "=c" (regs[2]), "=d" (regs[3])
+//         : "a" (function_id), "c" (subfunction_id));
+// }
+
+static pfs::optional<cpu_info> cpu_info_from_cpuid ()
+{
+    std::array<int, 4> cpui;
+    unsigned int eax, ebx, ecx, edx;
+    std::vector<std::array<int, 4>> data;
+    std::vector<std::array<int, 4>> extdata;
+
+    __cpuid(0, cpui[0], cpui[1], cpui[2], cpui[3]);
+    auto n = cpui[0];
+
+    for (int i = 0; i <= n; ++i) {
+        __cpuidex(cpui.data(), i, 0);
+        data.push_back(cpui);
+    }
+
+    // Capture vendor string
+    char vendor[0x20];
+    std::memset(vendor, 0, sizeof(vendor));
+    *reinterpret_cast<int*>(vendor) = data[0][1];
+    *reinterpret_cast<int*>(vendor + 4) = data[0][3];
+    *reinterpret_cast<int*>(vendor + 8) = data[0][2];
+
+    // Calling __cpuid with 0x80000000 as the function_id argument
+    // gets the number of the highest valid extended ID.
+    __cpuid(0x80000000, cpui[0], cpui[1], cpui[2], cpui[3]);
+    n = cpui[0];
+
+    char brand[0x40];
+    char * pbrand = brand;
+    std::memset(brand, 0, sizeof(brand));
+
+    for (int i = 0x80000000; i <= n; ++i) {
+        __cpuidex(cpui.data(), i, 0);
+        extdata.push_back(cpui);
+    }
+
+    // Interpret CPU brand string if reported
+    if (n >= 0x80000004) {
+        std::memcpy(brand, extdata[2].data(), 16);
+        std::memcpy(brand + 16, extdata[3].data(), 16);
+        std::memcpy(brand + 32, extdata[4].data(), 16);
+
+        // Trim prefix spaces
+        while (*pbrand == ' ')
+            pbrand++;
+    }
+
+    return cpu_info {vendor, pbrand};
+}
+
+linuxinfo_provider::linuxinfo_provider (error * perr)
 {
     os_release_info osi;
     auto err = parse_os_release(osi);
@@ -213,13 +284,59 @@ freedesktop_provider::freedesktop_provider (error * perr)
         return;
     }
 
-    _os_release.name        = std::move(osi.NAME);
-    _os_release.pretty_name = std::move(osi.PRETTY_NAME);
-    _os_release.version     = std::move(osi.VERSION);
-    _os_release.version_id  = std::move(osi.VERSION_ID);
-    _os_release.codename    = std::move(osi.VERSION_CODENAME);
-    _os_release.id          = std::move(osi.ID);
-    _os_release.id_like     = std::move(osi.ID_LIKE);
+    _os_info.name        = std::move(osi.NAME);
+    _os_info.pretty_name = std::move(osi.PRETTY_NAME);
+    _os_info.version     = std::move(osi.VERSION);
+    _os_info.version_id  = std::move(osi.VERSION_ID);
+    _os_info.codename    = std::move(osi.VERSION_CODENAME);
+    _os_info.id          = std::move(osi.ID);
+    _os_info.id_like     = std::move(osi.ID_LIKE);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Device info
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    std::array<char, 16> hostname;
+    auto rc = gethostname(hostname.data(), hostname.size());
+
+    if (rc != 0) {
+        pfs::throw_or(perr, error {pfs::get_last_system_error(), tr::_("gethostname")});
+        return;
+    }
+
+    _os_info.device_name = hostname.data();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // RAM installed
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    struct sysinfo si;
+
+    rc = sysinfo(& si);
+
+    if (rc != 0) {
+        pfs::throw_or(perr, error {pfs::get_last_system_error(), tr::_("sysinfo")});
+        return;
+    }
+
+    _os_info.ram_installed = (static_cast<double>(si.totalram) * si.mem_unit) / 1024 / 1024;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // CPU
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    auto cpu_info_opt = cpu_info_from_cpuid();
+
+    if (cpu_info_opt) {
+        _os_info.cpu_vendor = std::move(cpu_info_opt->vendor);
+        _os_info.cpu_brand = std::move(cpu_info_opt->brand);
+    }
+
+    if (_os_info.cpu_brand.empty()) {
+        // //auto cpu_arch_opt = pfs::getenv("PROCESSOR_ARCHITECTURE"); // e.g. AMD64
+        // //auto cpu_ncores_opt = pfs::getenv("NUMBER_OF_PROCESSORS"); // e.g. 6
+        // auto cpu_ident_opt = pfs::getenv("PROCESSOR_IDENTIFIER");  // e.,g. Intel64 Family 6 Model 158 Stepping 12, GenuineIntel
+        //
+        // if (cpu_ident_opt)
+        //     _os_info.cpu_brand = std::move(*cpu_ident_opt);
+    }
 }
 
 } // namespace metrics
