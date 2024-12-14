@@ -211,18 +211,25 @@ static char const * stringify_product_type (DWORD product_type)
 }
 
 //
+// https://learn.microsoft.com/en-us/windows-server/get-started/windows-server-release-info
 // https://en.wikipedia.org/wiki/List_of_Microsoft_codenames
 // https://en.wikipedia.org/wiki/Windows_10_version_history
 // https://en.wikipedia.org/wiki/Windows_11_version_history
+// https://en.wikipedia.org/wiki/Windows_Server_2016
+// https://en.wikipedia.org/wiki/Windows_Server_2019
+// https://en.wikipedia.org/wiki/Windows_Server_2022
+// https://en.wikipedia.org/wiki/Windows_Server_2025
 //
 // Codename for Windows 10 or 11
-static std::string codename_10_11 (DWORD build_number)
+static std::string codename_10_11 (DWORD build_number, bool is_workstation)
 {
+    using codename_map_type = std::map<DWORD, std::tuple<int, pfs::string_view, pfs::string_view>>;
+
     // Codename----------------------------------------------------
     // Version like 1507, 22H2-------------------                 |
     // Major version -------------------        |                 |
     //                                 v        v                 v
-    static std::map<DWORD, std::tuple<int, pfs::string_view, pfs::string_view>> codename_map = {
+    static codename_map_type ws_codename_map = {
           {10240U, { 10, "1507", "Threshold"}}
         , {10586U, { 10, "1511", "Threshold 2"}}
         , {14393U, { 10, "1607", "Redstone"}}
@@ -244,17 +251,41 @@ static std::string codename_10_11 (DWORD build_number)
         , {26100U, { 11, "24H2", "Hudson Valley"}}
     };
 
-    auto pos = codename_map.find(build_number);
+    static codename_map_type server_codename_map = {
+          {10586U, { 10, "1511", "Server 2016 1511"}} // Technical Preview 4
+        , {14393U, { 10, "1607", "Server 2016"}}
+        , {16299U, { 10, "1709", "Server 2016 1709"}}
+        , {17134U, { 10, "1803", "Server 2016 1803"}}
+        , {17763U, { 10, "1809", "Server 2019"}}
+        , {20348U, { 10, ""    , "Server 2022"}}
+        , {26100U, { 11, ""    , "Server 2025"}}
+    };
 
-    if (pos != codename_map.end()) {
-        auto const & value = pos->second;
-        auto version = std::get<1>(value);
-        auto codename = std::get<2>(value);
+    codename_map_type::const_iterator pos = is_workstation 
+        ? ws_codename_map.find(build_number)
+        : server_codename_map.find(build_number);
 
-        return to_string(codename);
+    if (is_workstation && pos == ws_codename_map.end()) 
+        return std::string{};
+
+    if (!is_workstation && pos == server_codename_map.end()) {
+        if (build_number < 17763U)
+            return std::string{"Server 2016"};
+
+        if (build_number < 20348U)
+            return std::string{"Server 2019"};
+
+        if (build_number < 26100U)
+            return std::string{"Server 2022"};
+
+        return std::string{"Server 2025"};
     }
 
-    return std::string{};
+    auto const & value = pos->second;
+    auto version = std::get<1>(value);
+    auto codename = std::get<2>(value);
+
+    return to_string(codename);
 }
 
 inline pfs::optional<OSVERSIONINFOEX> version_info_from_ntdll ()
@@ -418,24 +449,22 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     auto version_info = version_info_from_ntdll();
 
     if (version_info) {
+        bool is_workstation = version_info->wProductType == VER_NT_WORKSTATION;
+
         if (version_info->dwMajorVersion == 10 || version_info->dwMajorVersion == 11) {
             _os_info.version_id = fmt::format("{}.{}"
                 , version_info->dwMajorVersion
                 , version_info->dwMinorVersion);
-            _os_info.codename = codename_10_11(version_info->dwBuildNumber);
+            _os_info.codename = codename_10_11(version_info->dwBuildNumber, is_workstation);
         } else if (version_info->dwMajorVersion == 6) {
             if (version_info->dwMinorVersion == 3) {
-                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION
-                    ? "8.1" : "Server 2012 R2";
+                _os_info.version_id = is_workstation ? "8.1" : "Server 2012 R2";
             } else if (version_info->dwMinorVersion == 2) {
-                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION
-                    ? "8" : "Server 2012";
+                _os_info.version_id = is_workstation ? "8" : "Server 2012";
             } else if (version_info->dwMinorVersion == 1) {
-                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION 
-                    ? "7" : "Server 2008 R2";
+                _os_info.version_id = is_workstation ? "7" : "Server 2008 R2";
             } else if (version_info->dwMinorVersion == 0) {
-                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION 
-                    ? "Vista" : "Server 2008";
+                _os_info.version_id = is_workstation ? "Vista" : "Server 2008";
             }
         } else {
             _os_info.version_id = fmt::format("{}.{}", version_info->dwMajorVersion
