@@ -424,12 +424,19 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
                 , version_info->dwMinorVersion);
             _os_info.codename = codename_10_11(version_info->dwBuildNumber);
         } else if (version_info->dwMajorVersion == 6) {
-            if (version_info->dwMinorVersion == 3)
-                _os_info.version_id = "8.1";
-            else if (version_info->dwMinorVersion == 2)
-                _os_info.version_id = "8";
-            else if (version_info->dwMinorVersion == 1) // Windows 7 or Windows Server 2008 R2
-                _os_info.version_id = "7";
+            if (version_info->dwMinorVersion == 3) {
+                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION
+                    ? "8.1" : "Server 2012 R2";
+            } else if (version_info->dwMinorVersion == 2) {
+                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION
+                    ? "8" : "Server 2012";
+            } else if (version_info->dwMinorVersion == 1) {
+                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION 
+                    ? "7" : "Server 2008 R2";
+            } else if (version_info->dwMinorVersion == 0) {
+                _os_info.version_id = version_info->wProductType == VER_NT_WORKSTATION 
+                    ? "Vista" : "Server 2008";
+            }
         } else {
             _os_info.version_id = fmt::format("{}.{}", version_info->dwMajorVersion
                 , version_info->dwMinorVersion);
