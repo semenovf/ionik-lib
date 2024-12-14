@@ -11,6 +11,7 @@
 #include <pfs/getenv.hpp>
 #include <pfs/log.hpp>
 #include <pfs/optional.hpp>
+#include <pfs/string_view.hpp>
 #include <windows.h>
 #include <winnt.h>
 #include <bcrypt.h>         // NTSTATUS
@@ -19,8 +20,10 @@
 //#include <versionhelpers.h> // VerifyVersionInfoA
 #include <libloaderapi.h>   // GetProcAddress, GetModuleHandleA
 #include <array>
+#include <map>
 #include <cstring>
-
+#include <tuple>
+#include <vector>
 
 IONIK__NAMESPACE_BEGIN
 
@@ -207,6 +210,53 @@ static char const * stringify_product_type (DWORD product_type)
     return "";
 }
 
+//
+// https://en.wikipedia.org/wiki/List_of_Microsoft_codenames
+// https://en.wikipedia.org/wiki/Windows_10_version_history
+// https://en.wikipedia.org/wiki/Windows_11_version_history
+//
+// Codename for Windows 10 or 11
+static std::string codename_10_11 (DWORD build_number)
+{
+    // Codename----------------------------------------------------
+    // Version like 1507, 22H2-------------------                 |
+    // Major version -------------------        |                 |
+    //                                 v        v                 v
+    static std::map<DWORD, std::tuple<int, pfs::string_view, pfs::string_view>> codename_map = {
+          {10240U, { 10, "1507", "Threshold"}}
+        , {10586U, { 10, "1511", "Threshold 2"}}
+        , {14393U, { 10, "1607", "Redstone"}}
+        , {15063U, { 10, "1703", "Redstone 2"}}
+        , {16299U, { 10, "1709", "Redstone 3"}}
+        , {17134U, { 10, "1803", "Redstone 4"}}
+        , {17763U, { 10, "1809", "Redstone 5"}}
+        , {18362U, { 10, "1903", "Titanium 19H1"}}
+        , {18363U, { 10, "1909", "Vanadium 19H2"}}
+        , {19041U, { 10, "2004", "Vibranium 20H1"}}
+        , {19042U, { 10, "20H2", "Vibranium 20H2"}}
+        , {19043U, { 10, "21H1", "Vibranium 21H1"}}
+        , {19044U, { 10, "21H2", "Vibranium 21H2"}}
+        , {19045U, { 10, "22H2", "Vibranium 22H2"}}
+
+        , {22000U, { 11, "21H2", "Sun Valley"}}
+        , {22621U, { 11, "22H2", "Sun Valley 2"}}
+        , {22631U, { 11, "23H2", "Sun Valley 3"}}
+        , {26100U, { 11, "24H2", "Hudson Valley"}}
+    };
+
+    auto pos = codename_map.find(build_number);
+
+    if (pos != codename_map.end()) {
+        auto const & value = pos->second;
+        auto version = std::get<1>(value);
+        auto codename = std::get<2>(value);
+
+        return to_string(codename);
+    }
+
+    return std::string{};
+}
+
 inline pfs::optional<OSVERSIONINFOEX> version_info_from_ntdll ()
 {
     OSVERSIONINFOEX version_info;
@@ -368,16 +418,11 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     auto version_info = version_info_from_ntdll();
 
     if (version_info) {
-        if (version_info->dwMajorVersion == 11) {
-            if (version_info->dwMinorVersion == 0)
-                _os_info.version_id = "11";
-            else
-                _os_info.version_id = fmt::format("11.{}", version_info->dwMinorVersion);
-        } else if (version_info->dwMajorVersion == 10) {
-            if (version_info->dwMinorVersion == 0)
-                _os_info.version_id = "10";
-            else
-                _os_info.version_id = fmt::format("10.{}", version_info->dwMinorVersion);
+        if (version_info->dwMajorVersion == 10 || version_info->dwMajorVersion == 11) {
+            _os_info.version_id = fmt::format("{}.{}"
+                , version_info->dwMajorVersion
+                , version_info->dwMinorVersion);
+            _os_info.codename = codename_10_11(version_info->dwBuildNumber);
         } else if (version_info->dwMajorVersion == 6) {
             if (version_info->dwMinorVersion == 3)
                 _os_info.version_id = "8.1";
@@ -390,7 +435,12 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
                 , version_info->dwMinorVersion);
         }
         
-        _os_info.version = fmt::format("{} Build {}", _os_info.version_id, version_info->dwBuildNumber);
+        if (_os_info.codename.empty()) {
+            _os_info.version = fmt::format("{}.{}", _os_info.version_id, version_info->dwBuildNumber);
+        } else {
+            _os_info.version = fmt::format("{}.{} ({})", _os_info.version_id
+                , version_info->dwBuildNumber, _os_info.codename);
+        }
 
         auto product_type_cstr = stringify_product_type(product_type);
 
