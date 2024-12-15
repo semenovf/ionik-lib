@@ -223,12 +223,12 @@ static char const * stringify_product_type (DWORD product_type)
 // Codename for Windows 10 or 11
 static std::string codename_10_11 (DWORD build_number, bool is_workstation)
 {
+    // Codename-----------------------------------------------------------------------
+    // Version like 1507, 22H2--------------------------------------                 |
+    // Major version --------------------------------------        |                 |
+    //                                                    v        v                 v
     using codename_map_type = std::map<DWORD, std::tuple<int, pfs::string_view, pfs::string_view>>;
 
-    // Codename----------------------------------------------------
-    // Version like 1507, 22H2-------------------                 |
-    // Major version -------------------        |                 |
-    //                                 v        v                 v
     static codename_map_type ws_codename_map = {
           {10240U, { 10, "1507", "Threshold"}}
         , {10586U, { 10, "1511", "Threshold 2"}}

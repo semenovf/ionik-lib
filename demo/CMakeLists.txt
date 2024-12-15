@@ -19,3 +19,7 @@ add_subdirectory(available_video_capture_devices)
 add_subdirectory(filesystem_monitor)
 add_subdirectory(metrics_provider)
 add_subdirectory(usb_monitor)
+
+if (MSVC)
+    add_subdirectory(win32_service)
+endif()

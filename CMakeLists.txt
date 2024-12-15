@@ -19,6 +19,12 @@ option(IONIK__BUILD_DEMO "Build examples/demo" OFF)
 option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
 option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
 
+# Used by Win32 service specific projects /MACHINE:{ARM|ARM64|ARM64EC|EBC|X64|X86}
+# https://learn.microsoft.com/en-us/cpp/build/reference/machine-specify-target-platform?view=msvc-170
+if (NOT IONIK__SERVICE_PLATFORM)
+    set(IONIK__SERVICE_PLATFORM "X64" CACHE STRING "")
+endif()
+
 if (IONIK__BUILD_STRICT)
     if (NOT CMAKE_CXX_STANDARD)
         set(CMAKE_CXX_STANDARD 14)
