@@ -73,20 +73,24 @@ static void print_os ()
     try {
         ionik::metrics::os_info_provider oip;
         auto const & osr = oip.get_info();
-        fmt::println("OS           : {}", osr.name);
-        fmt::println("OS name      : {}", osr.pretty_name);
-        fmt::println("OS version   : {}", osr.version);
-        fmt::println("OS version ID: {}", osr.version_id);
-        fmt::println("OS codename  : {}", osr.codename);
-        fmt::println("OS ID        : {}", osr.id);
-        fmt::println("OS ID LIKE   : {}", osr.id_like);
+        fmt::println("OS            : {}", osr.name);
+        fmt::println("OS name       : {}", osr.pretty_name);
+        fmt::println("OS version    : {}", osr.version);
+        fmt::println("OS version ID : {}", osr.version_id);
+        fmt::println("OS codename   : {}", osr.codename);
+        fmt::println("OS ID         : {}", osr.id);
+        fmt::println("OS ID LIKE    : {}", osr.id_like);
 
-        fmt::println("Device name  : {}", osr.device_name);
-        fmt::println("CPU vendor   : {}", osr.cpu_vendor);
-        fmt::println("CPU          : {}", osr.cpu_brand);
-        fmt::println("RAM, GB      : {:.2f} ", osr.ram_installed / 1024);
-        // fmt::println("OS bits     : {}", osr.os_bits);
-        // fmt::println("CPU bits    : {}", osr.cpu_bits);
+        fmt::println("Device name   : {}", osr.device_name);
+        fmt::println("CPU vendor    : {}", osr.cpu_vendor);
+        fmt::println("CPU           : {}", osr.cpu_brand);
+        fmt::println("RAM, GB       : {:.2f} ", osr.ram_installed / 1024);
+
+#if __linux__
+        fmt::println("System name   : {}", osr.sysname);
+        fmt::println("Kernel release: {}", osr.kernel_release);
+        fmt::println("Machine       : {}", osr.machine);
+#endif
     } catch (ionik::error const & ex) {
         LOGE("", "{}", ex.what());
     }

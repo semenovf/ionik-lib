@@ -15,6 +15,7 @@
 #include <pfs/optional.hpp>
 #include <pfs/string_view.hpp>
 #include <sys/sysinfo.h>
+#include <sys/utsname.h>
 #include <cpuid.h>
 #include <algorithm>
 
@@ -326,6 +327,23 @@ linuxinfo_provider::linuxinfo_provider (error * perr)
         // if (cpu_ident_opt)
         //     _os_info.cpu_brand = std::move(*cpu_ident_opt);
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Kernel
+    // See man uname.2
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    struct utsname un;
+
+    rc = uname(& un);
+
+    if (rc != 0) {
+        pfs::throw_or(perr, error {pfs::get_last_system_error(), tr::_("uname")});
+        return;
+    }
+
+    _os_info.sysname = un.sysname;
+    _os_info.kernel_release = un.release;
+    _os_info.machine = un.machine;
 }
 
 } // namespace metrics

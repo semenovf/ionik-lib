@@ -33,6 +33,11 @@ struct os_info
     double ram_installed;    ///< Installed RAM in megabytes
     // std::uint8_t os_bits;    ///< Operation system bits, e.g. 32 or 64
     // std::uint8_t cpu_bits;   ///< CPU system bits, e.g. 32 or 64
+
+    // Kernel (Linux specific)
+    std::string sysname;        ///< Operating system name, e.g. "Linux" (Linux only)
+    std::string kernel_release; ///< Kernel release, e.g. "6.8.0-49-generic" (Linux only)
+    std::string machine;        ///< Hardware identifier, e.g. x86_64 (Linux only)
 };
 
 } // namespace metrics
