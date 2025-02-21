@@ -6,7 +6,6 @@
 // Changelog:
 //      2024.12.12 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
-#include "ionik/tag.hpp"
 #include "ionik/metrics/windowsinfo_provider.hpp"
 #include <pfs/getenv.hpp>
 #include <pfs/log.hpp>
@@ -193,6 +192,7 @@ static char const * stringify_product_type (DWORD product_type)
         case PRODUCT_XBOX_ERAOS                          : return "PRODUCT_XBOX_ERAOS";
         case PRODUCT_XBOX_DURANGOHOSTOS                  : return "PRODUCT_XBOX_DURANGOHOSTOS";
         case PRODUCT_XBOX_SCARLETTHOSTOS                 : return "PRODUCT_XBOX_SCARLETTHOSTOS";
+#if __UNUSED__
         case PRODUCT_AZURE_SERVER_CLOUDHOST              : return "PRODUCT_AZURE_SERVER_CLOUDHOST";
         case PRODUCT_AZURE_SERVER_CLOUDMOS               : return "PRODUCT_AZURE_SERVER_CLOUDMOS";
         case PRODUCT_CLOUDEDITIONN                       : return "PRODUCT_CLOUDEDITIONN";
@@ -200,8 +200,8 @@ static char const * stringify_product_type (DWORD product_type)
         case PRODUCT_AZURESTACKHCI_SERVER_CORE           : return "PRODUCT_AZURESTACKHCI_SERVER_CORE";
         case PRODUCT_DATACENTER_SERVER_AZURE_EDITION     : return "PRODUCT_DATACENTER_SERVER_AZURE_EDITION";
         case PRODUCT_DATACENTER_SERVER_CORE_AZURE_EDITION: return "PRODUCT_DATACENTER_SERVER_CORE_AZURE_EDITION";
+#endif
         case PRODUCT_UNLICENSED                          : return "PRODUCT_UNLICENSED";
-
         case PRODUCT_UNDEFINED:
         default:
             break;
@@ -306,11 +306,11 @@ inline pfs::optional<OSVERSIONINFOEX> version_info_from_ntdll ()
             RtlGetVersion(reinterpret_cast<LPOSVERSIONINFO>(& version_info));
             return version_info;
         } else {
-            LOGW(TAG, "GetProcAddress(\"ntdll\", \"RtlGetVersion\"): {}, error ignored"
+            LOGW("ionik", "GetProcAddress(\"ntdll\", \"RtlGetVersion\"): {}, error ignored"
                 , pfs::get_last_system_error().message());
         }
     } else {
-        LOGW(TAG, "GetModuleHandleA: {}, error ignored", pfs::get_last_system_error().message());
+        LOGW("ionik", "GetModuleHandleA: {}, error ignored", pfs::get_last_system_error().message());
     }
 
     return pfs::nullopt;
@@ -437,7 +437,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     if (success) {
         _os_info.device_name = std::string(compname_buffer, compname_buffer_size);
     } else {
-        LOGW(TAG, "GetComputerNameA: {}, error ignored", pfs::get_last_system_error().message());
+        LOGW("ionik", "GetComputerNameA: {}, error ignored", pfs::get_last_system_error().message());
 
         auto computer_name_opt = pfs::getenv("COMPUTERNAME");
 
@@ -504,7 +504,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     if (success) {
         _os_info.ram_installed = static_cast<decltype(_os_info.ram_installed)>(installed_ram_kibs) / 1024;
     } else {
-        LOGW(TAG, "GetPhysicallyInstalledSystemMemory: {}, error ignored", pfs::get_last_system_error().message());
+        LOGW("ionik", "GetPhysicallyInstalledSystemMemory: {}, error ignored", pfs::get_last_system_error().message());
         _os_info.ram_installed = 0;
     }
 
