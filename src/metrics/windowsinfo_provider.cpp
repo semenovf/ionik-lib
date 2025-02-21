@@ -6,6 +6,7 @@
 // Changelog:
 //      2024.12.12 Initial version.
 ////////////////////////////////////////////////////////////////////////////////
+#include "ionik/tag.hpp"
 #include "ionik/metrics/windowsinfo_provider.hpp"
 #include <pfs/getenv.hpp>
 #include <pfs/log.hpp>
@@ -306,11 +307,11 @@ inline pfs::optional<OSVERSIONINFOEX> version_info_from_ntdll ()
             RtlGetVersion(reinterpret_cast<LPOSVERSIONINFO>(& version_info));
             return version_info;
         } else {
-            LOGW("ionik", "GetProcAddress(\"ntdll\", \"RtlGetVersion\"): {}, error ignored"
+            LOGW(TAG, "GetProcAddress(\"ntdll\", \"RtlGetVersion\"): {}, error ignored"
                 , pfs::get_last_system_error().message());
         }
     } else {
-        LOGW("ionik", "GetModuleHandleA: {}, error ignored", pfs::get_last_system_error().message());
+        LOGW(TAG, "GetModuleHandleA: {}, error ignored", pfs::get_last_system_error().message());
     }
 
     return pfs::nullopt;
@@ -437,7 +438,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     if (success) {
         _os_info.device_name = std::string(compname_buffer, compname_buffer_size);
     } else {
-        LOGW("ionik", "GetComputerNameA: {}, error ignored", pfs::get_last_system_error().message());
+        LOGW(TAG, "GetComputerNameA: {}, error ignored", pfs::get_last_system_error().message());
 
         auto computer_name_opt = pfs::getenv("COMPUTERNAME");
 
@@ -504,7 +505,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     if (success) {
         _os_info.ram_installed = static_cast<decltype(_os_info.ram_installed)>(installed_ram_kibs) / 1024;
     } else {
-        LOGW("ionik", "GetPhysicallyInstalledSystemMemory: {}, error ignored", pfs::get_last_system_error().message());
+        LOGW(TAG, "GetPhysicallyInstalledSystemMemory: {}, error ignored", pfs::get_last_system_error().message());
         _os_info.ram_installed = 0;
     }
 

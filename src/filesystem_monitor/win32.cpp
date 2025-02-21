@@ -367,16 +367,16 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
     return rc;
 }
 
-template
+template IONIK__EXPORT
 int monitor<rep_type>::poll<functional_callbacks> (std::chrono::milliseconds timeout, functional_callbacks & cb, error * perr);
 
-template
+template IONIK__EXPORT
 int monitor<rep_type>::poll<fptr_callbacks> (std::chrono::milliseconds timeout, fptr_callbacks & cb, error * perr);
 
-template
+template IONIK__EXPORT
 int monitor<rep_type>::poll<emitter_callbacks> (std::chrono::milliseconds timeout, emitter_callbacks & cb, error * perr);
 
-template
+template IONIK__EXPORT
 int monitor<rep_type>::poll<emitter_mt_callbacks> (std::chrono::milliseconds timeout, emitter_mt_callbacks & cb, error * perr);
 
 }} // namespace ionik::filesystem_monitor

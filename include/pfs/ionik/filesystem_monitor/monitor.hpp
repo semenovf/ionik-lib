@@ -20,18 +20,19 @@ class monitor
     Rep _rep;
 
 public:
-    monitor (error * perr = nullptr);
+    IONIK__EXPORT  monitor (error * perr = nullptr);
+
     monitor (monitor const &) = delete;
     monitor (monitor &&) = delete;
     monitor & operator = (monitor const &) = delete;
     monitor & operator = (monitor &&) = delete;
 
-    ~monitor ();
+    IONIK__EXPORT ~monitor ();
 
-    bool add (pfs::filesystem::path const & path, error * perr = nullptr);
+    IONIK__EXPORT bool add (pfs::filesystem::path const & path, error * perr = nullptr);
 
     template <typename Callbacks>
-    int poll (std::chrono::milliseconds timeout, Callbacks & cb, error * perr = nullptr);
+    IONIK__EXPORT int poll (std::chrono::milliseconds timeout, Callbacks & cb, error * perr = nullptr);
 };
 
 }} // namespace ionik::filesystem_monitor

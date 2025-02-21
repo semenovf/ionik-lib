@@ -36,7 +36,7 @@ public:
      * @param unique_name For Linux value must be a valid filename (see open()), for Windows value
      *        must be a valid name for the named mutex (see CreateMutex())
      */
-    already_running (std::string const & unique_name, error * perr = nullptr);
+    IONIK__EXPORT already_running (std::string const & unique_name, error * perr = nullptr);
 
     already_running () = delete;
     already_running (already_running const &) = delete;
@@ -44,9 +44,9 @@ public:
     already_running & operator = (already_running const &) = delete;
     already_running & operator = (already_running &&) = delete;
 
-    ~already_running ();
+    IONIK__EXPORT ~already_running ();
 
-    bool operator () () const noexcept;
+    IONIK__EXPORT bool operator () () const noexcept;
 };
 
 } // namespace ionik

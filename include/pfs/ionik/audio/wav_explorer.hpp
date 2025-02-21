@@ -230,7 +230,7 @@ public:
         : _explorer(& explorer)
     {}
 
-    pfs::optional<wav_spectrum> operator () (std::size_t chunk_count, std::size_t frame_step
+    IONIK__EXPORT pfs::optional<wav_spectrum> operator () (std::size_t chunk_count, std::size_t frame_step
         , error * perr = nullptr);
 
     pfs::optional<wav_spectrum> operator () (std::size_t chunk_count, error * perr = nullptr)

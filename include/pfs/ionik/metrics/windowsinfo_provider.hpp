@@ -8,7 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "os_info.hpp"
-#include "pfs/ionik/error.hpp"
+#include "../error.hpp"
+#include "../exports.hpp"
+#include "../tag.hpp"
 #include <cstdlib>
 #include <string>
 
@@ -22,7 +24,7 @@ private:
     os_info _os_info;
 
 public:
-    windowsinfo_provider (error * perr = nullptr);
+    IONIK__EXPORT windowsinfo_provider (error * perr = nullptr);
 
 public:
     os_info const & get_info () const noexcept

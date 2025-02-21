@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "pfs/ionik/error.hpp"
+#include "pfs/ionik/exports.hpp"
 #include <utility>
 
 namespace ionik {
@@ -27,15 +28,15 @@ public:
     using write_result_type = std::pair<filesize_type, bool>;
 
 public:
-    static handle_type invalid () noexcept;
-    static bool is_invalid (handle_type const & h) noexcept;
-    static filesize_type size (filepath_type const & path, error * perr);
-    static handle_type open_read_only (filepath_type const & path, error * perr);
-    static handle_type open_write_only (filepath_type const & path, truncate_enum trunc
+    static IONIK__EXPORT handle_type invalid () noexcept;
+    static IONIK__EXPORT bool is_invalid (handle_type const & h) noexcept;
+    static IONIK__EXPORT filesize_type size (filepath_type const & path, error * perr);
+    static IONIK__EXPORT handle_type open_read_only (filepath_type const & path, error * perr);
+    static IONIK__EXPORT handle_type open_write_only (filepath_type const & path, truncate_enum trunc
         , filesize_type initial_size, error * perr);
-    static void close (handle_type & h);
-    static offset_result_type offset (handle_type const & h, error * perr);
-    static bool set_pos (handle_type & h, filesize_type offset, error * perr);
+    static IONIK__EXPORT void close (handle_type & h);
+    static IONIK__EXPORT offset_result_type offset (handle_type const & h, error * perr);
+    static IONIK__EXPORT bool set_pos (handle_type & h, filesize_type offset, error * perr);
 
     /**
      * Read data from file into buffer
@@ -44,8 +45,8 @@ public:
      *         {   0,  true } if no data available (end of file);
      **        {   0, false } on read failure, @e *perr set to @c ionik::error if specified and not @c null.
      */
-    static read_result_type read (handle_type & h, char * buffer, filesize_type len, error * perr);
-    static write_result_type write (handle_type & h, char const * buffer, filesize_type len, error * perr);
+    static IONIK__EXPORT read_result_type read (handle_type & h, char * buffer, filesize_type len, error * perr);
+    static IONIK__EXPORT write_result_type write (handle_type & h, char const * buffer, filesize_type len, error * perr);
 };
 
 } // namespace ionik
