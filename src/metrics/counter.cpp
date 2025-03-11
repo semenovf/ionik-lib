@@ -34,7 +34,7 @@ static std::int64_t units_to_bytes (pfs::string_view units, error * perr)
     if (units == "KB")
         return std::int64_t{1024};
 
-    pfs::throw_or(perr, error {pfs::errc::unexpected_data, tr::f_("unsupported units: {}", units)});
+    pfs::throw_or(perr, tr::f_("unsupported units: {}", units));
     return 0;
 }
 
@@ -44,7 +44,7 @@ counter_t to_int64_counter (pfs::string_view value, pfs::string_view units, erro
     auto result = pfs::to_integer<std::int64_t>(value.cbegin(), value.cend(), 10, ec);
 
     if (ec) {
-        pfs::throw_or(perr, error {ec, tr::f_("bad numeric value for: {}", value)});
+        pfs::throw_or(perr, ec, tr::f_("bad numeric value for: {}", value));
         return counter_t{};
     }
 
@@ -59,4 +59,3 @@ counter_t to_int64_counter (pfs::string_view value, pfs::string_view units, erro
 }
 
 }} // namespace ionik::metrics
-

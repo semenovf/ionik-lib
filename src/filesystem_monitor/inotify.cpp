@@ -29,11 +29,8 @@ monitor<rep_type>::monitor (error * perr)
     _rep.fd = inotify_init1(IN_NONBLOCK);
 
     if (_rep.fd < 0) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::_("inotify init failure")
-            , pfs::system_error_text()
-        });
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("inotify init failure: {}", pfs::system_error_text()));
 
         return;
     }
@@ -41,12 +38,8 @@ monitor<rep_type>::monitor (error * perr)
     _rep.ed = epoll_create1(0);
 
     if (_rep.ed < 0) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::_("epoll create failure")
-            , pfs::system_error_text()
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("epoll create failure: {}", pfs::system_error_text()));
         return;
     }
 
@@ -57,12 +50,8 @@ monitor<rep_type>::monitor (error * perr)
     auto rc = epoll_ctl(_rep.ed, EPOLL_CTL_ADD, _rep.fd, & ev);
 
     if (rc < 0) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::_("add entry to epoll failure")
-            , pfs::system_error_text()
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("add entry to epoll failure: {}", pfs::system_error_text()));
         return;
     }
 }
@@ -90,11 +79,8 @@ template <>
 bool monitor<rep_type>::add (fs::path const & path, error * perr)
 {
     if (!fs::exists(path)) {
-        pfs::throw_or(perr, error {
-              make_error_code(std::errc::invalid_argument)
-            , tr::f_("attempt to watch non-existence path: {}", path)
-        });
-
+        pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
+            , tr::f_("attempt to watch non-existence path: {}", path));
         return false;
     }
 
@@ -103,12 +89,8 @@ bool monitor<rep_type>::add (fs::path const & path, error * perr)
     auto fd = inotify_add_watch(_rep.fd, fs::utf8_encode(canonical_path).c_str(), IN_ALL_EVENTS);
 
     if (fd < 0) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text()
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("add path to watching failure: {}: {}", canonical_path, pfs::system_error_text()));
         return false;
     }
 
@@ -130,22 +112,16 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         if (errno == EINTR) {
             // Is not a critical error, ignore it
         } else {
-            pfs::throw_or(perr, error {
-                  pfs::get_last_system_error()
-                , tr::_("epoll wait failure")
-                , pfs::system_error_text()
-            });
+            pfs::throw_or(perr, pfs::get_last_system_error(), tr::f_("epoll wait failure: {}"
+                , pfs::system_error_text()));
         }
 
         return -1;
     }
 
     if (events[0].events & EPOLLERR) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::_("error on inotify descriptor occurred while epolling")
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::_("error on inotify descriptor occurred while epolling"));
         return -1;
     }
 
@@ -159,11 +135,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
             auto pos = _rep.watch_map.find(x->wd);
 
             if (pos == _rep.watch_map.end()) {
-                pfs::throw_or(perr, error {
-                      make_error_code(pfs::errc::unexpected_error)
-                    , tr::f_("entry not found in watch map by descriptor: {}", x->wd)
-                });
-
+                pfs::throw_or(perr, make_error_code(pfs::errc::unexpected_error)
+                    , tr::f_("entry not found in watch map by descriptor: {}", x->wd));
                 return -1;
             }
 
@@ -271,12 +244,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
             if (errno == EAGAIN) {
                 ;
             } else {
-                pfs::throw_or(perr, error {
-                      pfs::get_last_system_error()
-                    , tr::_("read inotify event failure")
-                    , pfs::system_error_text()
-                });
-
+                pfs::throw_or(perr, pfs::get_last_system_error(), tr::f_("read inotify event failure: {}"
+                    , pfs::system_error_text()));
                 return -1;
             }
         }

@@ -7,6 +7,7 @@
 //      2022.08.21 Initial version
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include "error.hpp"
 #include "exports.hpp"
 #include <chrono>
 #include <functional>
@@ -55,8 +56,7 @@ public:
         = [] (device_info const &) {};
 
 private:
-    std::pair<std::error_code, std::string> init (
-        std::initializer_list<std::string> && subsystems);
+    bool init (std::initializer_list<std::string> && subsystems, error & err);
     void deinit ();
 
 private:
@@ -77,7 +77,7 @@ public:
     /**
      * Construct device observer for subsystem.
      */
-    IONIK__EXPORT device_observer (std::error_code & ec, std::initializer_list<std::string> subsystems);
+    IONIK__EXPORT device_observer (error & err, std::initializer_list<std::string> subsystems);
 
     IONIK__EXPORT ~device_observer ();
 

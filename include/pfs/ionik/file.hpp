@@ -223,7 +223,7 @@ public: // static
     static bool rewrite (filepath_type const & path, char const * buffer
         , filesize_type count, error * perr)
     {
-        file f = open_write_only(path, truncate_enum::on, perr);
+        file f = open_write_only(path, truncate_enum::on, 0, perr);
 
         if (f) {
             auto n = f.write(buffer, count, perr);

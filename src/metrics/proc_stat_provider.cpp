@@ -28,10 +28,7 @@ inline int cpu_core_index (string_view key)
     auto index = pfs::to_integer<int>(key.cbegin() + 3, key.cend(), 10) + 1;
 
     if (index <= 0 || index > 4096) {
-        throw error {
-              pfs::errc::unexpected_data
-            , tr::f_("too big number of CPU cores: {}", index)
-        };
+        throw error {tr::f_("too big number of CPU cores: {}", index)};
     }
 
     return index;
@@ -59,10 +56,7 @@ proc_stat_provider::proc_stat_provider (error * perr)
             auto opt_cpu_data = parse_cpu_data(rec);
 
             if (!opt_cpu_data) {
-                pfs::throw_or(perr, error {
-                      pfs::errc::unexpected_data
-                    , tr::f_("bad value for `{}` in `/proc/stat`", rec.key)
-                });
+                pfs::throw_or(perr, tr::f_("bad value for `{}` in `/proc/stat`", rec.key));
                 return;
             }
 
@@ -108,29 +102,17 @@ bool proc_stat_provider::parse_record (string_view::const_iterator & pos
     }
 
     if (!success) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("unexpected `/proc/stat` record format")
-        });
-
+        pfs::throw_or(perr, tr::_("unexpected `/proc/stat` record format"));
         return false;
     }
 
     if (rec.key.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("`/proc/stat` record key is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("`/proc/stat` record key is empty"));
         return false;
     }
 
     if (rec.values.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("`/proc/stat` record value is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("`/proc/stat` record value is empty"));
         return false;
     }
 
@@ -239,11 +221,7 @@ bool proc_stat_provider::query (bool (* f) (string_view key, counter_t const & v
             auto opt_cpu_usage = calculate_cpu_usage(rec);
 
             if (!opt_cpu_usage) {
-                pfs::throw_or(perr, error {
-                      pfs::errc::unexpected_data
-                    , tr::f_("bad value for `{}` in `/proc/stat`", rec.key)
-                });
-
+                pfs::throw_or(perr, tr::f_("bad value for `{}` in `/proc/stat`", rec.key));
                 return false;
             }
 

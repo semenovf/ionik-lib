@@ -78,29 +78,17 @@ bool proc_self_status_provider::parse_record (string_view::const_iterator & pos
     }
 
     if (!success) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("unexpected `/proc/self/status` record format")
-        });
-
+        pfs::throw_or(perr, tr::_("unexpected `/proc/self/status` record format"));
         return false;
     }
 
     if (rec.key.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("`/proc/self/status` record key is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("`/proc/self/status` record key is empty"));
         return false;
     }
 
     if (rec.values.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("`/proc/self/status` record value is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("`/proc/self/status` record value is empty"));
         return false;
     }
 

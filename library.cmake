@@ -31,7 +31,6 @@ if (MSVC)
 endif()
 
 target_sources(ionik PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/local_file_provider.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/audio/wav_explorer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/metrics/counter.cpp

@@ -67,21 +67,13 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
         && advance_nl1n(p, last);
 
     if (!success) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("'/proc/cpuinfo' record has unexpected format")
-        });
-
+        pfs::throw_or(perr, tr::_("'/proc/cpuinfo' record has unexpected format"));
         return false;
     }
 
     // Value can be empty, but not key
     if (rec.key.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("'/proc/cpuinfo' record key is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("'/proc/cpuinfo' record key is empty"));
         return false;
     }
 
@@ -147,11 +139,7 @@ times_provider::times_provider (error * perr)
         }
 
         if (pcore == nullptr) {
-            pfs::throw_or(perr, error {
-                  pfs::errc::unexpected_data
-                , tr::_("`/proc/cpuinfo` has unexpected format")
-            });
-
+            pfs::throw_or(perr, tr::_("`/proc/cpuinfo` has unexpected format"));
             return;
         }
 
@@ -175,11 +163,7 @@ times_provider::times_provider (error * perr)
             }
 
             if (!success) {
-                pfs::throw_or(perr, error {
-                      pfs::errc::unexpected_data
-                    , tr::_("`cache_size` in `/proc/cpuinfo` has unexpected format")
-                });
-
+                pfs::throw_or(perr, tr::_("`cache_size` in `/proc/cpuinfo` has unexpected format"));
                 return;
             }
         }

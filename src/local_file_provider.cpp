@@ -96,12 +96,12 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
                 tmp = fs::read_symlink(tmp, ec);
 
             if (ec) {
-                pfs::throw_or(perr, ec, tr::_("open read only failure"), fs::utf8_encode(path));
+                pfs::throw_or(perr, ec, tr::f_("open read only failure: {}", fs::utf8_encode(path)));
                 return INVALID_FILE_HANDLE;
             }
         }  else {
             pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
-                , tr::_("expected regular file"), fs::utf8_encode(path));
+                , tr::f_("expected regular file: {}", fs::utf8_encode(path)));
             return INVALID_FILE_HANDLE;
         }
     }
@@ -143,7 +143,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 #endif
 
     if (h < 0) {
-        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
+        pfs::throw_or(perr, pfs::get_last_system_error()
             , tr::f_("open write only file failure: {}", path));
         return INVALID_FILE_HANDLE;
     }
@@ -174,9 +174,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 
         if (ec) {
             pfs::throw_or(perr, error {
-                  ec
-                , tr::_("resize file failure while open write only file")
-                , fs::utf8_encode(path)
+                tr::f_("resize file failure while open write only file: {}", fs::utf8_encode(path))
             });
 
             file_provider_t::close(h);
@@ -197,8 +195,7 @@ std::pair<filesize_t, bool> file_provider_t::offset (handle_t const & h, error *
 #endif
 
     if (n < 0) {
-        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
-            , tr::_("get file position"));
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("get file position"));
         return std::make_pair(0, false);
     }
 
@@ -219,8 +216,7 @@ bool file_provider_t::set_pos (handle_t & h, filesize_t pos, error * perr)
 #endif
 
     if (offset_value < 0) {
-        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
-            , tr::_("set file position"));
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("set file position"));
         return false;
     }
 
@@ -238,8 +234,7 @@ std::pair<filesize_t, bool> file_provider_t::read (handle_t & h, char * buffer
 #endif
 
     if (n < 0) {
-        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
-            , tr::_("read from file"));
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("read from file"));
         return std::make_pair(0, false);
     }
 
@@ -257,8 +252,7 @@ std::pair<filesize_t, bool> file_provider_t::write (handle_t & h, char const * b
 #endif
 
     if (n < 0) {
-        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
-            , tr::_("write into file"));
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("write into file"));
         return std::make_pair(0, false);
     }
 

@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "pfs/ionik/error.hpp"
+#include "pfs/ionik/exports.hpp"
 #include <pfs/filesystem.hpp>
 #include <chrono>
 

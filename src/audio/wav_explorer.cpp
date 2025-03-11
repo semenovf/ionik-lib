@@ -100,7 +100,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
     }
 
     if (res.first < WAV_HEADER_SIZE) {
-        pfs::throw_or(perr, error {errc::bad_data_format});
+        pfs::throw_or(perr, tr::_("bad WAV format"));
         return pfs::nullopt;
     }
 
@@ -129,7 +129,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
     } else if (chunk_id == "RIFX") {
         info.byte_order = pfs::endian::big;
     } else {
-        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        pfs::throw_or(perr, tr::_("unsupported file format"));
         return pfs::nullopt;
     }
 
@@ -137,7 +137,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
         , sizeof(header.format)};
 
     if (format != "WAVE") {
-        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        pfs::throw_or(perr, tr::_("unsupported file format"));
         return pfs::nullopt;
     }
 
@@ -145,7 +145,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
         , sizeof(header.subchunk1_id)};
 
     if (subchunk1_id != "fmt ") {
-        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        pfs::throw_or(perr, tr::_("unsupported file format"));
         return pfs::nullopt;
     }
 
@@ -159,7 +159,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
             info.audio_format = header.audio_format;
             break;
         default:
-            pfs::throw_or(perr, error {errc::unsupported, tr::f_("audio format: {}", header.audio_format)});
+            pfs::throw_or(perr, tr::f_("unsupported audio format: {}", header.audio_format));
             return pfs::nullopt;
     }
 
@@ -169,7 +169,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
             info.num_channels = header.num_channels;
             break;
         default:
-            pfs::throw_or(perr, error {errc::unsupported, tr::f_("number of channels: {}", header.num_channels)});
+            pfs::throw_or(perr, tr::f_("unsupported number of channels: {}", header.num_channels));
             return pfs::nullopt;
     }
 
@@ -197,7 +197,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
         }
 
         if (res.first < chunk_header_size) {
-            pfs::throw_or(perr, error {errc::bad_data_format});
+            pfs::throw_or(perr, tr::_("bad WAV format"));
             return pfs::nullopt;
 
         }
@@ -234,7 +234,7 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
     // The "data" subchunk contains the size of the data and the actual sound:
     // the number of bytes in the data: NumSamples * num_channels * sample_size/8
     if (subchunk2_id != 0x64617461) { // "data"
-        pfs::throw_or(perr, error {errc::unsupported, tr::_("file format")});
+        pfs::throw_or(perr, tr::_("unsupported file format"));
         return pfs::nullopt;
     }
 
@@ -274,12 +274,12 @@ bool wav_explorer::decode (std::size_t frames_chunk_size)
     }
 
     if (hdr->audio_format != 1) { // PCM
-        on_error(error {errc::unsupported, tr::_("only PCM format supported for decoding")});
+        on_error(error {tr::_("only PCM format supported for decoding")});
         return false;
     }
 
     if (hdr->sample_size > 16) {
-        on_error(error {errc::unsupported, tr::_("sample size: {} bits (only size <= 16 bits supported now)")});
+        on_error(error {tr::_("sample size: {} bits (only size <= 16 bits supported now)")});
         return false;
     }
 
@@ -334,10 +334,7 @@ pfs::optional<wav_spectrum>
 wav_spectrum_builder::operator () (std::size_t chunk_count, std::size_t frame_step, error * perr)
 {
     if (chunk_count == 0) {
-        pfs::throw_or(perr, error {
-              std::make_error_code(std::errc::invalid_argument)
-            , tr::_("chunk count must be greater than 0")
-        });
+        pfs::throw_or(perr, tr::_("chunk count must be greater than 0"));
         return pfs::nullopt;
     }
 
@@ -353,7 +350,7 @@ wav_spectrum_builder::operator () (std::size_t chunk_count, std::size_t frame_st
         ctx.spectrum.info = info;
 
         if (ctx.spectrum.info.sample_size > 16) {
-            ctx.err = error {errc::unsupported, tr::_("sample size greater than 16")};
+            ctx.err = error {tr::_("sample size greater than 16")};
             return false;
         }
 
@@ -366,7 +363,7 @@ wav_spectrum_builder::operator () (std::size_t chunk_count, std::size_t frame_st
         } else if (is_stereo16(ctx.spectrum.info)) {
             _build_proc = & wav_spectrum_builder::build_from_stereo16;
         } else {
-            ctx.err = error {errc::unsupported, tr::f_("8/16 bits and mono/stereo only")};
+            ctx.err = error {tr::f_("8/16 bits and mono/stereo only")};
             return false;
         }
 
@@ -437,7 +434,7 @@ bool wav_spectrum_builder::build_from_mono8 (builder_context & ctx
     auto samples_count = size / sizeof(std::uint8_t);
 
     if (size % samples_count != 0) {
-        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        ctx.err = error {tr::_("bad data format or data may be corrupted")};
         return false;
     }
 
@@ -479,7 +476,7 @@ bool wav_spectrum_builder::build_from_stereo8 (builder_context & ctx
     auto samples_count = size / sizeof(std::uint8_t);
 
     if (size % samples_count != 0) {
-        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        ctx.err = error {tr::_("bad data format or data may be corrupted")};
         return false;
     }
 
@@ -534,7 +531,7 @@ bool wav_spectrum_builder::build_from_mono16 (builder_context & ctx
     auto samples_count = size / sizeof(std::int16_t);
 
     if (size % samples_count != 0) {
-        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        ctx.err = error {tr::_("bad data format or data may be corrupted")};
         return false;
     }
 
@@ -575,7 +572,7 @@ bool wav_spectrum_builder::build_from_stereo16 (builder_context & ctx
     auto samples_count = size / sizeof(std::int16_t);
 
     if (size % samples_count != 0) {
-        ctx.err = error {errc::bad_data_format, tr::_("bad data format or data may be corrupted")};
+        ctx.err = error {tr::_("bad data format or data may be corrupted")};
         return false;
     }
     using frame_iterator = ionik::audio::s16_stereo_frame_iterator;

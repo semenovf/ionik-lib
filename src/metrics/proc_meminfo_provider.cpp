@@ -52,29 +52,17 @@ bool proc_meminfo_provider::parse_record (string_view::const_iterator & pos
         && advance_nl1n(p, last);
 
     if (!success) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("unexpected meminfo record format")
-        });
-
+        pfs::throw_or(perr, tr::_("unexpected meminfo record format"));
         return false;
     }
 
     if (rec.key.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("meminfo record key is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("meminfo record key is empty"));
         return false;
     }
 
     if (rec.value.empty()) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("meminfo record value is empty")
-        });
-
+        pfs::throw_or(perr, tr::_("meminfo record value is empty"));
         return false;
     }
 

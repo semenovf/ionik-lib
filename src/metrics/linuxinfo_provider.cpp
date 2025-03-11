@@ -119,11 +119,7 @@ static bool parse_record (string_view::const_iterator & pos, string_view::const_
         && advance_nl_or_endp(p, last);
 
     if (!(success && !rec.key.empty())) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_data
-            , tr::_("unexpected 'os_release' record format")
-        });
-
+        pfs::throw_or(perr, tr::_("unexpected 'os_release' record format"));
         return false;
     }
 

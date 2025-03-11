@@ -77,11 +77,7 @@ static std::int64_t read_integer (fs::path const & path, error * perr)
         --last;
 
     if (first == last) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_error
-            , tr::f_("invalid content in: {}", path)
-        });
-
+        pfs::throw_or(perr, tr::f_("invalid content in: {}", path));
         return -1;
     }
 
@@ -89,11 +85,7 @@ static std::int64_t read_integer (fs::path const & path, error * perr)
     auto n = pfs::to_integer<std::int64_t>(first, last, ec);
 
     if (ec) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_error
-            , tr::f_("invalid content in: {}", path)
-        });
-
+        pfs::throw_or(perr, tr::f_("invalid content in: {}", path));
         return -1;
     }
 
@@ -180,12 +172,10 @@ std::vector<std::string> sys_class_net_provider::interfaces (error * perr)
 
     if (!fs::exists(dir, ec)) {
         if (ec) {
-            pfs::throw_or(perr, error {ec, tr::f_("check path failure: {}", dir)});
+            pfs::throw_or(perr, ec, tr::f_("check path failure: {}", dir));
         } else {
-            pfs::throw_or(perr, error {
-                  std::make_error_code(std::errc::no_such_file_or_directory)
-                , fs::utf8_encode(dir)
-            });
+            pfs::throw_or(perr, std::make_error_code(std::errc::no_such_file_or_directory)
+                , fs::utf8_encode(dir));
         }
 
         return std::vector<std::string>{};
@@ -193,12 +183,9 @@ std::vector<std::string> sys_class_net_provider::interfaces (error * perr)
 
     if (!fs::is_directory(dir)) {
         if (ec) {
-            pfs::throw_or(perr, error {ec, tr::f_("check directory failure: {}", dir)});
+            pfs::throw_or(perr, ec, tr::f_("check directory failure: {}", dir));
         } else {
-            pfs::throw_or(perr, error {
-                  std::make_error_code(std::errc::not_a_directory)
-                , fs::utf8_encode(dir)
-            });
+            pfs::throw_or(perr, std::make_error_code(std::errc::not_a_directory), fs::utf8_encode(dir));
         }
 
         return std::vector<std::string>{};
@@ -211,6 +198,4 @@ std::vector<std::string> sys_class_net_provider::interfaces (error * perr)
     return result;
 }
 
-
 }} // namespace ionik::metrics
-

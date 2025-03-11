@@ -6,9 +6,9 @@
 // Changelog:
 //      2022.08.21 Initial version
 ////////////////////////////////////////////////////////////////////////////////
-#include "pfs/fmt.hpp"
-#include "pfs/ionik/device_observer.hpp"
-#include "pfs/ionik/error.hpp"
+#include "device_observer.hpp"
+#include "error.hpp"
+#include <pfs/i18n.hpp>
 #include <map>
 #include <fcntl.h>
 #include <libudev.h>
@@ -31,8 +31,7 @@ struct device_observer_rep
 std::function<void(std::string const &)> device_observer::on_failure
     = [] (std::string const &) {};
 
-std::pair<std::error_code, std::string>
-device_observer::init (std::initializer_list<std::string> && subsystems)
+bool device_observer::init (std::initializer_list<std::string> && subsystems, error & err)
 {
     _rep = new device_observer_rep;
     _rep->md = -1;
@@ -40,15 +39,15 @@ device_observer::init (std::initializer_list<std::string> && subsystems)
     _rep->u = udev_new();
 
     if (!_rep->u) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , "create udev context");
+        err = error {tr::_("create udev context failure")};
+        return false;
     }
 
     _rep->m = udev_monitor_new_from_netlink(_rep->u, "udev");
 
     if (!_rep->m) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , "create udev monitor object");
+        err = error{tr::_("create udev monitor object failure")};
+        return false;
     }
 
     for (auto const & devtype: subsystems) {
@@ -56,8 +55,8 @@ device_observer::init (std::initializer_list<std::string> && subsystems)
             , devtype.c_str(), nullptr);
 
         if (errn < 0) {
-            return std::make_pair(make_error_code(errc::acquire_device_observer)
-                , "modify monitor filter");
+            err = error {tr::_("modify monitor filter failure")};
+            return false;
         }
     }
 
@@ -65,22 +64,22 @@ device_observer::init (std::initializer_list<std::string> && subsystems)
     int errn = udev_monitor_enable_receiving(_rep->m);
 
     if (errn < 0) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , "start monitoring");
+        err = error {tr::_("start monitoring failure")};
+        return false;
     }
 
     _rep->md = udev_monitor_get_fd(_rep->m);
 
     if (_rep->md < 0) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , "monitor file descriptor");
+        err = error {tr::_("monitor file descriptor failure")};
+        return false;
     }
 
     errn = fcntl(_rep->md, F_SETFD, fcntl(_rep->md, F_GETFD, 0) | O_NONBLOCK);
 
     if (errn < 0) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , "set nonblocking to observer file descriptor");
+        err = error {tr::_("set nonblocking to observer file descriptor failure")};
+        return false;
     }
 
     // In the initial epoll_create() implementation, the size argument informed
@@ -96,8 +95,8 @@ device_observer::init (std::initializer_list<std::string> && subsystems)
     _rep->ed = epoll_create(1);
 
     if (_rep->ed < 0) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , strerror(errno));
+        err = error {tr::f_("epoll_create failure: {}", pfs::system_error_text())};
+        return false;
     }
 
     struct epoll_event ev;
@@ -107,11 +106,11 @@ device_observer::init (std::initializer_list<std::string> && subsystems)
     errn = epoll_ctl(_rep->ed, EPOLL_CTL_ADD, _rep->md, & ev);
 
     if (errn < 0) {
-        return std::make_pair(make_error_code(errc::acquire_device_observer)
-            , strerror(errno));
+        err = error {tr::f_("epoll_ctl failure: {}", pfs::system_error_text())};
+        return false;
     }
 
-    return std::make_pair(std::error_code{}, std::string{});
+    return true;
 }
 
 void device_observer::deinit ()
@@ -136,21 +135,18 @@ void device_observer::deinit ()
     delete _rep;
 }
 
-device_observer::device_observer (std::error_code & ec
-    , std::initializer_list<std::string> subsystems)
+device_observer::device_observer (error & err, std::initializer_list<std::string> subsystems)
 {
-    auto res = init(std::move(subsystems));
-
-    if (res.first)
-        ec = res.first;
+    init(std::move(subsystems), err);
 }
 
 device_observer::device_observer (std::initializer_list<std::string> subsystems)
 {
-    auto res = init(std::move(subsystems));
+    error err;
+    auto success = init(std::move(subsystems), err);
 
-    if (res.first)
-        throw pfs::error{res.first, res.second};
+    if (!success)
+        throw err;
 }
 
 device_observer::~device_observer ()
