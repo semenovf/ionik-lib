@@ -10,7 +10,8 @@
 #pragma once
 #include "error.hpp"
 #include "file_provider.hpp"
-#include "pfs/i18n.hpp"
+#include <pfs/expected.hpp>
+#include <pfs/i18n.hpp>
 #include <string>
 #include <type_traits>
 
@@ -244,6 +245,17 @@ public: // static
             return f.read_all(perr);
 
         return std::string{};
+    }
+
+    static pfs::expected<std::string, error> read_all (filepath_type const & path)
+    {
+        error err;
+        auto s = read_all(path, & err);
+
+        if (err)
+            return pfs::unexpected<error>(err);
+
+        return s;
     }
 };
 
