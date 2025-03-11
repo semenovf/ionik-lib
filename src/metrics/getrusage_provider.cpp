@@ -22,11 +22,7 @@ bool getrusage_provider::query (bool (* f) (string_view key, counter_t const & v
     int rc = getrusage(RUSAGE_SELF, & r);
 
     if (rc != 0) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , pfs::system_error_text()
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error(), pfs::system_error_text());
         return false;
     }
 

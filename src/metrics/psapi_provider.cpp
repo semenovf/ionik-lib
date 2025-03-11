@@ -30,11 +30,7 @@ bool psapi_provider::query (bool (* f) (string_view key, counter_t const & value
     auto rc = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *) & pmc, sizeof(pmc));
 
     if (rc == 0) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , "GetProcessMemoryInfo failure"
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error(), "GetProcessMemoryInfo failure");
         return false;
     }
 

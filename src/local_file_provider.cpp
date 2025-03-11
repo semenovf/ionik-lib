@@ -115,8 +115,7 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
 #   endif
 
     if (h < 0) {
-        pfs::throw_or(perr, std::error_code(errno, std::generic_category())
-            , tr::f_("open read only file: {}", path));
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::f_("open read only file: {}", path));
         return INVALID_FILE_HANDLE;
     }
 
@@ -143,8 +142,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 #endif
 
     if (h < 0) {
-        pfs::throw_or(perr, pfs::get_last_system_error()
-            , tr::f_("open write only file failure: {}", path));
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::f_("open write only file failure: {}", path));
         return INVALID_FILE_HANDLE;
     }
 
@@ -173,9 +171,8 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 #endif
 
         if (ec) {
-            pfs::throw_or(perr, error {
-                tr::f_("resize file failure while open write only file: {}", fs::utf8_encode(path))
-            });
+            pfs::throw_or(perr, tr::f_("resize file failure while open write only file: {}"
+                , fs::utf8_encode(path)));
 
             file_provider_t::close(h);
             return INVALID_FILE_HANDLE;

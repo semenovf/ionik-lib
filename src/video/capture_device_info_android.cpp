@@ -281,8 +281,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                             }
                         } else {
                             err = error {
-                                  errc::backend_error
-                                , tr::f_("query metadata (ACameraMetadata_getConstEntry) failure"
+                                tr::f_("query metadata (ACameraMetadata_getConstEntry) failure"
                                     " with tag: {}, error code: {} (see camera/NdkCameraError.h for error description)"
                                     , static_cast<int>(tag), static_cast<int>(status))
                             };
@@ -290,8 +289,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
                     }
                 } else {
                     err = error {
-                          errc::backend_error
-                        , tr::f_("query camera characteristics (ACameraManager_getCameraCharacteristics)"
+                        tr::f_("query camera characteristics (ACameraManager_getCameraCharacteristics)"
                             " failure: error code: {} (see camera/NdkCameraError.h for error description)"
                             , static_cast<int>(status))
                     };
@@ -348,17 +346,13 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
             }
         } else {
             err = error {
-                  errc::backend_error
-                , tr::f_("query cameras (ACameraManager_getCameraIdList) failure: error code: {}"
+                tr::f_("query cameras (ACameraManager_getCameraIdList) failure: error code: {}"
                     " (see camera/NdkCameraError.h for error description)"
                     , static_cast<int>(status))
             };
         }
     } else {
-        err = error {
-              errc::backend_error
-            , tr::_("create camera manager (ACameraManager_create) failure")
-        };
+        err = error {tr::_("create camera manager (ACameraManager_create) failure")};
     }
 
     if (idList != nullptr)

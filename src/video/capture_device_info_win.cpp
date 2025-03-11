@@ -283,22 +283,14 @@ IMFSourceReader * create_source_reader (IMFMediaSource * psource, error * perr)
     auto attrs_guard = make_release_guard(pattrs);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error{
-              errc::backend_error
-           , tr::_("MFCreateAttributes() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("MFCreateAttributes() call failure"));
         return nullptr;
     }
 
     hr = pattrs->SetUINT32(MF_SOURCE_READER_DISCONNECT_MEDIASOURCE_ON_SHUTDOWN, TRUE);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error{
-              errc::backend_error
-            , tr::_("IMFAttributes::SetUINT32() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("IMFAttributes::SetUINT32() call failure"));
         return nullptr;
     }
 
@@ -313,11 +305,7 @@ IMFSourceReader * create_source_reader (IMFMediaSource * psource, error * perr)
     hr = MFCreateSourceReaderFromMediaSource(psource, pattrs, & reader);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error{
-              errc::backend_error
-            , tr::_("MFCreateSourceReaderFromMediaSource() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("MFCreateSourceReaderFromMediaSource() call failure"));
         return nullptr;
     }
 
@@ -337,22 +325,14 @@ static pfs::optional<pixel_format> current_pixel_format (IMFMediaSource * psourc
         , & current_media_type);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error {
-              errc::backend_error
-            , tr::_("IMFSourceReader::GetCurrentMediaType() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("IMFSourceReader::GetCurrentMediaType() call failure"));
         return pfs::nullopt;
     }
 
     auto current_pxf_opt = make_pixel_format(current_media_type);
 
     if (!current_pxf_opt) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_error
-            , tr::_("unsupported current media type for video capture device")
-        });
-
+        pfs::throw_or(perr, tr::_("unsupported current media type for video capture device"));
         return pfs::nullopt;
     }
 
@@ -405,11 +385,7 @@ static std::vector<pixel_format> enumerate_pixel_formats (IMFMediaSource * psour
                     break;
 
                 default:
-                    pfs::throw_or(perr, error { 
-                          errc::backend_error
-                        , tr::_("IMFSourceReader::GetNativeMediaType() call failure")
-                    });
-
+                    pfs::throw_or(perr, tr::_("IMFSourceReader::GetNativeMediaType() call failure"));
                     return std::vector<pixel_format>{};
             }
 
@@ -428,11 +404,7 @@ static pfs::optional<capture_device_info> create_capture_device (IMFActivate * p
     auto source_guard = make_release_guard(psource);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error {
-              errc::backend_error
-            , tr::_("IMFActivate::ActivateObject() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("IMFActivate::ActivateObject() call failure"));
         return pfs::nullopt;
     }
 
@@ -462,12 +434,8 @@ static pfs::optional<capture_device_info> create_capture_device (IMFActivate * p
     }
 
     if (!current_pixel_format_match) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_error
-            , tr::f_("none of the pixel formats match current one for video capture device: {}"
-                , info.readable_name)
-        });
-
+        pfs::throw_or(perr, tr::f_("none of the pixel formats match current one for video capture device: {}"
+            , info.readable_name));
         return pfs::nullopt;
     }
 
@@ -484,11 +452,7 @@ static std::vector<capture_device_info> enumerate_devices (IMFAttributes * pattr
     HRESULT hr = MFEnumDeviceSources(pattrs, & pdevices, & count);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error{
-              errc::backend_error
-            , tr::_("MFEnumDeviceSources() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("MFEnumDeviceSources() call failure"));
         return std::vector<capture_device_info>{};
     }
 
@@ -538,11 +502,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
     auto attrs_guard = make_release_guard(pattrs);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error { 
-              errc::backend_error
-            , tr::_("MFCreateAttributes() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("MFCreateAttributes() call failure"));
         return std::vector<capture_device_info>{};
     }
 
@@ -551,11 +511,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * perr)
         , MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
 
     if (FAILED(hr)) {
-        pfs::throw_or(perr, error {
-              errc::backend_error
-            , tr::_("IMFAttributes::SetGUID() call failure")
-        });
-
+        pfs::throw_or(perr, tr::_("IMFAttributes::SetGUID() call failure"));
         return std::vector<capture_device_info>{};
     }
 

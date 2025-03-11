@@ -51,11 +51,8 @@ netioapi_provider::netioapi_provider (std::string const & alias, error * perr)
     auto if_index = index_by_alias(alias);
 
     if (if_index < 0) {
-        pfs::throw_or(perr, error {
-              std::make_error_code(std::errc::result_out_of_range)
-            , tr::f_("interface not found by alias: {}", alias)
-        });
-
+        pfs::throw_or(perr, std::make_error_code(std::errc::result_out_of_range)
+            , tr::f_("interface not found by alias: {}", alias));
         return;
     }
 
@@ -78,12 +75,7 @@ bool netioapi_provider::read (std::int64_t & rx_bytes, std::int64_t & tx_bytes, 
     auto rc = GetIfEntry2(& ifrow);
 
     if (rc != NO_ERROR) {
-        pfs::throw_or(perr, error {
-              pfs::errc::unexpected_error
-            , tr::_("GetIfEntry2 failure")
-            , pfs::system_error_text(rc)
-        });
-
+        pfs::throw_or(perr, tr::_("GetIfEntry2 failure: {}", pfs::system_error_text(rc)));
         return false;
     }
 
@@ -176,7 +168,7 @@ std::vector<std::string> netioapi_provider::interfaces (error * perr)
     auto rc = GetIfTable2(& iftable);
 
     if (rc != NO_ERROR) {
-        pfs::throw_or(perr, error {pfs::errc::unexpected_error, pfs::system_error_text(rc), "GetIfEntry2"});
+        pfs::throw_or(perr, tr::f_("GetIfEntry2 failure: {}", pfs::system_error_text(rc)));
         return std::vector<std::string>{};
     }
 

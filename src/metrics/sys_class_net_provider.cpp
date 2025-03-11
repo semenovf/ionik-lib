@@ -40,15 +40,11 @@ sys_class_net_provider::sys_class_net_provider (std::string iface, std::string r
             continue;
 
         if (ec) {
-            pfs::throw_or(perr, error {ec, tr::f_("check path failure: {}", p)});
+            pfs::throw_or(perr, ec, tr::f_("check path failure: {}", p));
             return;
         }
 
-        pfs::throw_or(perr, error {
-              std::make_error_code(std::errc::no_such_file_or_directory)
-            , fs::utf8_encode(p)
-        });
-
+        pfs::throw_or(perr, std::make_error_code(std::errc::no_such_file_or_directory), fs::utf8_encode(p));
         return;
     }
 

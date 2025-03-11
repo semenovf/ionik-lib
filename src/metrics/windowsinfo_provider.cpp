@@ -407,7 +407,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     if (success) {
 } else {
         if (GetLastError() != ERROR_OLD_WIN_VERSION) {
-            pfs::throw_or(perr, error {pfs::get_last_system_error(), "VerifyVersionInfoA"});
+            pfs::throw_or(perr, pfs::get_last_system_error(), "VerifyVersionInfoA");
             return;
         }
 
@@ -415,7 +415,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
         success = GetVersionExA(reinterpret_cast<LPOSVERSIONINFOA>(& version_info));
 
         if (!success) {
-            pfs::throw_or(perr, error {pfs::get_last_system_error(), "GetVersionExA"});
+            pfs::throw_or(perr, pfs::get_last_system_error(), "GetVersionExA");
             return;
         }
     }
@@ -426,7 +426,7 @@ windowsinfo_provider::windowsinfo_provider (error * perr)
     auto success = GetProductInfo(6, 1, 0, 0, & product_type) != FALSE;
 
     if (!success) {
-        pfs::throw_or(perr, error {pfs::get_last_system_error(), "GetProductInfo"});
+        pfs::throw_or(perr, pfs::get_last_system_error(), "GetProductInfo");
         return;
     }
 

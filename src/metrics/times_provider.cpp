@@ -173,11 +173,7 @@ times_provider::times_provider (error * perr)
     _recent_ticks = times(& ticks);
 
     if (_recent_ticks == clock_t{-1}) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::f_("times() call failure")
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::f_("times() call failure"));
         return;
     }
 
@@ -249,11 +245,7 @@ bool times_provider::query (bool (* f) (string_view key, counter_t const & value
     auto opt_cpu_usage = calculate_cpu_usage();
 
     if (!opt_cpu_usage) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::_("times() call failure")
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("times() call failure"));
         return false;
     }
 

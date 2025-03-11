@@ -87,10 +87,9 @@ pdh_provider::pdh_provider (error * perr)
                         continue;
                 }
 
-                pfs::throw_or(perr, error {
-                      errc::unsupported
-                    , tr::f_("perfomance counter is not valid: {}", pfs::windows::utf8_encode(item.name.c_str()))
-                });
+                pfs::throw_or(perr, tr::f_("perfomance counter is not valid: {}"
+                    , pfs::windows::utf8_encode(item.name.c_str())));
+                return;
             }
 
             //
@@ -117,11 +116,7 @@ pdh_provider::pdh_provider (error * perr)
     }
 
     if (rc != ERROR_SUCCESS) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , exception_cause
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error(), exception_cause);
         return;
     }
 }
@@ -157,10 +152,7 @@ bool pdh_provider::query (bool (* f) (string_view key, counter_t const & value, 
         if (rc == PDH_NO_DATA)
             return true;
 
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , "PdhCollectQueryData"
-        });
+        pfs::throw_or(perr, pfs::get_last_system_error(), "PdhCollectQueryData");
 
         return false;
     }

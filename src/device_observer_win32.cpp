@@ -85,8 +85,7 @@ LRESULT notify_window_proc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lpara
             if (!ptr) {
                 throw error {
                       pfs::get_last_system_error()
-                    , tr::_("Unable to fetch device observer pointer")
-                    , pfs::system_error_text()
+                    , tr::f_("unable to fetch device observer pointer: {}", pfs::system_error_text()
                 };
             }
 
@@ -221,18 +220,16 @@ static void collect_device_classes ()
 
 device_observer::device_observer (std::initializer_list<std::string> subsystems)
 {
-    auto res = init(std::move(subsystems));
+    error err;
+    auto success = init(std::move(subsystems), err);
 
-    if (res.first)
-        throw pfs::error{res.first, res.second};
+    if (!success)
+        throw err;
 }
 
-device_observer::device_observer (std::error_code & ec, std::initializer_list<std::string> subsystems)
+device_observer::device_observer (error & err, std::initializer_list<std::string> subsystems)
 {
-    auto res = init(std::move(subsystems));
-
-    if (res.first)
-        ec = res.first;
+    init(std::move(subsystems), err);
 }
 
 device_observer::~device_observer ()
@@ -240,8 +237,7 @@ device_observer::~device_observer ()
     deinit();
 }
 
-std::pair<std::error_code, std::string> device_observer::init (
-    std::initializer_list<std::string> && subsystems)
+bool device_observer::init (std::initializer_list<std::string> && subsystems, error & err)
 {
     _rep = new device_observer_rep {
           HWND{0}
@@ -268,7 +264,8 @@ std::pair<std::error_code, std::string> device_observer::init (
             , nullptr, wx.hInstance, nullptr);
 
         if (!_rep->hwnd) {
-            throw error {pfs::get_last_system_error(), pfs::system_error_text()};
+            err = error {pfs::get_last_system_error(), pfs::system_error_text()};
+            return false;
         }
     }
 
@@ -288,7 +285,7 @@ std::pair<std::error_code, std::string> device_observer::init (
         if (subs_pos != __subsystems.cend()) {
             notification_filter.dbcc_classguid = subs_pos->guid;
         } else {
-            device_observer::on_failure(fmt::format("Unsupported subsystem: {}, ignored", devtype));
+            device_observer::on_failure(fmt::format("unsupported subsystem: {}, ignored", devtype));
             continue;
         }
 
@@ -299,7 +296,7 @@ std::pair<std::error_code, std::string> device_observer::init (
         _rep->dev_notifs.push_back(dev_notif);
     }
 
-    return std::make_pair(std::error_code{}, std::string{});
+    return true;
 }
 
 void device_observer::deinit ()

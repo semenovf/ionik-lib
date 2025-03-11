@@ -69,11 +69,8 @@ notify_changes_entry * win32::locate_entry (pfs::filesystem::path const & dir_pa
 bool win32::add_dir (fs::path const & path, error* perr)
 {
     if (!fs::exists(path)) {
-        pfs::throw_or(perr, error {
-              make_error_code(std::errc::invalid_argument)
-            , tr::f_("attempt to watch non-existence path: {}", path)
-        });
-
+        pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
+            , tr::f_("attempt to watch non-existence path: {}", path));
         return false;
     }
 
@@ -99,11 +96,8 @@ bool win32::add_dir (fs::path const & path, error* perr)
         , nullptr);
 
     if (hdir == INVALID_HANDLE_VALUE) {
-        pfs::throw_or(perr, error{
-              pfs::get_last_system_error()
-            , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text()
-        });
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("add path to watching failure: {}: {}", canonical_path, pfs::system_error_text()));
 
         return false;
     }
@@ -111,11 +105,8 @@ bool win32::add_dir (fs::path const & path, error* perr)
     HANDLE waiting_handle = ::CreateEvent(nullptr, TRUE, FALSE, nullptr);
 
     if (waiting_handle == nullptr) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text()
-        });
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("add path to watching failure: {}: {}", canonical_path, pfs::system_error_text()));
 
         return false;
     }
@@ -142,12 +133,8 @@ bool win32::add_dir (fs::path const & path, error* perr)
     auto success = read_dir_changes(x);
 
     if (!success) {
-        pfs::throw_or(perr, error {
-              pfs::get_last_system_error()
-            , tr::f_("add path to watching failure: {}", canonical_path)
-            , pfs::system_error_text()
-        });
-
+        pfs::throw_or(perr, error { pfs::get_last_system_error()
+            , tr::f_("add path to watching failure: {}: {}", canonical_path, pfs::system_error_text()));
         return false;
     }
 
@@ -160,11 +147,8 @@ bool win32::add_dir (fs::path const & path, error* perr)
 bool win32::add_file (fs::path const & path, error * perr)
 {
     if (!fs::exists(path)) {
-        pfs::throw_or(perr, error {
-              make_error_code(std::errc::invalid_argument)
-            , tr::f_("attempt to watch non-existence path: {}", path)
-        });
-
+        pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
+            , tr::f_("attempt to watch non-existence path: {}", path)));
         return false;
     }
 
@@ -253,12 +237,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         return 0;
        
     if (rc == WAIT_FAILED) {
-        pfs::throw_or(perr, error { 
-              pfs::get_last_system_error()
-            , tr::_("WaitForMultipleObjects failure")
-            , pfs::system_error_text()
-        });
-
+        pfs::throw_or(perr, pfs::get_last_system_error()
+            , tr::f_("WaitForMultipleObjects failure: {}", pfs::system_error_text()));
         return -1;
     }
 
@@ -269,10 +249,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         auto pos = _rep.watch_dirs.find(fd);
 
         if (pos == _rep.watch_dirs.end()) {
-            pfs::throw_or(perr, error {
-                  pfs::errc::unexpected_error
-                , tr::_("watch entity not found")
-            });
+            pfs::throw_or(perr, pfs::errc::unexpected_error
+                , tr::_("watch entity not found"));
 
             return -1;
         }
@@ -355,10 +333,8 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
         ::ResetEvent(x.overlapped_ptr->hEvent);
 
         if (!backend::win32::read_dir_changes(x)) {
-            pfs::throw_or(perr, error {
-                  pfs::errc::unexpected_error
-                , tr::_("ReadDirectoryChangesW failure")
-            });
+            pfs::throw_or(perr, pfs::errc::unexpected_error
+                , tr::_("ReadDirectoryChangesW failure"));
 
             return -1;
         }

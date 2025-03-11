@@ -285,7 +285,7 @@ linuxinfo_provider::linuxinfo_provider (error * perr)
     auto rc = gethostname(hostname.data(), hostname.size());
 
     if (rc != 0) {
-        pfs::throw_or(perr, error {pfs::get_last_system_error(), tr::_("gethostname")});
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("gethostname"));
         return;
     }
 
@@ -299,7 +299,7 @@ linuxinfo_provider::linuxinfo_provider (error * perr)
     rc = sysinfo(& si);
 
     if (rc != 0) {
-        pfs::throw_or(perr, error {pfs::get_last_system_error(), tr::_("sysinfo")});
+        pfs::throw_or(perr, pfs::get_last_system_error(), tr::_("sysinfo"));
         return;
     }
 

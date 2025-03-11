@@ -198,8 +198,8 @@ static bool device_info_helper (IMMDevice * pEndpoint, device_info & di)
                 hr = pProps->GetValue(PKEY_Device_FriendlyName, & varName);
 
                 if (SUCCEEDED(hr)) {
-					di.name = pfs::windows::utf8_encode(pwszID); // convert_wide(pwszID);
-					di.readable_name = pfs::windows::utf8_encode(varName.pwszVal); // convert_wide(varName.pwszVal);
+                    di.name = pfs::windows::utf8_encode(pwszID); // convert_wide(pwszID);
+                    di.readable_name = pfs::windows::utf8_encode(varName.pwszVal); // convert_wide(varName.pwszVal);
                     PropVariantClear(& varName);
 
                     result = true;
