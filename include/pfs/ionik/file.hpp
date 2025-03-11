@@ -12,6 +12,7 @@
 #include "file_provider.hpp"
 #include <pfs/expected.hpp>
 #include <pfs/i18n.hpp>
+#include <pfs/optional.hpp>
 #include <string>
 #include <type_traits>
 
@@ -217,10 +218,10 @@ public: // static
     }
 
     /**
-     * Rewrite file with content from @a text.
+     * Rewrite file with content from @a buffer.
      */
     static bool rewrite (filepath_type const & path, char const * buffer
-        , filesize_type count, error * perr = nullptr)
+        , filesize_type count, error * perr)
     {
         file f = open_write_only(path, truncate_enum::on, perr);
 
@@ -232,12 +233,24 @@ public: // static
         return false;
     }
 
+    static pfs::optional<error> rewrite (filepath_type const & path, char const * buffer
+        , filesize_type count)
+    {
+        error err;
+        auto success = rewrite(path, buffer, count, & err);
+
+        if (!success)
+            return err;
+
+        return pfs::nullopt;
+    }
+
     static void rewrite (filepath_type const & path, std::string const & text)
     {
         rewrite(path, text.c_str(), static_cast<filesize_type>(text.size()));
     }
 
-    static std::string read_all (filepath_type const & path, error * perr = nullptr)
+    static std::string read_all (filepath_type const & path, error * perr)
     {
         auto f = file::open_read_only(path, perr);
 
