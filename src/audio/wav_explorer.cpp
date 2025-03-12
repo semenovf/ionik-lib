@@ -19,6 +19,7 @@
 #include "ionik/audio/wav_explorer.hpp"
 #include <pfs/binary_istream.hpp>
 #include <pfs/endian.hpp>
+#include <pfs/i18n.hpp>
 #include <pfs/numeric_cast.hpp>
 #include <pfs/string_view.hpp>
 #include <pfs/ionik/local_file.hpp>

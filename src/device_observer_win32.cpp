@@ -85,7 +85,7 @@ LRESULT notify_window_proc (HWND hwnd, UINT message, WPARAM wparam, LPARAM lpara
             if (!ptr) {
                 throw error {
                       pfs::get_last_system_error()
-                    , tr::f_("unable to fetch device observer pointer: {}", pfs::system_error_text()
+                    , tr::f_("unable to fetch device observer pointer: {}", pfs::system_error_text())
                 };
             }
 

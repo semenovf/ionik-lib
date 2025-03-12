@@ -6,32 +6,25 @@
 // Changelog:
 //      2024.12.15 Initial version (https://learn.microsoft.com/en-us/windows/win32/services/svcconfig-cpp).
 ////////////////////////////////////////////////////////////////////////////////
-#include <windows.h>
+#include "utils.hpp"
 #include <pfs/argvapi.hpp>
 #include <pfs/expected.hpp>
-#include <pfs/i18n.hpp>
 #include <pfs/scope.hpp>
 #include <pfs/string_view.hpp>
 #include <pfs/windows.hpp>
 #include <pfs/ionik/error.hpp>
 #include <cstdlib>
-#include <memory>
-#include <type_traits>
 
 #pragma comment(lib, "advapi32.lib")
 
-//TCHAR szCommand[10];
-//TCHAR szSvcName[80];
-
 namespace fs = pfs::filesystem;
+using result_type = pfs::expected<bool, std::string>;
 
-pfs::expected<bool, std::string> __stdcall DoQuerySvc(std::wstring service_name);
-VOID __stdcall DoUpdateSvcDesc(void);
-VOID __stdcall DoDisableSvc(void);
-VOID __stdcall DoEnableSvc(void);
-VOID __stdcall DoDeleteSvc(void);
+result_type WINAPI do_query_service (std::wstring service_name);
+result_type WINAPI do_enable_service (std::wstring service_name, bool enable);
+result_type WINAPI do_delete_service (std::wstring service_name);
 
-void __stdcall print_usage (fs::path const & program_name)
+void print_usage (fs::path const & program_name)
 {
     fmt::println(tr::_("Description:"));
     fmt::println(tr::_("    Command-line tool that configures a service.\n"));
@@ -39,10 +32,10 @@ void __stdcall print_usage (fs::path const & program_name)
     fmt::println(tr::f_("    {} COMMAND SERVICE_NAME\n", program_name));
     fmt::println(tr::_("Commands:"));
     fmt::println(tr::_("    query"));
-    fmt::println(tr::_("    describe"));
     fmt::println(tr::_("    disable"));
     fmt::println(tr::_("    enable"));
     fmt::println(tr::_("    delete"));
+    fmt::println(tr::_("    describe"));
 }
 
 int __cdecl wmain (int argc, WCHAR * argv[])
@@ -50,7 +43,7 @@ int __cdecl wmain (int argc, WCHAR * argv[])
     auto command_line = pfs::make_argvapi(argc, argv);
 
     if( argc != 3 ) {
-        fmt::println(stderr, tr::_("Incorrect number of arguments"));
+        print_error(tr::_("Incorrect number of arguments\n"));
         print_usage(command_line.program_name());
         return EXIT_FAILURE;
     }
@@ -59,29 +52,30 @@ int __cdecl wmain (int argc, WCHAR * argv[])
     auto command_name = it.next().arg();
     auto service_name = it.next().arg();
 
-    //StringCchCopy(szCommand, 10, argv[1]);
-    //StringCchCopy(szSvcName, 80, argv[2]);
+    result_type res;
+    bool print_usage_on_error = false;
 
     if (command_name == L"query") {
-        auto res = DoQuerySvc(to_string(service_name));
-
-        if (!res) {
-            fmt::println(stderr, res.error());
-            return EXIT_FAILURE;
-        }
-    }
-    //else if (lstrcmpi( szCommand, TEXT("describe")) == 0 )
-    //    DoUpdateSvcDesc();
-    //else if (lstrcmpi( szCommand, TEXT("disable")) == 0 )
-    //    DoDisableSvc();
-    //else if (lstrcmpi( szCommand, TEXT("enable")) == 0 )
-    //    DoEnableSvc();
-    //else if (lstrcmpi( szCommand, TEXT("delete")) == 0 )
-    //    DoDeleteSvc();
-    else {
-        fmt::println(stderr, tr::f_("Unknown command: {}\n", pfs::windows::utf8_encode(
+        res = do_query_service(to_string(service_name));
+    } else if (command_name == L"disable") {
+        res = do_enable_service(to_string(service_name), false);
+    } else if (command_name == L"enable") {
+        res = do_enable_service(to_string(service_name), true);
+    } else if (command_name == L"delete") {
+        res = do_delete_service(to_string(service_name));
+    } else if (command_name == L"describe") {
+        //res = do_enable_service(to_string(service_name));
+    } else {
+        res = pfs::make_unexpected(tr::f_("Unknown command: {}", pfs::windows::utf8_encode(
             command_name.begin(), command_name.size())));
-        print_usage(command_line.program_name());
+    }
+
+    if (!res) {
+        fmt::println(stderr, res.error());
+
+        if (print_usage_on_error)
+            print_usage(command_line.program_name());
+
         return EXIT_FAILURE;
     }
 
@@ -91,40 +85,27 @@ int __cdecl wmain (int argc, WCHAR * argv[])
 /**
  * Retrieves and displays the current service configuration.
  */
-pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name)
+result_type WINAPI do_query_service (std::wstring service_name)
 {
     // Get a handle to the SCM database. 
-    LPCWSTR machine_name = nullptr;  // Local computer
-    LPCWSTR database_name = nullptr; // ServicesActive database 
-    auto schSCManager = OpenSCManagerW(machine_name, database_name, SC_MANAGER_ALL_ACCESS);
+    auto sc_manager = make_manager();
 
-    if (schSCManager == nullptr) {
-        return pfs::make_unexpected(tr::f_("OpenSCManager ФВВ: {}"
-            , pfs::get_last_system_error().message()));
+    if (!sc_manager) {
+        return pfs::make_unexpected(tr::f_("OpenSCManager: {}", pfs::get_last_system_error().message()));
     }
-
-    auto schSCManager_guard = pfs::make_scope_exit([schSCManager] {
-        CloseServiceHandle(schSCManager);
-    });
 
     // Get a handle to the service.
+    auto sc_service = make_service(& *sc_manager, service_name.c_str(), SERVICE_QUERY_CONFIG);
 
-    SC_HANDLE schService = OpenServiceW(schSCManager, service_name.c_str(), SERVICE_QUERY_CONFIG); // need query config access 
-
-    if (schService == nullptr) {
-        return pfs::make_unexpected(tr::f_("OpenServiceW: {}"
-            , pfs::get_last_system_error().message()));
+    if (!sc_service) {
+        return pfs::make_unexpected(tr::f_("OpenService: {}", pfs::get_last_system_error().message()));
     }
 
-    auto schService_guard = pfs::make_scope_exit([schService] {
-        CloseServiceHandle(schService);
-    });
-
     // Get the configuration information.
-    DWORD dwBytesNeeded;
-    DWORD cbBufSize; 
+    DWORD dwBytesNeeded = 0;
+    DWORD cbBufSize = 0; 
     LPQUERY_SERVICE_CONFIGW lpsc; 
-    auto success = QueryServiceConfigW(schService, nullptr, 0, & dwBytesNeeded) != FALSE;
+    auto success = QueryServiceConfigW(& *sc_service, nullptr, 0, & dwBytesNeeded) == TRUE;
 
     if (!success) {
         auto dwError = GetLastError();
@@ -132,6 +113,10 @@ pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name
         if (dwError == ERROR_INSUFFICIENT_BUFFER) {
             cbBufSize = dwBytesNeeded;
             lpsc = static_cast<LPQUERY_SERVICE_CONFIGW>(LocalAlloc(LMEM_FIXED, cbBufSize));
+
+            if (lpsc == nullptr)
+                return pfs::make_unexpected(tr::f_("LocalAlloc", pfs::get_last_system_error().message()));
+
         } else {
             return pfs::make_unexpected(tr::f_("QueryServiceConfig: {}"
                 , pfs::get_last_system_error().message()));
@@ -140,7 +125,7 @@ pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name
 
     auto lpsc_guard = pfs::make_scope_exit([lpsc] { LocalFree(lpsc); });
 
-    success = QueryServiceConfigW(schService, lpsc, cbBufSize, & dwBytesNeeded) != FALSE;
+    success = QueryServiceConfigW(& *sc_service, lpsc, cbBufSize, & dwBytesNeeded) == TRUE;
 
     if (!success) {
         return pfs::make_unexpected(tr::f_("QueryServiceConfig: {}"
@@ -148,7 +133,7 @@ pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name
     }
 
     LPSERVICE_DESCRIPTIONW lpsd;
-    success = QueryServiceConfig2W(schService, SERVICE_CONFIG_DESCRIPTION, nullptr, 0, & dwBytesNeeded) != FALSE;
+    success = QueryServiceConfig2W(& *sc_service, SERVICE_CONFIG_DESCRIPTION, nullptr, 0, & dwBytesNeeded) != FALSE;
         
     if (!success) {
         auto dwError = GetLastError();
@@ -156,6 +141,9 @@ pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name
         if (dwError == ERROR_INSUFFICIENT_BUFFER) {
             cbBufSize = dwBytesNeeded;
             lpsd = static_cast<LPSERVICE_DESCRIPTIONW>(LocalAlloc(LMEM_FIXED, cbBufSize));
+
+            if (lpsd == nullptr)
+                return pfs::make_unexpected(tr::f_("LocalAlloc", pfs::get_last_system_error().message()));
         } else {
             return pfs::make_unexpected(tr::f_("QueryServiceConfig2: {}"
                 , pfs::get_last_system_error().message()));
@@ -164,7 +152,7 @@ pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name
 
     auto lpsd_guard = pfs::make_scope_exit([lpsd] { LocalFree(lpsd); });
 
-    success = QueryServiceConfig2W(schService, SERVICE_CONFIG_DESCRIPTION, (LPBYTE)lpsd
+    success = QueryServiceConfig2W(& *sc_service, SERVICE_CONFIG_DESCRIPTION, (LPBYTE)lpsd
         , cbBufSize, & dwBytesNeeded) != FALSE;
 
     if (!success) {
@@ -196,55 +184,26 @@ pfs::expected<bool, std::string> __stdcall DoQuerySvc (std::wstring service_name
     return true;
 }
 
-#if __FIXME__
-//
-// Purpose: 
-//   Disables the service.
-//
-// Parameters:
-//   None
-// 
-// Return value:
-//   None
-//
-VOID __stdcall DoDisableSvc()
+/**
+ * Enables/Disables the service.
+ */ 
+result_type WINAPI do_enable_service (std::wstring service_name, bool enable)
 {
-    SC_HANDLE schSCManager;
-    SC_HANDLE schService;
-
     // Get a handle to the SCM database. 
+    auto sc_manager = make_manager();
 
-    schSCManager = OpenSCManager( 
-        NULL,                    // local computer
-        NULL,                    // ServicesActive database 
-        SC_MANAGER_ALL_ACCESS);  // full access rights 
-
-    if (NULL == schSCManager) 
-    {
-        printf("OpenSCManager failed (%d)\n", GetLastError());
-        return;
-    }
+    if (!sc_manager)
+        return pfs::make_unexpected(tr::f_("OpenSCManager: {}", pfs::get_last_system_error().message()));
 
     // Get a handle to the service.
+    auto sc_service = make_service(& *sc_manager, service_name.c_str(), SERVICE_CHANGE_CONFIG);
 
-    schService = OpenService( 
-        schSCManager,            // SCM database 
-        szSvcName,               // name of service 
-        SERVICE_CHANGE_CONFIG);  // need change config access 
+    if (!sc_service)
+        return pfs::make_unexpected(tr::f_("OpenService: {}", pfs::get_last_system_error().message()));
 
-    if (schService == NULL)
-    { 
-        printf("OpenService failed (%d)\n", GetLastError()); 
-        CloseServiceHandle(schSCManager);
-        return;
-    }    
-
-    // Change the service start type.
-
-    if (! ChangeServiceConfig( 
-        schService,        // handle of service 
+    auto success = ChangeServiceConfigW(& *sc_service, // handle of service 
         SERVICE_NO_CHANGE, // service type: no change 
-        SERVICE_DISABLED,  // service start type 
+        enable ? SERVICE_DEMAND_START : SERVICE_DISABLED,  // service start type 
         SERVICE_NO_CHANGE, // error control: no change 
         NULL,              // binary path: no change 
         NULL,              // load order group: no change 
@@ -252,81 +211,48 @@ VOID __stdcall DoDisableSvc()
         NULL,              // dependencies: no change 
         NULL,              // account name: no change 
         NULL,              // password: no change 
-        NULL) )            // display name: no change
-    {
-        printf("ChangeServiceConfig failed (%d)\n", GetLastError()); 
-    }
-    else printf("Service disabled successfully.\n"); 
-
-    CloseServiceHandle(schService); 
-    CloseServiceHandle(schSCManager);
-}
-
-//
-// Purpose: 
-//   Enables the service.
-//
-// Parameters:
-//   None
-// 
-// Return value:
-//   None
-//
-VOID __stdcall DoEnableSvc()
-{
-    SC_HANDLE schSCManager;
-    SC_HANDLE schService;
-
-    // Get a handle to the SCM database. 
-
-    schSCManager = OpenSCManager( 
-        NULL,                    // local computer
-        NULL,                    // ServicesActive database 
-        SC_MANAGER_ALL_ACCESS);  // full access rights 
-
-    if (NULL == schSCManager) 
-    {
-        printf("OpenSCManager failed (%d)\n", GetLastError());
-        return;
-    }
-
-    // Get a handle to the service.
-
-    schService = OpenService( 
-        schSCManager,            // SCM database 
-        szSvcName,               // name of service 
-        SERVICE_CHANGE_CONFIG);  // need change config access 
-
-    if (schService == NULL)
-    { 
-        printf("OpenService failed (%d)\n", GetLastError()); 
-        CloseServiceHandle(schSCManager);
-        return;
-    }    
+        NULL) == TRUE;     // display name: no change
 
     // Change the service start type.
+    if (!success) {
+        return pfs::make_unexpected(tr::f_("ChangeServiceConfig: {}"
+            , pfs::get_last_system_error().message()));
+    } 
 
-    if (! ChangeServiceConfig( 
-        schService,            // handle of service 
-        SERVICE_NO_CHANGE,     // service type: no change 
-        SERVICE_DEMAND_START,  // service start type 
-        SERVICE_NO_CHANGE,     // error control: no change 
-        NULL,                  // binary path: no change 
-        NULL,                  // load order group: no change 
-        NULL,                  // tag ID: no change 
-        NULL,                  // dependencies: no change 
-        NULL,                  // account name: no change 
-        NULL,                  // password: no change 
-        NULL) )                // display name: no change
-    {
-        printf("ChangeServiceConfig failed (%d)\n", GetLastError()); 
-    }
-    else printf("Service enabled successfully.\n"); 
+    fmt::println(tr::f_("Service {} successfully", (enable ? tr::_("enabled") : tr::_("disabled")))); 
 
-    CloseServiceHandle(schService); 
-    CloseServiceHandle(schSCManager);
+    return true;
 }
 
+/**
+ * Deletes a service from the SCM database.
+ */
+result_type WINAPI do_delete_service (std::wstring service_name)
+{
+    // Get a handle to the SCM database. 
+    auto sc_manager = make_manager();
+
+    if (!sc_manager)
+        return pfs::make_unexpected(tr::f_("OpenSCManager: {}", pfs::get_last_system_error().message()));
+
+    // Get a handle to the service.
+    auto sc_service = make_service(& *sc_manager, service_name.c_str(), DELETE);
+
+    // Delete the service.
+    if (!sc_service)
+        return pfs::make_unexpected(tr::f_("OpenService: {}", pfs::get_last_system_error().message()));
+
+    auto success = DeleteService(& *sc_service) == TRUE;
+
+    if (!success)
+        return pfs::make_unexpected(tr::f_("DeleteService: {}", pfs::get_last_system_error().message()));
+
+    fmt::println(tr::_("Service deleted successfully")) ;
+
+    return true;
+}
+
+#if __FIXME__
 //
 // Purpose: 
 //   Updates the service description to "This is a test description".
@@ -388,58 +314,5 @@ VOID __stdcall DoUpdateSvcDesc()
     CloseServiceHandle(schSCManager);
 }
 
-//
-// Purpose: 
-//   Deletes a service from the SCM database
-//
-// Parameters:
-//   None
-// 
-// Return value:
-//   None
-//
-VOID __stdcall DoDeleteSvc()
-{
-    SC_HANDLE schSCManager;
-    SC_HANDLE schService;
-
-    // Get a handle to the SCM database. 
-
-    schSCManager = OpenSCManager( 
-        NULL,                    // local computer
-        NULL,                    // ServicesActive database 
-        SC_MANAGER_ALL_ACCESS);  // full access rights 
-
-    if (NULL == schSCManager) 
-    {
-        printf("OpenSCManager failed (%d)\n", GetLastError());
-        return;
-    }
-
-    // Get a handle to the service.
-
-    schService = OpenService( 
-        schSCManager,       // SCM database 
-        szSvcName,          // name of service 
-        DELETE);            // need delete access 
-
-    if (schService == NULL)
-    { 
-        printf("OpenService failed (%d)\n", GetLastError()); 
-        CloseServiceHandle(schSCManager);
-        return;
-    }
-
-    // Delete the service.
-
-    if (! DeleteService(schService) ) 
-    {
-        printf("DeleteService failed (%d)\n", GetLastError()); 
-    }
-    else printf("Service deleted successfully\n"); 
-
-    CloseServiceHandle(schService); 
-    CloseServiceHandle(schSCManager);
-}
 
 #endif // __FIXME__

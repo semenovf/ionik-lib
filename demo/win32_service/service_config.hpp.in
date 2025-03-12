@@ -1,0 +1,2 @@
+constexpr wchar_t * kSERVICE_NAME = L"@IONIK__TEST_SERVICE_NAME@";
+constexpr wchar_t * kSERVICE_DISPLAY_NAME = L"@IONIK__TEST_SERVICE_DISPLAY_NAME@";

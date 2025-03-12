@@ -6,53 +6,82 @@
 // Changelog:
 //      2024.12.15 Initial version (https://learn.microsoft.com/en-us/windows/win32/services/svc-cpp).
 ////////////////////////////////////////////////////////////////////////////////
+#include "service_config.hpp"
+#include "utils.hpp"
+#include <pfs/argvapi.hpp>
+#include <pfs/expected.hpp>
+#include <pfs/string_view.hpp>
+#include <pfs/windows.hpp>
 #include <windows.h>
-#include <tchar.h>
-#include <strsafe.h>
 #include "messages.h"
+#include <cstdlib>
 
 #pragma comment(lib, "advapi32.lib")
 
-#define SVCNAME TEXT("SvcName")
+namespace fs = pfs::filesystem;
+using result_type = pfs::expected<bool, std::string>;
 
-SERVICE_STATUS          gSvcStatus; 
-SERVICE_STATUS_HANDLE   gSvcStatusHandle; 
-HANDLE                  ghSvcStopEvent = NULL;
+//SERVICE_STATUS          gSvcStatus; 
+//SERVICE_STATUS_HANDLE   gSvcStatusHandle; 
+//HANDLE                  ghSvcStopEvent = NULL;
 
-VOID SvcInstall(void);
-VOID WINAPI SvcCtrlHandler( DWORD ); 
-VOID WINAPI SvcMain( DWORD, LPTSTR * ); 
+result_type WINAPI do_install_service (std::wstring service_name);
 
-VOID ReportSvcStatus( DWORD, DWORD, DWORD );
-VOID SvcInit( DWORD, LPTSTR * ); 
-VOID SvcReportEvent( LPTSTR );
-
-
+//VOID SvcInstall(void);
+//VOID WINAPI SvcCtrlHandler( DWORD ); 
+//VOID WINAPI SvcMain( DWORD, LPTSTR * ); 
 //
-// Purpose: 
-//   Entry point for the process
-//
-// Parameters:
-//   None
-// 
-// Return value:
-//   None, defaults to 0 (zero)
-//
-int __cdecl _tmain(int argc, TCHAR *argv[]) 
+//VOID ReportSvcStatus( DWORD, DWORD, DWORD );
+//VOID SvcInit( DWORD, LPTSTR * ); 
+//VOID SvcReportEvent( LPTSTR );
+
+void print_usage (fs::path const & program_name)
+{
+    fmt::println(tr::_("Description:"));
+    fmt::println(tr::_("    Command-line tool that installs a service.\n"));
+    fmt::println(tr::_("Usage:"));
+    fmt::println(tr::f_("    {} -h | --help", program_name));
+    fmt::println(tr::_ ("        Print this usage\n"));
+    fmt::println(tr::f_("    {} install", program_name));
+    fmt::println(tr::_ ("        Install the service"));
+}
+
+int __cdecl wmain (int argc, WCHAR * argv[]) 
 { 
-    // If command-line parameter is "install", install the service. 
-    // Otherwise, the service is probably being started by the SCM.
+    auto command_line = pfs::make_argvapi(argc, argv);
+    auto it = command_line.begin();
 
-    if( lstrcmpi( argv[1], TEXT("install")) == 0 )
-    {
-        SvcInstall();
-        return 0;
+    if (it.has_more()) {
+        auto item = it.next();
+
+        if (item.is_option()) {
+            if (item.optname() == L"h" || item.optname() == L"help") {
+                print_usage(command_line.program_name());
+                return EXIT_SUCCESS;
+            } else {
+                print_error(tr::_("Unexpected option\n"));
+                print_usage(command_line.program_name());
+                return EXIT_FAILURE;
+            }
+        } else {
+            auto command_name = item.arg();
+
+            // Install the service. 
+            if (command_name == L"install") {
+                auto res = do_install_service(kSERVICE_NAME);
+
+                if (!res)
+                    return EXIT_FAILURE;
+            }
+        }
     }
 
+#if __FIXME__    
+    // The service is probably being started by the SCM.
+
     // TO_DO: Add any additional services for the process to this table.
-    SERVICE_TABLE_ENTRY DispatchTable[] = 
-    { 
-        { SVCNAME, (LPSERVICE_MAIN_FUNCTION) SvcMain }, 
+    SERVICE_TABLE_ENTRY DispatchTable[] = { 
+        { kSERVICE_NAME, (LPSERVICE_MAIN_FUNCTION) SvcMain }, 
         { NULL, NULL } 
     }; 
 
@@ -63,8 +92,14 @@ int __cdecl _tmain(int argc, TCHAR *argv[])
     { 
         SvcReportEvent(TEXT("StartServiceCtrlDispatcher")); 
     } 
+#endif // __FIXME__
 } 
 
+result_type WINAPI do_install_service (std::wstring service_name)
+{
+    return true;
+}
+#if __FIXME__
 //
 // Purpose: 
 //   Installs a service in the SCM database
@@ -318,29 +353,28 @@ VOID WINAPI SvcCtrlHandler( DWORD dwCtrl )
 //
 VOID SvcReportEvent(LPTSTR szFunction) 
 { 
-    HANDLE hEventSource;
     LPCTSTR lpszStrings[2];
-    TCHAR Buffer[80];
+    WCHAR Buffer[80];
 
-    hEventSource = RegisterEventSource(NULL, SVCNAME);
+    auto hEventSource = RegisterEventSource(NULL, SVCNAME);
 
-    if( NULL != hEventSource )
-    {
+    if( NULL != hEventSource ) {
         StringCchPrintf(Buffer, 80, TEXT("%s failed with %d"), szFunction, GetLastError());
 
         lpszStrings[0] = SVCNAME;
         lpszStrings[1] = Buffer;
 
-        ReportEvent(hEventSource,        // event log handle
-            EVENTLOG_ERROR_TYPE, // event type
-            0,                   // event category
-            SVC_ERROR,           // event identifier
-            NULL,                // no security identifier
-            2,                   // size of lpszStrings array
-            0,                   // no binary data
-            lpszStrings,         // array of strings
-            NULL);               // no binary data
+        ReportEvent(hEventSource, // event log handle
+            EVENTLOG_ERROR_TYPE,  // event type
+            0,                    // event category
+            SVC_ERROR,            // event identifier
+            NULL,                 // no security identifier
+            2,                    // size of lpszStrings array
+            0,                    // no binary data
+            lpszStrings,          // array of strings
+            NULL);                // no binary data
 
         DeregisterEventSource(hEventSource);
     }
 }
+#endif // __FIXME__

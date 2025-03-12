@@ -12,6 +12,10 @@ if (NOT MSVC)
     return()
 endif()
 
+set(IONIK__TEST_SERVICE_NAME "IonikTestService" )
+set(IONIK__TEST_SERVICE_DISPLAY_NAME "Ionik Test Service")
+configure_file(service_config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/service_config.hpp)
+
 set(MC_COMMAND mc)
 set(RC_COMMAND rc)
 set(LINK_COMMAND link)
