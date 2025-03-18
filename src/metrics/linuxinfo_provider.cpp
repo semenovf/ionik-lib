@@ -26,6 +26,13 @@ namespace metrics {
 namespace fs = pfs::filesystem;
 using string_view = pfs::string_view;
 
+#if defined(__GNUC__) && __GNUC__ < 11
+inline void __cpuidex (int cpuid_info[4], int leaf, int subleaf)
+{
+    __cpuid_count(leaf, subleaf, cpuid_info[0], cpuid_info[1], cpuid_info[2], cpuid_info[3]);
+}
+#endif
+
 //
 // https://www.freedesktop.org/software/systemd/man/latest/os-release.html
 //
