@@ -9,6 +9,7 @@
 #pragma once
 #include "pfs/ionik/error.hpp"
 #include "pfs/ionik/exports.hpp"
+#include <cstdint>
 #include <utility>
 
 namespace ionik {

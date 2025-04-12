@@ -18,6 +18,7 @@
 #include <sys/utsname.h>
 #include <cpuid.h>
 #include <algorithm>
+#include <array>
 
 IONIK__NAMESPACE_BEGIN
 
