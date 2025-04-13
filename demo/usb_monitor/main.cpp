@@ -14,6 +14,18 @@
 
 static constexpr char const * TAG = "ionik-lib";
 
+#if IONIK__DEVICE_OBSERVER_DISABLED
+int main (int /*argc*/, char * /*argv*/[])
+{
+    fmt::println(stderr,
+        "ATTENTION!\n"
+        "Device observer feature disabled.\n"
+        "See warning(s) while build library.");
+
+    return EXIT_SUCCESS;
+}
+
+#else // !IONIK__DEVICE_OBSERVER_DISABLED
 int main (int argc, char * argv[])
 {
     ionik::device_observer::on_failure = [] (std::string const & msg) {
@@ -53,3 +65,4 @@ int main (int argc, char * argv[])
 
     return EXIT_SUCCESS;
 }
+#endif // IONIK__DEVICE_OBSERVER_DISABLED

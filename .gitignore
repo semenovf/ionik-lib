@@ -3,7 +3,8 @@
 !/3rdparty/*.cmake
 !/3rdparty/CMakeLists.txt
 
-/2ndparty/
+/2ndparty/*
+!/2ndparty/CMakeLists.txt
 
 ### KDevelop ###
 *.kdev4

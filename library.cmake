@@ -75,9 +75,7 @@ elseif (UNIX)
             "For Debian-based distributions try to install 'libudev-dev' package"
             "Device observer based on 'udev' library disabled")
 
-        #if (NOT EXISTS /usr/include/libudev.h)
-        #    target_include_directories(ionik PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/libudev1)
-        #endif()
+            target_compile_definitions(ionik PUBLIC IONIK__DEVICE_OBSERVER_DISABLED=1)
     endif()
 
 elseif (MSVC)
@@ -98,12 +96,15 @@ else()
     message (FATAL_ERROR "Unsupported platform")
 endif()
 
-if (IONIK__ENABLE_QT5)
+if (IONIK__ENABLE_QT6)
+    message(WARNING " Qt6 support for audio backend not implemented yet")
+elseif (IONIK__ENABLE_QT5)
+    # On Ubuntu (all Debian-based?) need to install `libgl-dev` package
     find_package(Qt5 COMPONENTS Core Gui Network Multimedia REQUIRED)
     target_sources(ionik PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_qt5.cpp)
-    target_link_directories(ionik PRIVATE Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia)
+    target_link_libraries(ionik PRIVATE Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia)
     set(_ionik__audio_backend_FOUND ON)
-endif(IONIK__ENABLE_QT5)
+endif()
 
 if (NOT _ionik__audio_backend_FOUND)
     #if (UNIX AND NOT APPLE AND NOT CYGWIN)
@@ -145,21 +146,6 @@ if (NOT _ionik__audio_backend_FOUND)
     message(WARNING
         " No any Audio backend found\n"
         " For Debian-based distributions it may be PulseAudio ('libpulse-dev' package)")
-endif()
-
-if (NOT TARGET pfs::common)
-    set(FETCHCONTENT_UPDATES_DISCONNECTED_COMMON ON)
-
-    message(STATUS "Fetching pfs::common ...")
-    include(FetchContent)
-    FetchContent_Declare(common
-        GIT_REPOSITORY https://github.com/semenovf/common-lib.git
-        GIT_TAG master
-        GIT_PROGRESS TRUE
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/2ndparty/common
-        SUBBUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/2ndparty/common)
-    FetchContent_MakeAvailable(common)
-    message(STATUS "Fetching pfs::common complete")
 endif()
 
 target_include_directories(ionik
