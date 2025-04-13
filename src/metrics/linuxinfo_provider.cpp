@@ -14,17 +14,19 @@
 #include <pfs/i18n.hpp>
 #include <pfs/optional.hpp>
 #include <pfs/string_view.hpp>
-#include <sys/sysinfo.h>
-#include <sys/utsname.h>
-#include <cpuid.h>
 #include <algorithm>
 #include <array>
+#include <cpuid.h>
+#include <unistd.h>
+#include <sys/sysinfo.h>
+#include <sys/utsname.h>
 
 IONIK__NAMESPACE_BEGIN
 
 namespace metrics {
 
 namespace fs = pfs::filesystem;
+using pfs::to_string;
 using string_view = pfs::string_view;
 
 #if defined(__GNUC__) && __GNUC__ < 11
