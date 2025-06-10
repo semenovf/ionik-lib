@@ -188,7 +188,9 @@ static char const * stringify_product_type (DWORD product_type)
         case PRODUCT_LITE                                : return "PRODUCT_LITE";
         case PRODUCT_IOTENTERPRISES                      : return "Windows IoT Enterprise LTSC";
         case PRODUCT_XBOX_SYSTEMOS                       : return "PRODUCT_XBOX_SYSTEMOS";
+#if __UNUSED__ // 'PRODUCT_XBOX_NATIVEOS': undeclared identifier: Windows 11 (24H2)
         case PRODUCT_XBOX_NATIVEOS                       : return "PRODUCT_XBOX_NATIVEOS";
+#endif
         case PRODUCT_XBOX_GAMEOS                         : return "PRODUCT_XBOX_GAMEOS";
         case PRODUCT_XBOX_ERAOS                          : return "PRODUCT_XBOX_ERAOS";
         case PRODUCT_XBOX_DURANGOHOSTOS                  : return "PRODUCT_XBOX_DURANGOHOSTOS";
