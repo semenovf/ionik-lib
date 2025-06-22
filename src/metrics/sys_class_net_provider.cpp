@@ -29,7 +29,7 @@ sys_class_net_provider::sys_class_net_provider (std::string iface, std::string r
         _readable_name = _iface;
 
     fs::path const net_dir = PFS__LITERAL_PATH("/sys/class/net");
-    fs::path const root_dir = net_dir / fs::utf8_decode(_iface) / PFS__LITERAL_PATH("statistics");
+    fs::path const root_dir = net_dir / pfs::utf8_decode_path(_iface) / PFS__LITERAL_PATH("statistics");
     _rx_bytes_path = root_dir / PFS__LITERAL_PATH("rx_bytes");
     _tx_bytes_path = root_dir / PFS__LITERAL_PATH("tx_bytes");
 
@@ -44,7 +44,8 @@ sys_class_net_provider::sys_class_net_provider (std::string iface, std::string r
             return;
         }
 
-        pfs::throw_or(perr, std::make_error_code(std::errc::no_such_file_or_directory), fs::utf8_encode(p));
+        pfs::throw_or(perr, std::make_error_code(std::errc::no_such_file_or_directory)
+            , pfs::utf8_encode_path(p));
         return;
     }
 
@@ -171,7 +172,7 @@ std::vector<std::string> sys_class_net_provider::interfaces (error * perr)
             pfs::throw_or(perr, ec, tr::f_("check path failure: {}", dir));
         } else {
             pfs::throw_or(perr, std::make_error_code(std::errc::no_such_file_or_directory)
-                , fs::utf8_encode(dir));
+                , pfs::utf8_encode_path(dir));
         }
 
         return std::vector<std::string>{};
@@ -181,7 +182,7 @@ std::vector<std::string> sys_class_net_provider::interfaces (error * perr)
         if (ec) {
             pfs::throw_or(perr, ec, tr::f_("check directory failure: {}", dir));
         } else {
-            pfs::throw_or(perr, std::make_error_code(std::errc::not_a_directory), fs::utf8_encode(dir));
+            pfs::throw_or(perr, std::make_error_code(std::errc::not_a_directory), pfs::utf8_encode_path(dir));
         }
 
         return std::vector<std::string>{};
@@ -189,7 +190,7 @@ std::vector<std::string> sys_class_net_provider::interfaces (error * perr)
 
     // Entries can be symbolic links
     for (auto const & dir_entry : fs::directory_iterator{dir})
-        result.push_back(fs::utf8_encode(dir_entry.path().filename()));
+        result.push_back(pfs::utf8_encode_path(dir_entry.path().filename()));
 
     return result;
 }

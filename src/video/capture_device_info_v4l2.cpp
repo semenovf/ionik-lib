@@ -48,13 +48,13 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
     std::vector<fs::path> files;
     fs::directory_scanner ds;
 
-    auto deviceDir = fs::utf8_decode("/dev");
+    auto deviceDir = pfs::utf8_decode_path("/dev");
 
     ds.on_entry = [& files, deviceDir] (pfs::filesystem::path const & path) {
         if (fs::is_character_file(path)) {
             auto filename = path.filename();
 
-            if (pfs::starts_with(fs::utf8_encode(filename), "video")) {
+            if (pfs::starts_with(pfs::utf8_encode_path(filename), "video")) {
                 fs::path target = path;
 
                 while (fs::is_symlink(target)) {
@@ -71,7 +71,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
     ds.scan(deviceDir);
 
     for (auto const & path: files) {
-        auto fd = ::open(fs::utf8_encode(path).c_str(), O_RDWR /*O_RDONLY*/);
+        auto fd = ::open(pfs::utf8_encode_path(path).c_str(), O_RDWR /*O_RDONLY*/);
 
         if (fd >= 0) {
             v4l2_capability vcap;
@@ -84,7 +84,7 @@ std::vector<capture_device_info> fetch_capture_devices (error * /*perr*/)
                     capture_device_info & cdi = result.back();
 
                     cdi.subsystem       = subsystem_enum::video4linux2;
-                    cdi.id              = fs::utf8_encode(path);
+                    cdi.id              = pfs::utf8_encode_path(path);
                     cdi.readable_name   = reinterpret_cast<char const *>(vcap.card);
                     cdi.orientation     = 0;
                     cdi.data["path"]    = cdi.id;

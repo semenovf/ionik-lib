@@ -60,7 +60,7 @@ filesize_t file_provider_t::size (filepath_t const & path, error * perr)
 {
     if (!fs::exists(path)) {
         pfs::throw_or(perr, make_error_code(std::errc::no_such_file_or_directory)
-            , fs::utf8_encode(path));
+            , pfs::utf8_encode_path(path));
         return 0;
     }
 
@@ -83,7 +83,7 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
     if (!fs::exists(path)) {
         pfs::throw_or(perr
             , make_error_code(std::errc::no_such_file_or_directory)
-            , fs::utf8_encode(path));
+            , pfs::utf8_encode_path(path));
         return INVALID_FILE_HANDLE;
     }
 
@@ -96,12 +96,12 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
                 tmp = fs::read_symlink(tmp, ec);
 
             if (ec) {
-                pfs::throw_or(perr, ec, tr::f_("open read only failure: {}", fs::utf8_encode(path)));
+                pfs::throw_or(perr, ec, tr::f_("open read only failure: {}", pfs::utf8_encode_path(path)));
                 return INVALID_FILE_HANDLE;
             }
         }  else {
             pfs::throw_or(perr, make_error_code(std::errc::invalid_argument)
-                , tr::f_("expected regular file: {}", fs::utf8_encode(path)));
+                , tr::f_("expected regular file: {}", pfs::utf8_encode_path(path)));
             return INVALID_FILE_HANDLE;
         }
     }
@@ -111,7 +111,7 @@ handle_t file_provider_t::open_read_only (filepath_t const & path, error * perr)
     // _sopen_s(& h, fs::utf8_encode(path).c_str(), O_RDONLY, _SH_DENYNO, 0);
     _wsopen_s(& h, path.c_str(), O_RDONLY | O_BINARY, _SH_DENYNO, 0);
 #   else
-    handle_t h = ::open(fs::utf8_encode(path).c_str(), O_RDONLY);
+    handle_t h = ::open(pfs::utf8_encode_path(path).c_str(), O_RDONLY);
 #   endif
 
     if (h < 0) {
@@ -138,7 +138,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
     // _sopen_s(& h, fs::utf8_encode(path).c_str(), oflags, _SH_DENYWR, S_IRUSR | S_IWUSR);
     _wsopen_s(& h, path.c_str(), oflags, _SH_DENYWR, S_IRUSR | S_IWUSR);
 #else
-    handle_t h = ::open(fs::utf8_encode(path).c_str(), oflags, S_IRUSR | S_IWUSR);
+    handle_t h = ::open(pfs::utf8_encode_path(path).c_str(), oflags, S_IRUSR | S_IWUSR);
 #endif
 
     if (h < 0) {
@@ -164,7 +164,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
             ec = std::make_error_code(std::errc::file_too_large);
         }
 #else
-        auto rc = ::truncate(fs::utf8_encode(path).c_str(), static_cast<off_t>(initial_size));
+        auto rc = ::truncate(pfs::utf8_encode_path(path).c_str(), static_cast<off_t>(initial_size));
 
         if (rc != 0)
             ec = pfs::get_last_system_error();
@@ -172,7 +172,7 @@ handle_t file_provider_t::open_write_only (filepath_t const & path, truncate_enu
 
         if (ec) {
             pfs::throw_or(perr, tr::f_("resize file failure while open write only file: {}"
-                , fs::utf8_encode(path)));
+                , pfs::utf8_encode_path(path)));
 
             file_provider_t::close(h);
             return INVALID_FILE_HANDLE;

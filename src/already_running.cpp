@@ -27,8 +27,8 @@ already_running::already_running (std::string const & unique_name, error * perr)
 {
 #if defined(PFS__OS_LINUX)
 
-    _lock_file_path = fs::standard_paths::temp_folder() / fs::utf8_decode(unique_name + ".lock");
-    _fd = open(fs::utf8_encode(_lock_file_path).c_str(), O_WRONLY | O_CREAT, 0600);
+    _lock_file_path = fs::standard_paths::temp_folder() / pfs::utf8_decode_path(unique_name + ".lock");
+    _fd = open(pfs::utf8_encode_path(_lock_file_path).c_str(), O_WRONLY | O_CREAT, 0600);
 
     if (_fd < 0) {
         pfs::throw_or(perr, pfs::get_last_system_error(), pfs::system_error_text());

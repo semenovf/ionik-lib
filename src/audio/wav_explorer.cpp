@@ -76,7 +76,7 @@ wav_explorer::wav_explorer (pfs::filesystem::path const & path, error * perr)
     if (!pfs::filesystem::exists(path)) {
         pfs::throw_or(perr
             , std::make_error_code(std::errc::no_such_file_or_directory)
-            , pfs::filesystem::utf8_encode(path));
+            , pfs::utf8_encode_path(path));
 
         return;
     }

@@ -86,7 +86,7 @@ bool monitor<rep_type>::add (fs::path const & path, error * perr)
 
     auto canonical_path = fs::canonical(path);
 
-    auto fd = inotify_add_watch(_rep.fd, fs::utf8_encode(canonical_path).c_str(), IN_ALL_EVENTS);
+    auto fd = inotify_add_watch(_rep.fd, pfs::utf8_encode_path(canonical_path).c_str(), IN_ALL_EVENTS);
 
     if (fd < 0) {
         pfs::throw_or(perr, pfs::get_last_system_error()
@@ -147,7 +147,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
             if (x->len > 0) {
                 // Canonical function requires path existance
                 //path = fs::canonical(path / fs::utf8_decode(x->name));
-                path /= fs::utf8_decode(x->name);
+                path /= pfs::utf8_decode_path(x->name);
             }
 
 // #if PFS__LOG_LEVEL >= 3
