@@ -8,36 +8,42 @@
 //      2021.08.03 Initial version (multimedia-lib).
 //      2023.03.31 Initial version (ionik-lib).
 ////////////////////////////////////////////////////////////////////////////////
-#include "pfs/fmt.hpp"
 #include "pfs/ionik/audio/device.hpp"
+#include <pfs/fmt.hpp>
+#include <cerrno>
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <cerrno>
 
 using namespace ionik;
 
 int main (int argc, char * argv[])
 {
+    if (!audio::supported()) {
+        fmt::println("Attention!!! This library is compiled without support for audio devices.");
+        return EXIT_SUCCESS;
+    }
+
     auto default_input_device = audio::default_input_device();
     auto default_output_device = audio::default_output_device();
 
     if (!default_input_device.name.empty()) {
-        fmt::print("Default input device:\n"
+        fmt::println("Default input device:\n"
                 "\tname={}\n"
-                "\treadable name={}\n"
+                "\treadable name={}"
             , default_input_device.name, default_input_device.readable_name);
     } else {
-        fmt::print("Default input device: none\n");
+        fmt::println("Default input device: none");
     }
 
     if (!default_output_device.name.empty()) {
-        fmt::print("Default output device:\n"
-		        "\tname={}\n"
-		        "\treadable name={}\n"
+        fmt::println("Default output device:\n"
+            "\tname={}\n"
+            "\treadable name={}"
             , default_output_device.name, default_output_device.readable_name);
     } else {
-        fmt::print("Default output device: none\n");
+        fmt::println("Default output device: none");
     }
 
     std::string indent{"     "};
@@ -47,7 +53,10 @@ int main (int argc, char * argv[])
     int counter = 0;
     auto input_devices = audio::fetch_devices(audio::device_mode::input);
 
-    std::cout << "Input devices:\n";
+    if (input_devices.empty())
+        fmt::println("Input devices: none");
+    else
+        fmt::println("Input devices:");
 
     for (auto const & d: input_devices) {
         prefix = (d.name == default_input_device.name)
@@ -59,7 +68,10 @@ int main (int argc, char * argv[])
     auto output_devices = audio::fetch_devices(audio::device_mode::output);
     counter = 0;
 
-    std::cout << "Output devices:\n";
+    if (output_devices.empty())
+        fmt::println("Output devices: none");
+    else
+        fmt::println("Output devices:");
 
     for (auto const & d: output_devices) {
         prefix = (d.name == default_output_device.name)

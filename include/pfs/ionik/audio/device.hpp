@@ -30,8 +30,24 @@ struct device_info
     std::string readable_name;
 };
 
-IONIK__EXPORT device_info default_input_device ();  // default source/input device
-IONIK__EXPORT device_info default_output_device (); // default sink/output device
+/**
+ * Checks whether this library can retrieve information about audio devices.
+ */
+IONIK__EXPORT bool supported ();
+
+/**
+ * Default source/input device.
+ */
+IONIK__EXPORT device_info default_input_device ();
+
+/**
+ * Default sink/output device.
+ */
+IONIK__EXPORT device_info default_output_device ();
+
+/**
+ * Fetches all available audio devices according to @a mode.
+ */
 IONIK__EXPORT std::vector<device_info> fetch_devices (device_mode mode);
 
 }} // namespace ionik::audio

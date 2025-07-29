@@ -34,7 +34,7 @@ int main (int argc, char * argv[])
     signal(SIGINT, sigterm_handler);
     signal(SIGTERM, sigterm_handler);
 
-    auto path = pfs::filesystem::utf8_decode(argv[1]);
+    auto path = pfs::utf8_decode_path(argv[1]);
     ionik::filesystem_monitor::functional_callbacks callbacks;
 
     callbacks.accessed = [] (fs::path const & p) {

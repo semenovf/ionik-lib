@@ -15,6 +15,11 @@
 namespace ionik {
 namespace audio {
 
+bool supported ()
+{
+    return true;
+}
+
 // Default source/input device
 device_info default_input_device ()
 {

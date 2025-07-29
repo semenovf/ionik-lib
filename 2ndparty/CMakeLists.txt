@@ -1,25 +1,25 @@
 ################################################################################
 # Copyright (c) 2025 Vladislav Trifochkin
 #
-# This file is part of `netty-lib`.
+# This file is part of `ionik-lib`.
 #
 # Changelog:
-#       2025.04.13 Initial version
+#       2025.07.29 Initial version
 ################################################################################
+include(FetchContent)
 
-if (NOT TARGET pfs::common)
-    if (NETTY__DISABLE_FETCH_CONTENT AND EXISTS common/.git)
-        add_subdirectory(common)
-    else()
-        set(FETCHCONTENT_UPDATES_DISCONNECTED_COMMON ON)
-        message(STATUS "Fetching common ...")
-        include(FetchContent)
-        FetchContent_Declare(common
-            GIT_REPOSITORY https://github.com/semenovf/common-lib.git
-            GIT_TAG master
-            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
-            # SUBBUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/2ndparty/common)
-        FetchContent_MakeAvailable(common)
-        message(STATUS "Fetching common complete")
+foreach (_dep common)
+    if (NOT TARGET ${_dep})
+        if (IONIK__DISABLE_FETCH_CONTENT AND EXISTS ${CMAKE_CURRENT_LIST_DIR}/${_dep}/.git)
+            add_subdirectory(${_dep})
+        else()
+            message(STATUS "Fetching ${_dep} ...")
+            FetchContent_Declare(${_dep}
+                GIT_REPOSITORY git@github.com:semenovf/${_dep}-lib.git
+                GIT_TAG master
+                SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/${_dep})
+            FetchContent_MakeAvailable(${_dep})
+            message(STATUS "Fetching ${_dep} complete")
+        endif()
     endif()
-endif()
+endforeach()

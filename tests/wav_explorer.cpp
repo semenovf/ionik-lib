@@ -29,10 +29,10 @@ inline fs::path data_dir_path ()
     if (fs::exists(dir_path))
         return dir_path;
 
-    dir_path = fs::current_path() 
+    dir_path = fs::current_path()
         / PFS__LITERAL_PATH("data");
 
-    MESSAGE("dir_path: ", fs::utf8_encode(dir_path));
+    MESSAGE("dir_path: ", pfs::utf8_encode_path(dir_path));
     REQUIRE(fs::exists(dir_path));
 
     return dir_path;
@@ -122,9 +122,9 @@ TEST_CASE("wav_explorer") {
     };
 
     for (auto const & elem: test_data) {
-        ionik::audio::wav_explorer wav_explorer{ data_dir_path() 
+        ionik::audio::wav_explorer wav_explorer{ data_dir_path()
             / PFS__LITERAL_PATH("au")
-            / fs::utf8_decode(elem.filename)
+            / pfs::utf8_decode_path(elem.filename)
         };
 
         ionik::error err;

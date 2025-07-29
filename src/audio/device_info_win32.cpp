@@ -20,6 +20,11 @@
 namespace ionik {
 namespace audio {
 
+bool supported ()
+{
+    return true;
+}
+
 // Avoid warning:
 // warning C4996: 'wcsrtombs': This function or variable may be unsafe.
 //                 Consider using wcsrtombs_s instead. To disable

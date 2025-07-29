@@ -146,6 +146,7 @@ if (NOT _ionik__audio_backend_FOUND)
     message(WARNING
         " No any Audio backend found\n"
         " For Debian-based distributions it may be PulseAudio ('libpulse-dev' package)")
+    target_sources(ionik PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/audio/device_info_dumb.cpp)
 endif()
 
 target_include_directories(ionik

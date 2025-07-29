@@ -23,7 +23,7 @@ static fs::path unique_temp_file_path ()
 
     while (result.empty() && counter-- > 0) {
         result = fs::standard_paths::temp_folder()
-            / fs::utf8_decode(to_string(pfs::generate_uuid()) + ".ionik");
+            / pfs::utf8_decode_path(to_string(pfs::generate_uuid()) + ".ionik");
 
         if (fs::exists(result))
             result.clear();
@@ -37,7 +37,7 @@ static fs::path unique_temp_file_path ()
 
 TEST_CASE("local_file") {
     auto test_file_path = unique_temp_file_path();
-    MESSAGE("Test file path: ", pfs::filesystem::utf8_encode(test_file_path));
+    MESSAGE("Test file path: ", pfs::utf8_encode_path(test_file_path));
 
     // === Create file and write test data
     auto test_file = ionik::local_file::open_write_only(test_file_path);
@@ -90,7 +90,7 @@ TEST_CASE("local_file") {
 
 TEST_CASE("initial size") {
     auto test_file_path = unique_temp_file_path();
-    MESSAGE("Test file path: ", pfs::filesystem::utf8_encode(test_file_path));
+    MESSAGE("Test file path: ", pfs::utf8_encode_path(test_file_path));
 
     ionik::local_file::filesize_type initial_size = 10UL * 1024 * 1024 * 1024; // 10 Mib
 

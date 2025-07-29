@@ -15,6 +15,11 @@
 namespace ionik {
 namespace audio {
 
+bool supported ()
+{
+    return true;
+}
+
 class context_notifier final
 {
     pa_context_state_t _state {PA_CONTEXT_UNCONNECTED};

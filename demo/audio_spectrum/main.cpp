@@ -74,7 +74,7 @@ int main (int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    auto auPath = fs::utf8_decode(argv[1]);
+    auto auPath = pfs::utf8_decode_path(argv[1]);
 
     if (!(fs::exists(auPath) && fs::is_regular_file(auPath))) {
         LOGE("", "File not found or it is not a regular file: {}", auPath);

@@ -19,6 +19,7 @@ option(IONIK__BUILD_DEMO "Build examples/demo" OFF)
 option(IONIK__BUILD_SHARED "Enable build shared library" OFF)
 option(IONIK__ENABLE_QT5 "Enable Qt5 Multimedia as backend" OFF)
 option(IONIK__ENABLE_QT6 "Enable Qt6 Multimedia as backend (NOT IMPLEMENTED YET)" OFF)
+option(IONIK__DISABLE_FETCH_CONTENT "Disable fetch content if sources of dependencies already exists in the working tree (checks .git subdirectory)" ON)
 
 # Used by Win32 service specific projects /MACHINE:{ARM|ARM64|ARM64EC|EBC|X64|X86}
 # https://learn.microsoft.com/en-us/cpp/build/reference/machine-specify-target-platform?view=msvc-170
