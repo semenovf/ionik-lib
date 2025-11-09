@@ -1,5 +1,5 @@
 ####################################################################################################
-# Copyright (c) 2022-2024 Vladislav Trifochkin
+# Copyright (c) 2022-2025 Vladislav Trifochkin
 #
 # This file is part of `ionik-lib`.
 #

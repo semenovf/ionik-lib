@@ -34,7 +34,7 @@ void WavSpectrum::setSpectrum (pfs::filesystem::path const & auPath
 {
     _good = true;
     _wavSpectrum = std::move(wavSpectrum);
-    _source = QUrl::fromLocalFile(QString::fromStdString(pfs::filesystem::utf8_encode(auPath)));
+    _source = QUrl::fromLocalFile(QString::fromStdString(pfs::utf8_encode_path(auPath)));
     Q_EMIT(spectrumChanged());
 }
 
@@ -43,7 +43,7 @@ void WavSpectrum::setSpectrum (pfs::filesystem::path const & auPath
 {
     _good = true;
     _wavSpectrum = wavSpectrum;
-    _source = QUrl::fromLocalFile(QString::fromStdString(pfs::filesystem::utf8_encode(auPath)));
+    _source = QUrl::fromLocalFile(QString::fromStdString(pfs::utf8_encode_path(auPath)));
     Q_EMIT(spectrumChanged());
 }
 

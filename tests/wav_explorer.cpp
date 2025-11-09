@@ -277,7 +277,7 @@ TEST_CASE("QAudioDecoder") {
     // successfully.
 
     au_decoder.setAudioFormat(audioFormat);
-    au_decoder.setSourceFilename(QString::fromStdString(pfs::filesystem::utf8_encode(au_path)));
+    au_decoder.setSourceFilename(QString::fromStdString(pfs::utf8_encode_path(au_path)));
     au_decoder.start();
 
     app.exec();
