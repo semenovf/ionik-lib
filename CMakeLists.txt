@@ -50,7 +50,7 @@ if (BUILD_SHARED_LIBS AND NOT IONIK__BUILD_STATIC)
     add_library(ionik)
     target_compile_definitions(ionik PUBLIC IONIK__EXPORTS)
 else()
-    add_library(netty STATIC)
+    add_library(ionik STATIC)
     target_compile_definitions(ionik PUBLIC IONIK__STATIC)
 endif()
 
