@@ -105,12 +105,12 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
         return pfs::nullopt;
     }
 
-    pfs::binary_istream<pfs::endian::little> is {buffer
+    pfs::binary_istream<pfs::endian::little> in {buffer
         , pfs::numeric_cast<std::size_t>(WAV_HEADER_SIZE)};
 
     wav_header header;
 
-    is >> header.chunk_id
+    in >> header.chunk_id
         >> header.chunk_size
         >> header.format
         >> header.subchunk1_id
@@ -203,8 +203,8 @@ pfs::optional<wav_info> wav_explorer::read_header (error * perr)
 
         }
 
-        pfs::binary_istream<pfs::endian::little> is {buffer, chunk_header_size};
-        is >> subchunk2_id >> subchunk2_size;
+        pfs::binary_istream<pfs::endian::little> in1 {buffer, chunk_header_size};
+        in1 >> subchunk2_id >> subchunk2_size;
 
         if (pfs::endian::native == pfs::endian::little)
             subchunk2_id = pfs::byteswap(subchunk2_id);

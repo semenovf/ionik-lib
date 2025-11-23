@@ -140,8 +140,6 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
                 return -1;
             }
 
-            bool is_dir = x->mask & IN_ISDIR;
-
             fs::path path = pos->second;
 
             if (x->len > 0) {
@@ -151,6 +149,7 @@ int monitor<rep_type>::poll (std::chrono::milliseconds timeout, Callbacks & cb, 
             }
 
 // #if PFS__LOG_LEVEL >= 3
+//             bool is_dir = x->mask & IN_ISDIR;
 //             std::string entry_type_str = is_dir ? "DIR_" : "FILE";
 //             std::string xname = x->len > 0 ? x->name : "<empty>";
 // #endif

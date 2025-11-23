@@ -12,6 +12,7 @@
 #include <pfs/i18n.hpp>
 #include <pfs/integer.hpp>
 #include <pfs/numeric_cast.hpp>
+#include <cstdint>
 #include <iterator>
 #include <thread>
 
@@ -20,12 +21,12 @@ namespace metrics {
 
 using string_view = proc_stat_provider::string_view;
 
-inline int cpu_core_index (string_view key)
+inline std::size_t cpu_core_index (string_view key)
 {
     if (key == "cpu")
         return 0;
 
-    auto index = pfs::to_integer<int>(key.cbegin() + 3, key.cend(), 10) + 1;
+    auto index = pfs::to_integer<std::size_t>(key.cbegin() + 3, key.cend(), 10) + 1;
 
     if (index <= 0 || index > 4096) {
         throw error {tr::f_("too big number of CPU cores: {}", index)};

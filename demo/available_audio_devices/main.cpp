@@ -18,7 +18,7 @@
 
 using namespace ionik;
 
-int main (int argc, char * argv[])
+int main (int, char *[])
 {
     if (!audio::supported()) {
         fmt::println("Attention!!! This library is compiled without support for audio devices.");

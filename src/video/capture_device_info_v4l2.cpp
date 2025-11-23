@@ -26,7 +26,7 @@ namespace fs = pfs::filesystem;
 namespace ionik {
 namespace video {
 
-static int xioctl (int fh, int request, void * arg)
+static int xioctl (int fh, unsigned long request, void * arg)
 {
     int r = 0;
 

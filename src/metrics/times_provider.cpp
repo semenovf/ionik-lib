@@ -150,10 +150,10 @@ times_provider::times_provider (error * perr)
         } else if (rec.key == "cache_size") {
             string_view value;
             string_view units;
-            auto pos = rec.value.cbegin();
-            auto last = rec.value.cend();
-            auto success = advance_decimal_digits_value(pos, last, value)
-                && advance_units(pos, last, units);
+            auto pos1 = rec.value.cbegin();
+            auto last1 = rec.value.cend();
+            auto success = advance_decimal_digits_value(pos1, last1, value)
+                && advance_units(pos1, last1, units);
 
             if (success) {
                 pcore->cache_size = to_int64_counter(value, units, & err);

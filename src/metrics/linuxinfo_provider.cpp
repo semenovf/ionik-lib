@@ -30,7 +30,7 @@ using pfs::to_string;
 using string_view = pfs::string_view;
 
 #if defined(__GNUC__) && __GNUC__ < 11
-inline void __cpuidex (int cpuid_info[4], int leaf, int subleaf)
+inline void __cpuidex (unsigned int cpuid_info[4], unsigned int leaf, unsigned int subleaf)
 {
     __cpuid_count(leaf, subleaf, cpuid_info[0], cpuid_info[1], cpuid_info[2], cpuid_info[3]);
 }
@@ -222,25 +222,28 @@ struct cpu_info
 
 static pfs::optional<cpu_info> cpu_info_from_cpuid ()
 {
-    std::array<int, 4> cpui;
-    unsigned int eax, ebx, ecx, edx;
-    std::vector<std::array<int, 4>> data;
-    std::vector<std::array<int, 4>> extdata;
+    std::array<unsigned int, 4> cpui;
+    std::vector<std::array<unsigned int, 4>> data;
+    std::vector<std::array<unsigned int, 4>> extdata;
 
     __cpuid(0, cpui[0], cpui[1], cpui[2], cpui[3]);
     auto n = cpui[0];
 
-    for (int i = 0; i <= n; ++i) {
+    for (unsigned int i = 0; i <= n; ++i) {
+#if defined(__GNUC__) && __GNUC__ < 11
         __cpuidex(cpui.data(), i, 0);
+#else
+        __cpuidex(reinterpret_cast<int*>(cpui.data()), i, 0);
+#endif
         data.push_back(cpui);
     }
 
     // Capture vendor string
     char vendor[0x20];
     std::memset(vendor, 0, sizeof(vendor));
-    *reinterpret_cast<int*>(vendor) = data[0][1];
-    *reinterpret_cast<int*>(vendor + 4) = data[0][3];
-    *reinterpret_cast<int*>(vendor + 8) = data[0][2];
+    *reinterpret_cast<unsigned int*>(vendor) = data[0][1];
+    *reinterpret_cast<unsigned int*>(vendor + 4) = data[0][3];
+    *reinterpret_cast<unsigned int*>(vendor + 8) = data[0][2];
 
     // Calling __cpuid with 0x80000000 as the function_id argument
     // gets the number of the highest valid extended ID.
@@ -251,8 +254,12 @@ static pfs::optional<cpu_info> cpu_info_from_cpuid ()
     char * pbrand = brand;
     std::memset(brand, 0, sizeof(brand));
 
-    for (int i = 0x80000000; i <= n; ++i) {
+    for (unsigned int i = 0x80000000; i <= n; ++i) {
+#if defined(__GNUC__) && __GNUC__ < 11
         __cpuidex(cpui.data(), i, 0);
+#else
+        __cpuidex(reinterpret_cast<int*>(cpui.data()), i, 0);
+#endif
         extdata.push_back(cpui);
     }
 
